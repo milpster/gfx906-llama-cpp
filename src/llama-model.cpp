@@ -1303,13 +1303,50 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
 
     const int i_gpu_start = std::max(n_layer_all + 1 - n_gpu_layers, 0);
     const int act_gpu_layers = devices.empty() ? 0 : std::min(n_gpu_layers, n_layer_all + 1);
+
+    // COST mode: dual-budget walk. Per-layer compute cost (recurrent=1, attn=W_ATTN) and
+    // memory footprint (recurrent=1, attn=W_MEM, accounts for KV cache) each get their own
+    // prefix sum over GPU layers. A layer is assigned to max(dev_by_cost, dev_by_mem):
+    // whichever budget exhausts first forces the move to the next device. This keeps COST
+    // mode from concentrating too many attention layers on one device and OOMing. For
+    // non-hybrid models every layer has equal weight, so this reduces to LAYER.
+    std::vector<float> cost_prefix;
+    std::vector<float> mem_prefix;
+    float total_cost = 0.0f;
+    float total_mem  = 0.0f;
+    constexpr float W_ATTN = 4.0f;  // compute cost ratio
+    constexpr float W_MEM  = 1.0f;  // memory ratio (1.0 = treat all layers equally; prevents COST from overloading any device and OOMing at large ctx)
+    if (split_mode == LLAMA_SPLIT_MODE_COST && act_gpu_layers > 0) {
+        cost_prefix.assign(act_gpu_layers + 1, 0.0f);
+        mem_prefix .assign(act_gpu_layers + 1, 0.0f);
+        for (int k = 0; k < act_gpu_layers; ++k) {
+            const int il = i_gpu_start + k;
+            const bool is_recr = (il < n_layer_all && hparams.is_recr(il));
+            cost_prefix[k + 1] = cost_prefix[k] + (is_recr ? 1.0f : W_ATTN);
+            mem_prefix [k + 1] = mem_prefix [k] + (is_recr ? 1.0f : W_MEM);
+        }
+        total_cost = std::max(cost_prefix[act_gpu_layers], 1.0f);
+        total_mem  = std::max(mem_prefix [act_gpu_layers], 1.0f);
+    }
+
     auto get_layer_buft_list = [&](int il) -> llama_model::impl::layer_dev {
         const bool is_swa = il < n_layer_all && hparams.is_swa(il);
         if (il < i_gpu_start || (il - i_gpu_start) >= act_gpu_layers) {
             LLAMA_LOG_DEBUG("load_tensors: layer %3d assigned to device %s, is_swa = %d\n", il, ggml_backend_dev_name(cpu_dev), is_swa);
             return {cpu_dev, &pimpl->cpu_buft_list};
         }
-        const int layer_gpu = std::upper_bound(splits.begin(), splits.begin() + n_devices(), float(il - i_gpu_start)/act_gpu_layers) - splits.begin();
+        int layer_gpu;
+        if (split_mode == LLAMA_SPLIT_MODE_COST) {
+            const int k = il - i_gpu_start;
+            const float cost_frac = cost_prefix[k] / total_cost;
+            const float mem_frac  = mem_prefix[k]  / total_mem;
+            const int dev_by_cost = std::upper_bound(splits.begin(), splits.begin() + n_devices(), cost_frac) - splits.begin();
+            const int dev_by_mem  = std::upper_bound(splits.begin(), splits.begin() + n_devices(), mem_frac)  - splits.begin();
+            layer_gpu = std::max(dev_by_cost, dev_by_mem);
+        } else {
+            const float layer_frac = float(il - i_gpu_start) / act_gpu_layers;
+            layer_gpu = std::upper_bound(splits.begin(), splits.begin() + n_devices(), layer_frac) - splits.begin();
+        }
         auto * dev = devices.at(layer_gpu).dev;
         LLAMA_LOG_DEBUG("load_tensors: layer %3d assigned to device %s, is_swa = %d\n", il, ggml_backend_dev_name(dev), is_swa);
         return {dev, &pimpl->gpu_buft_list.at(dev)};

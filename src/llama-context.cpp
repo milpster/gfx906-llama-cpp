@@ -426,7 +426,7 @@ llama_context::llama_context(
             params.pipeline_parallel_type != LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED &&
             model.n_devices() > 1 &&
             model.n_gpu_layers() > model.hparams.n_layer_all &&
-            model.split_mode() == LLAMA_SPLIT_MODE_LAYER &&
+            (model.split_mode() == LLAMA_SPLIT_MODE_LAYER || model.split_mode() == LLAMA_SPLIT_MODE_COST) &&
             cparams.offload_kqv &&
             !model.has_tensor_overrides();
 
