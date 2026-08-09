@@ -2274,6 +2274,10 @@ common_speculative_init_result::common_speculative_init_result(
 
     if (spec_mtp) {
         cparams.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+        cparams.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED;
+        // use the same (possibly fit-reduced) context size as the target
+        // avoids MTP draft reserving flash attention workspace for full n_ctx
+        cparams.n_ctx = llama_n_ctx(ctx_tgt);
     }
 
     // note: for small models maybe we can set this to the maximum possible draft from all speculative types

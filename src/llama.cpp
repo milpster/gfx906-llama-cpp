@@ -46,6 +46,18 @@ const char * llama_flash_attn_type_name(enum llama_flash_attn_type flash_attn_ty
     GGML_ABORT("fatal error");
 }
 
+const char * llama_pipeline_parallel_type_name(enum llama_pipeline_parallel_type pipeline_parallel_type) {
+    switch (pipeline_parallel_type) {
+        case LLAMA_PIPELINE_PARALLEL_TYPE_AUTO:
+            return "auto";
+        case LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED:
+            return "disabled";
+        case LLAMA_PIPELINE_PARALLEL_TYPE_ENABLED:
+            return "enabled";
+    }
+    GGML_ABORT("fatal error");
+}
+
 struct llama_sampler_chain_params llama_sampler_chain_default_params() {
     struct llama_sampler_chain_params result = {
         /*.no_perf =*/ true,
@@ -578,4 +590,3 @@ const char * llama_print_system_info(void) {
 
     return s.c_str();
 }
-

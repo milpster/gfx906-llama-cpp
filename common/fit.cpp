@@ -183,6 +183,7 @@ static void common_params_fit_impl(
     constexpr int64_t MiB = 1024*1024;
     typedef std::vector<llama_device_memory_data> dmds_t;
     const llama_model_params default_mparams = llama_model_default_params();
+    const bool fixed_gpu_layers = mparams->n_gpu_layers != default_mparams.n_gpu_layers;
 
     std::vector<ggml_backend_dev_t> devs;
     uint32_t hp_ngl = 0; // hparams.n_gpu_layers
@@ -315,7 +316,7 @@ static void common_params_fit_impl(
                             sum_used_target -= margins[id];
                         }
                     }
-                    if (nd > 1) {
+                    if (nd > 1 && !fixed_gpu_layers) {
                         // for multiple devices we need to be more conservative in terms of how much context we think can fit:
                         //   - for dense models only whole layers can be assigned to devices
                         //   - for MoE models only whole tensors can be assigned to devices, which we estimate to be <= 1/3 of a layer
@@ -333,6 +334,30 @@ static void common_params_fit_impl(
                     } else {
                         for (size_t id = 0; id < nd; id++) {
                             sum_projected_used_min_ctx += dmds_min_ctx[id].mb.total();
+                        }
+                    }
+                    if (nd > 1 && fixed_gpu_layers) {
+                        uint32_t n_ctx_fit = hp_nct;
+                        bool fits = true;
+                        for (size_t id = 0; id < nd; id++) {
+                            const int64_t used_full = dmds_full[id].mb.total();
+                            const int64_t used_min  = dmds_min_ctx[id].mb.total();
+                            const int64_t target    = dmds_full[id].free - margins[id];
+                            if (used_full <= target) {
+                                continue;
+                            }
+                            uint32_t n_ctx_device = n_ctx_min;
+                            fits = fits && target >= used_min;
+                            if (target > used_min && used_full > used_min) {
+                                n_ctx_device += (hp_nct - n_ctx_min) * (target - used_min) / (used_full - used_min);
+                            }
+                            n_ctx_fit = std::min(n_ctx_fit, n_ctx_device);
+                        }
+                        cparams->n_ctx = std::max(n_ctx_fit - n_ctx_fit % 256, n_ctx_min);
+                        LOG_TRC("%s: context size reduced from %" PRIu32 " to %" PRIu32 " using per-device limits\n",
+                            __func__, hp_nct, cparams->n_ctx);
+                        if (fits) {
+                            return;
                         }
                     }
                     if (sum_used_target > sum_projected_used_min_ctx) {
@@ -372,7 +397,7 @@ static void common_params_fit_impl(
         throw common_params_fit_exception("was unable to fit model into system memory by reducing context, abort");
     }
 
-    if (mparams->n_gpu_layers != default_mparams.n_gpu_layers) {
+    if (fixed_gpu_layers) {
         throw common_params_fit_exception("n_gpu_layers already set by user to " + std::to_string(mparams->n_gpu_layers) + ", abort");
     }
     if (nd > 1) {

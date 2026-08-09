@@ -306,6 +306,7 @@ llama_context::llama_context(
     LLAMA_LOG_INFO("%s: n_ubatch      = %u\n",   __func__, cparams.n_ubatch);
     LLAMA_LOG_INFO("%s: causal_attn   = %d\n",   __func__, cparams.causal_attn);
     LLAMA_LOG_INFO("%s: flash_attn    = %s\n",   __func__, llama_flash_attn_type_name(params.flash_attn_type));
+    LLAMA_LOG_INFO("%s: pipeline mode = %s\n",   __func__, llama_pipeline_parallel_type_name(params.pipeline_parallel_type));
     LLAMA_LOG_INFO("%s: kv_unified    = %s\n",   __func__, cparams.kv_unified ? "true" : "false");
     LLAMA_LOG_INFO("%s: freq_base     = %.1f\n", __func__, cparams.rope_freq_base);
     LLAMA_LOG_INFO("%s: freq_scale    = %g\n",   __func__, cparams.rope_freq_scale);
@@ -421,6 +422,8 @@ llama_context::llama_context(
         // TODO: move these checks to ggml_backend_sched
         // enabling pipeline parallelism in the scheduler increases memory usage, so it is only done when necessary
         bool pipeline_parallel =
+            cparams.ctx_type != LLAMA_CONTEXT_TYPE_MTP &&
+            params.pipeline_parallel_type != LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED &&
             model.n_devices() > 1 &&
             model.n_gpu_layers() > model.hparams.n_layer_all &&
             model.split_mode() == LLAMA_SPLIT_MODE_LAYER &&
@@ -445,6 +448,11 @@ llama_context::llama_context(
                     break;
                 }
             }
+        }
+
+        if (cparams.ctx_type != LLAMA_CONTEXT_TYPE_MTP &&
+            params.pipeline_parallel_type == LLAMA_PIPELINE_PARALLEL_TYPE_ENABLED && !pipeline_parallel) {
+            LLAMA_LOG_WARN("%s: pipeline parallelism requested but unavailable\n", __func__);
         }
 
         cparams.pipeline_parallel = pipeline_parallel;
@@ -3476,6 +3484,7 @@ llama_context_params llama_context_default_params() {
         /*.pooling_type                =*/ LLAMA_POOLING_TYPE_UNSPECIFIED,
         /*.attention_type              =*/ LLAMA_ATTENTION_TYPE_UNSPECIFIED,
         /*.flash_attn_type             =*/ LLAMA_FLASH_ATTN_TYPE_AUTO,
+        /*.pipeline_parallel_type      =*/ LLAMA_PIPELINE_PARALLEL_TYPE_AUTO,
         /*.rope_freq_base              =*/ 0.0f,
         /*.rope_freq_scale             =*/ 0.0f,
         /*.yarn_ext_factor             =*/ -1.0f,

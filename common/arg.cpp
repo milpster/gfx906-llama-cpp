@@ -1568,6 +1568,21 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
                                    string_format("error: unknown value for --flash-attn: '%s'\n", value.c_str()));
                            }
                        }).set_env("LLAMA_ARG_FLASH_ATTN"));
+    add_opt(common_arg({ "--pipeline-parallel" }, "[on|off|auto]",
+                       string_format("set pipeline parallelism ('on', 'off', or 'auto', default: '%s')",
+                                     llama_pipeline_parallel_type_name(params.pipeline_parallel_type)),
+                       [](common_params & params, const std::string & value) {
+                           if (is_truthy(value)) {
+                               params.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_ENABLED;
+                           } else if (is_falsey(value)) {
+                               params.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED;
+                           } else if (is_autoy(value)) {
+                               params.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_AUTO;
+                           } else {
+                               throw std::runtime_error(
+                                   string_format("error: unknown value for --pipeline-parallel: '%s'\n", value.c_str()));
+                           }
+                       }).set_env("LLAMA_ARG_PIPELINE_PARALLEL"));
     add_opt(common_arg(
         {"-p", "--prompt"}, "PROMPT",
         "prompt to start generation with; for system message, use -sys",

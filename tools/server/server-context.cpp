@@ -1091,6 +1091,20 @@ private:
                 auto cparams_dft = common_context_params_to_llama(params_dft);
                 if (spec_mtp) {
                     cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+                    cparams_dft.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED;
+                    // MTP draft uses the target's (possibly fit-reduced) n_ctx at runtime.
+                    // Estimate with the same n_ctx to avoid over-reserving fit_params_target.
+                    {
+                        auto mparams_tgt = common_model_params_to_llama(params_base);
+                        auto cparams_tgt = common_context_params_to_llama(params_base);
+                        common_fit_params(params_dft.model.path.c_str(), &mparams_tgt, &cparams_tgt,
+                            params_base.tensor_split,
+                            params_base.tensor_buft_overrides.data(),
+                            params_base.fit_params_target.data(),
+                            params_base.fit_params_min_ctx,
+                            GGML_LOG_LEVEL_ERROR);
+                        cparams_dft.n_ctx = cparams_tgt.n_ctx;
+                    }
                 }
                 cparams_dft.n_rs_seq = 0;
 
@@ -1114,6 +1128,7 @@ private:
                         }
                     }
 
+                    std::vector<size_t> measured_bytes(tgt_devices.size(), 0);
                     for (size_t j = 0; j < devs.size(); ++j) {
                         const size_t bytes = (measure_model_bytes ? dmd[j].model : 0) + dmd[j].context + dmd[j].compute;
                         total += bytes;
@@ -1122,6 +1137,7 @@ private:
                                 SRV_DBG("[spec] adding %.2f MiB to fit_params_target for device %s\n",
                                         bytes / (1024.0 * 1024.0), ggml_backend_dev_name(devs[j]));
                                 params_base.fit_params_target[i] += bytes;
+                                measured_bytes[i] += bytes;
                                 break;
                             }
                         }
@@ -1129,6 +1145,47 @@ private:
                     SRV_TRC("[spec] estimated memory usage of %s is %.2f MiB\n",
                             has_draft ? "draft model" : "MTP context",
                             total / (1024.0 * 1024.0));
+
+                    if (spec_mtp) {
+                        for (int pass = 0; pass < 2; ++pass) {
+                            auto mparams_tgt = common_model_params_to_llama(params_base);
+                            auto cparams_tgt = common_context_params_to_llama(params_base);
+                            common_fit_params(params_dft.model.path.c_str(), &mparams_tgt, &cparams_tgt,
+                                params_base.tensor_split,
+                                params_base.tensor_buft_overrides.data(),
+                                params_base.fit_params_target.data(),
+                                params_base.fit_params_min_ctx,
+                                GGML_LOG_LEVEL_ERROR);
+                            if (cparams_dft.n_ctx == cparams_tgt.n_ctx) {
+                                break;
+                            }
+
+                            cparams_dft.n_ctx = cparams_tgt.n_ctx;
+                            auto dmd_refined = common_get_device_memory_data(
+                                params_dft.model.path.c_str(), &mparams_dft, &cparams_dft,
+                                devs, hp_ngl, hp_nct, hp_nex, GGML_LOG_LEVEL_ERROR);
+
+                            std::vector<size_t> refined_bytes(tgt_devices.size(), 0);
+                            total = 0;
+                            for (size_t j = 0; j < devs.size(); ++j) {
+                                const size_t bytes = (measure_model_bytes ? dmd_refined[j].model : 0) + dmd_refined[j].context + dmd_refined[j].compute;
+                                total += bytes;
+                                for (size_t i = 0; i < tgt_devices.size(); ++i) {
+                                    if (tgt_devices[i] == devs[j]) {
+                                        refined_bytes[i] += bytes;
+                                        break;
+                                    }
+                                }
+                            }
+                            for (size_t i = 0; i < tgt_devices.size(); ++i) {
+                                params_base.fit_params_target[i] -= measured_bytes[i];
+                                params_base.fit_params_target[i] += refined_bytes[i];
+                            }
+                            measured_bytes = std::move(refined_bytes);
+                            SRV_TRC("[spec] refined MTP memory estimate at n_ctx=%" PRIu32 " is %.2f MiB\n",
+                                    cparams_dft.n_ctx, total / (1024.0 * 1024.0));
+                        }
+                    }
                 } catch (const std::exception & e) {
                     SRV_WRN("[spec] failed to measure %s memory: %s\n",
                             has_draft ? "draft model" : "MTP context", e.what());
