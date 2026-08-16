@@ -193,6 +193,26 @@ User accepted ctx loss for pp. Two levers tested:
 ub 384, vk f16 on: tg 16.8-19.0/s, pp 282-285/s, vision OK.**
 Both start scripts updated (GGML_VK_DISABLE_F16 removed).
 
+## ub / nbatch_fa ladder with tile kernel (2026-08-16, round 3)
+
+Re-tested after the q8 tile kernel landed (old ub trials ran with VEC):
+
+| ub  | status                  | pp @5k |
+|----:|-------------------------|-------:|
+| 320 | listening, stable       | 320.14 |
+| 384 | baseline                | 325-333 |
+| 448 | listening, stable       | 322.65 |
+| 512 | listening; DIED on 2nd distinct pp (VK1 167 MiB, FA pool OOM) | ~308 (1st) |
+
+nbatch_fa 64 @ 32 cols (table edit (256,256,32,...,64,128)): 321.32 -
+occupancy 1 loss beats sync savings, same failure mode as 64-col.
+Reverted, baseline re-verified at 325.81. Both levers rejected.
+ub 384 + (256,256,32,256,2,32,128) is final.
+
+Meta-backend multi-buffer fix: planned, not implemented -
+see ../META-BUFFER-PLAN.md (root cause: ggml-alloc multi-buffer wrapper
+vs meta segment init abort #22197; ~60-100 line fix, option A).
+
 ## Optimization round 2: 64-col config tested, ctx re-fit (2026-08-16)
 
 1. **64-col (256,256,64,512thr,occ1) config: REJECTED.** Retested on an
