@@ -1,5 +1,32 @@
 # Plan: fix meta backend multi-buffer abort (enables -sm tensor)
 
+VERDICT (2026-08-16, after execution): **KILLED - not a bug worth fixing
+for this model.** Findings below supersede the plan.
+
+## What actually happened
+
+- The "multi buffers are not supported" abort from the first attempt was
+  never reproduced: both observed crashes (meta.cpp:1576 and :1520) were
+  plain OOM from splits that over-assigned the small devices. With a
+  fit-able split (-ts 45,20,35) tensor mode STARTS AND LISTENS.
+- With 3 devices the model runs but produces garbage ("////////" for any
+  prompt) and pp is 132 tok/s (4x SLOWER than layer mode).
+  Cause: qwen35 has only 4 KV heads. A 3-way tensor split misaligns the
+  head->device mapping; the 20% VK1 slice gets a fractional head.
+- 2 devices (clean 2+2 head split) cannot hold the weights.
+
+## Conclusion
+
+- The multi-buffer limitation is real but was NOT the blocker.
+- The blocker is model topology (4 KV heads) + 3 unequal GPUs.
+- Even if it ran correctly, measured pp 132 with PCIe-staged copies
+  (no ROCm<->Vulkan P2P) suggests tensor mode would lose to layer mode's
+  333 on this rig regardless.
+- Models with 8+ KV heads on matched GPUs could still benefit from the
+  multi-buffer fix; the plan below is kept for that scenario only.
+
+## Original plan (kept for reference)
+
 Goal: let `-sm tensor` (all GPUs work on every matmul in parallel) run on the
 ROCm+Vulkan rig, breaking the 66-layer serial-sum pp ceiling (~333 tok/s).
 

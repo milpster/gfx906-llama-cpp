@@ -15,6 +15,7 @@ MMQ="${MMQ:-0}"
 SM="${SM:-cost}"
 PP="${PP:-on}"
 MMPROJ="${MMPROJ:-1}"
+DEVS="${DEVS:-rocm0,vulkan1,rocm1}"
 CTK="${CTK:-q8_0}"
 CTV="${CTV:-q8_0}"
 
@@ -58,7 +59,7 @@ env "${VKENV[@]}" "${MENV[@]}" HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
     -b 16384 -ub "$UB" --ctx-checkpoints 30 \
     --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 \
     --presence_penalty 0.0 --repeat-penalty 1.0 \
-    --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
+    --device "$DEVS" --port 8009 -np 1 -mg 0 \
     --reasoning-preserve --reasoning on \
     --spec-type draft-mtp --spec-draft-n-max "$NMAX" \
     -ctk "$CTK" -ctv "$CTV" "${DRAFT_ARGS[@]}" \
