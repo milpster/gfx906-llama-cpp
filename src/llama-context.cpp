@@ -427,8 +427,13 @@ llama_context::llama_context(
             model.n_devices() > 1 &&
             model.n_gpu_layers() > model.hparams.n_layer_all &&
             (model.split_mode() == LLAMA_SPLIT_MODE_LAYER || model.split_mode() == LLAMA_SPLIT_MODE_COST) &&
-            cparams.offload_kqv &&
-            !model.has_tensor_overrides();
+            cparams.offload_kqv;
+
+        // tensor overrides only move static weights; the scheduler double-buffers
+        // input copies independently of weight placement, so they are safe with PP
+        if (pipeline_parallel && model.has_tensor_overrides()) {
+            LLAMA_LOG_INFO("%s: pipeline parallelism enabled with tensor overrides\n", __func__);
+        }
 
         // pipeline parallelism requires support for async compute and events in all devices
         if (pipeline_parallel) {

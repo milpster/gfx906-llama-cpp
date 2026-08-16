@@ -2591,6 +2591,16 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_env("LLAMA_ARG_SPLIT_MODE"));
     add_opt(common_arg(
+        {"--cost-attn-weight"}, "N",
+        "compute-cost weight of attention layers relative to recurrent layers when using split-mode cost (default: 4.0)",
+        [](common_params & params, const std::string & value) {
+            params.cost_attn_weight = std::stof(value);
+            if (params.cost_attn_weight <= 0.0f) {
+                throw std::invalid_argument("must be a positive number");
+            }
+        }
+    ).set_env("LLAMA_ARG_COST_ATTN_WEIGHT"));
+    add_opt(common_arg(
         {"-ts", "--tensor-split"}, "N0,N1,N2,...",
         "fraction of the model to offload to each GPU, comma-separated list of proportions, e.g. 3,1",
         [](common_params & params, const std::string & value) {

@@ -483,6 +483,8 @@ struct common_params {
 
     enum llama_split_mode split_mode = LLAMA_SPLIT_MODE_LAYER; // how to split the model across GPUs
 
+    float cost_attn_weight = 4.0f; // compute-cost weight of attention layers relative to recurrent layers (split_mode = cost only)
+
     common_cpu_params cpuparams;
     common_cpu_params cpuparams_batch;
 

@@ -1314,7 +1314,7 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     std::vector<float> mem_prefix;
     float total_cost = 0.0f;
     float total_mem  = 0.0f;
-    constexpr float W_ATTN = 4.0f;  // compute cost ratio
+    const float W_ATTN = params.cost_attn_weight;  // compute cost ratio (attention vs recurrent)
     constexpr float W_MEM  = 1.0f;  // memory ratio (1.0 = treat all layers equally; prevents COST from overloading any device and OOMing at large ctx)
     if (split_mode == LLAMA_SPLIT_MODE_COST && act_gpu_layers > 0) {
         cost_prefix.assign(act_gpu_layers + 1, 0.0f);
@@ -2353,6 +2353,7 @@ llama_model_params llama_model_default_params() {
         /*.tensor_buft_overrides       =*/ nullptr,
         /*.n_gpu_layers                =*/ -1,
         /*.split_mode                  =*/ LLAMA_SPLIT_MODE_LAYER,
+        /*.cost_attn_weight            =*/ 4.0f,
         /*.main_gpu                    =*/ 0,
         /*.tensor_split                =*/ nullptr,
         /*.progress_callback           =*/ nullptr,
