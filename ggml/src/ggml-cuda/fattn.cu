@@ -337,15 +337,16 @@ enum best_fattn_kernel {
     BEST_FATTN_KERNEL_MMA_F16  = 400,
 };
 
-// On GCN HIP, q8_0 K/V can use the tile kernel with in-kernel dequant.
+// On GCN (Vega 10/20, incl. MI50/MI60), q8_0 K/V can use the tile kernel with in-kernel dequant.
 // It loads K/V tiles once per CUDA block instead of once per query row (VEC), which matters at
 // large KV depth where attention reads dominate. No F16 shadow buffer is needed for this path.
+// CDNA and RDNA keep the VEC path: untested there, and tensor-core equipped.
 static bool ggml_cuda_fattn_tile_q8_0_native(const int device, const ggml_tensor * dst) {
     const ggml_tensor * Q = dst->src[0];
     const ggml_tensor * K = dst->src[1];
     const ggml_tensor * V = dst->src[2];
     const int cc = ggml_cuda_info().devices[device].cc;
-    if (!(K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && !GGML_CUDA_CC_IS_RDNA(cc) &&
+    if (!(K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && GGML_CUDA_CC_IS_GCN(cc) &&
             K->ne[0] == V->ne[0] && K->ne[0] <= 256 && K->ne[0] % 32 == 0 && Q->ne[1] > 2)) {
         return false;
     }
