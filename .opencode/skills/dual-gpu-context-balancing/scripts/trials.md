@@ -193,6 +193,38 @@ User accepted ctx loss for pp. Two levers tested:
 ub 384, vk f16 on: tg 16.8-19.0/s, pp 282-285/s, vision OK.**
 Both start scripts updated (GGML_VK_DISABLE_F16 removed).
 
+## Optimization round 2: 64-col config tested, ctx re-fit (2026-08-16)
+
+1. **64-col (256,256,64,512thr,occ1) config: REJECTED.** Retested on an
+   idle system: 314 tok/s vs 327 for 32-col. Occupancy 1 (512 threads)
+   halves latency hiding on GCN; the extra tile amortization cannot
+   compensate. 32 cols is the ceiling for DKQ=256 on gfx906.
+2. **Vectorized q8 loads: BLOCKED structurally.** qs sits at offset 2 of
+   a 34-byte block stride; wider-than-16-bit aligned access requires a
+   KV layout change (split scale/quant planes), not a loader tweak.
+3. **nbatch_fa 64 for q8 path**: subsumed by (1) - the 64-col entry was
+   the vehicle; rejected with it.
+4. **ctx re-fit with the q8 kernel** (f16-shadow reservation gone from fit):
+
+| mode  | mmproj | -c     | frees r0/vk1/r1   | validation            |
+|-------|--------|-------:|-------------------|-----------------------|
+| layer | on     | 197000 | 3100/274/1059     | prod (kept, margin)  |
+| layer | on     | 199000 | ~/202/~           | listening + pp 318   |
+| layer | on     | 202000 | -/202/-           | DEAD: runtime FA pool alloc |
+| layer | off    | 206000 | 2982/167/941      | pp 327 OK            |
+| layer | off    | 210000 | -/130/-           | DEAD: runtime ROCm err |
+| cost  | off    | 226000 | 1465/833/1085     | **pp 312 + tg 18.1 validated** |
+| cost  | off    | 230000 | 1402/804/1031     | listening; DEAD on tg-shaped FA alloc |
+| cost  | off    | 232000 | -/776/-           | DEAD: runtime ROCm err |
+
+Runtime failures are first-alloc of new FA shapes (dst_tmp pool) - the
+fitter does not reserve for them. Text winner: cost 226k (max ctx) or
+layer 206k (max pp). Vision winner: layer 197k.
+
+Scripts updated: llama-start-q8v.sh (197k layer), llama-start-q8-text.sh
+(226k cost). Commits: d14628d04 (kernel), 251990ce6 (cost-attn wiring),
+522e206c5 + 24539d59a (skill/scripts).
+
 ## q8_0-native FA tile kernel (2026-08-16, code change)
 
 Problem: on HIP, quantized-KV FA always dispatched to the VEC kernel
