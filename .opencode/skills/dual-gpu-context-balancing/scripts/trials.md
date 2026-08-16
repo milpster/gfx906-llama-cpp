@@ -4,7 +4,24 @@ Hardware: 2x Radeon VII (16 GiB ROCm) + RTX 3080 Laptop (8 GiB Vulkan).
 Software: `build-vega20/bin/llama-server`, `-sm cost`, `--pipeline-parallel on`,
 MTP `draft-mtp --spec-draft-n-max 3`. No KV quantization (F16 throughout).
 
-## Final winner
+## Final production config (2026-08-16, end of session)
+
+`llama-start-q8v.sh`: -sm layer -ts 39,21,40 -c 197000, pipeline off,
+q8_0 target KV + F16 draft KV, n-max 2, draft-mtp + ngram-mod,
+--cache-reuse 256, mmproj-F16 vision, q8 tile kernel (d14628d04 + GCN gate 5471c58d7).
+
+Late-session additions (measured on the live prod instance):
+
+| change | result |
+|---|---|
+| ngram-mod + cache-reuse 256 added | no regression: tg 19.55 @256 out, pp 328.1 @5k, vision OK |
+| MTP n-max 3 A/B (measured earlier, kept 2) | 18.43 vs 18.67 tg; pos-3 accept only 32%; +100-130 MiB/dev risk to VK1 274 MiB free |
+| pp at -b 16384 (ub 384), 8681 tok fresh | **340.51 tok/s** (2.94 ms/tok) - best shallow pp recorded; -b is already 16384 in prod scripts, this documents it |
+
+n-max note: user reports n-max 3 may pay off only after longer sessions
+in prod; kept 2 per measured data.
+
+## Final winner (F16 era, superseded - see sections below)
 
 ```
 -ts 42,19,39 -sm cost -ot '^blk\.64\.nextn\..*=ROCm0' -c 144000
