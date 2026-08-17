@@ -1275,23 +1275,26 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
         constexpr int cols_per_block = DKQ <= 128 ? 64 : 32;
         constexpr uint32_t cfg_hip = ggml_cuda_fattn_tile_get_config_amd(DKQ, DV, cols_per_block);
         if constexpr (cfg_hip != 0) {
-        if (Q->ne[1] > (DKQ <= 128 ? 32 : 16)/ncols2) {
-            const int nwarps    = ggml_cuda_fattn_tile_get_nthreads (DKQ, DV, cols_per_block, cc) / warp_size;
-            const int nbatch_fa = ggml_cuda_fattn_tile_get_nbatch_fa(DKQ, DV, cols_per_block, cc);
-            // q8_0 K/V can be loaded and dequantized directly in the kernel, skipping the f16 shadow copy.
-            constexpr uint32_t cfg_q8 = cfg_hip;
-            constexpr int nbatch_K_q8 = (cfg_q8 >> 23) & ((1 << 9) - 1);
-            constexpr bool q8_ok = DKQ % 32 == 0 && DV % 32 == 0 && nbatch_K_q8 % 32 == 0 && DKQ % nbatch_K_q8 == 0;
-            if constexpr (q8_ok) {
-                const ggml_tensor * K = dst->src[1];
-                const ggml_tensor * V = dst->src[2];
-                if (K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0) {
-                    fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true>;
-                    launch_fattn<DV, cols_per_block/ncols2, ncols2>
-                        (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
-                    return;
-                }
+        const int nwarps    = ggml_cuda_fattn_tile_get_nthreads (DKQ, DV, cols_per_block, cc) / warp_size;
+        const int nbatch_fa = ggml_cuda_fattn_tile_get_nbatch_fa(DKQ, DV, cols_per_block, cc);
+        // q8_0 K/V can be loaded and dequantized directly in the kernel, skipping the f16 shadow copy.
+        // Keep this dispatch in sync with ggml_cuda_fattn_tile_q8_0_native() in fattn.cu, which skips
+        // the shadow reservation for Q->ne[1] > 2: small-Q ops (prompt tails, MTP verify) must not
+        // fall through to f16 call sites that write the shadow into unreserved memory.
+        constexpr uint32_t cfg_q8 = cfg_hip;
+        constexpr int nbatch_K_q8 = (cfg_q8 >> 23) & ((1 << 9) - 1);
+        constexpr bool q8_ok = DKQ % 32 == 0 && DV % 32 == 0 && nbatch_K_q8 % 32 == 0 && DKQ % nbatch_K_q8 == 0;
+        if constexpr (q8_ok) {
+            const ggml_tensor * K = dst->src[1];
+            const ggml_tensor * V = dst->src[2];
+            if (K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
+                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true>;
+                launch_fattn<DV, cols_per_block/ncols2, ncols2>
+                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
+                return;
             }
+        }
+        if (Q->ne[1] > (DKQ <= 128 ? 32 : 16)/ncols2) {
             fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, false>;
             launch_fattn<DV, cols_per_block/ncols2, ncols2>
                 (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, true, true, false, warp_size);
