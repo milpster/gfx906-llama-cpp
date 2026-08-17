@@ -360,6 +360,64 @@ all three devices. That stranded compute buffer was the hidden constraint.
    buffer size (~650-720 MiB), startup fails with
    `failed to create MTP context` even though all other devices have
    hundreds of MiB free.
-3. **Moving MTP to ROCm0 redistributes the cliff** to ROCm0's free headroom.
-   The new ceiling (-c 144000) is where ROCm0's free (~685 MiB) just barely
-   accommodates the grown MTP buffer (~716 MiB).
+ 3. **Moving MTP to ROCm0 redistributes the cliff** to ROCm0's free headroom.
+    The new ceiling (-c 144000) is where ROCm0's free (~685 MiB) just barely
+    accommodates the grown MTP buffer (~716 MiB).
+
+## Ctx re-ladder with fixed binary (2026-08-17, post shadow-fix)
+
+Protocol: llama-start-q8v.sh variants, one-batch pp (16357 tok), tg 1024.
+F16 draft KV + n-max 2 + ngram-mod unchanged. Fixed binary = fattn-tile.cuh
+q8 dispatch fix (uncommitted at record time).
+
+| Trial | sm | -ts | -c | mmproj | pp 16.4k | tg 1024 | acc | Verdict |
+|---|---|---|---:|---|---:|---:|---:|---|
+| V1 | layer | 39,21,40 | 199000 | on | 328.65 | 17.45 | 0.617 | PASS |
+| V2 | layer | 39,21,40 | 202000 | on | 327.04 | 16.13 | 0.542 | PASS - old DEATH was shadow bug |
+| V3 | cost | 42,19,39 | 202000 | on | 313.85 | 17.45 | 0.637 | PASS; pp worse than layer |
+| T1 | cost | 42,19,39 | 230000 | off | - | - | - | DEAD: ROCm1 pool_leg alloc OOM on first MMQ (true VRAM wall) |
+| T2 | cost | 42,19,39 | 228000 | off | 312.10 | 16.26 | 0.563 | PASS - new text ceiling |
+
+Deep-fill validation (same binary): cost 197k took a single 180,011-tok
+prefill at 139.59 tok/s avg (0->180k), then tg 18.0 tok/s acc 0.63 at 180k
+depth, HTTP 200, 0 faults. Layer 197k: 100k fill + 1024 tg + vision clean.
+
+Conclusions:
+- Vision ceiling 197k -> 202k (layer mode; cost also fits but pp 314 vs 327).
+  205k+ unprobed (ladder cut short on user request).
+- Text ceiling 226k -> 228k; 230k fails on ROCm1 MMQ workspace alloc.
+- Every pre-fix "DEAD at margin" verdict was F16-shadow pool corruption.
+- KERNEL-TODO.md (same dir) holds the split-plane q8 loader design sketch.
+
+## Deep-fill re-validation at 202k + nextn override (2026-08-17, later)
+
+User's bare-202k prod run died at 104.7k fill: ROCm1 hipblasCreate
+CUBLAS_STATUS_ALLOC_FAILED (lazy rocBLAS workspace vs fill-consumed
+headroom; real VRAM wall, not the shadow bug). New validation bar set:
+110k single prefill + tg 1024.
+
+| Trial | config | fill | result |
+|---|---|---|---|
+| A_202k_nextn | layer 39,21,40 -c 202000 + -ot '^blk\.64\.nextn\..*=ROCm0' | 110,028 tok | PASS: pp 193.3 avg, tg 17.0 acc 0.652, 0 faults |
+
+Verdict: vision prod config = 202k WITH the nextn override (the flag is
+required; bare 202k fails deep fills). llama-start-q8v.sh updated.
+Lesson recorded: shallow one-batch pp validation is insufficient for
+deep-fill configs - the 110k bar is now mandatory for ctx ceiling claims.
+
+## Qwen3.8 re-validation (2026-08-17, model swap correction)
+
+The 202k ladder above was accidentally run on Qwen3.6. Re-validated with
+the intended model (llama-start-q8v.sh now points at Qwen3.8-27B-Q8_0,
+froggeric template, mmproj-F16 kept, same config: layer 39,21,40 -c 202000
++ nextn -ot):
+
+| test | result |
+|---|---|
+| startup | listening |
+| 110k single prefill | PASS: 110,028 tok, 193.29 tok/s avg, 0 errors, 0 faults |
+| tg 1024 @ 110k fill | 18.38 tok/s, acc 0.588 |
+| vision @ 110k fill | OK |
+
+Qwen3.6 vs 3.8 at the same config: pp avg 193.3 both; tg 17.0 vs 18.4 (3.8
+faster); acc 0.652 vs 0.588. Config unchanged; only model + template swapped.

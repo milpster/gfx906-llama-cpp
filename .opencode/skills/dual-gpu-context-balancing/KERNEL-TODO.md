@@ -1,0 +1,81 @@
+# Kernel TODO (post q8-shadow-fix, 2026-08-17)
+
+Ideas that survived the tuning sessions but are NOT yet implemented.
+Each entry: what, why, expected gain, cost/risk, kill criteria.
+
+## 1. Split-plane q8_0 KV layout -> vectorized tile loaders
+
+Status: NOT STARTED (design sketch only). This is the main remaining
+deep-fill pp lever on the HIP side.
+
+### Problem
+
+q8_0 blocks are 34 bytes: fp16 scale `d` then 32 int8 quants (`qs`).
+In the KV cache, `qs` therefore sits at offset 2 of a 34-byte row stride,
+so `qs` is only guaranteed 2-byte aligned. The tile loaders in
+`ggml/src/ggml-cuda/fattn-tile.cuh` (`flash_attn_tile_load_tile_q8_0`,
+half2 and float variants) must read `ushort` one at a time:
+
+    const ushort * qs = (const ushort *) blk->qs; // qs is only 2-byte aligned
+    for (int l = 0; l < 16; ++l) { const ushort u = qs[l]; ... }
+
+At deep fills (100k+ KV) attention is pure KV-stream bandwidth and the
+per-load instruction overhead + narrow bursts cap the kernel. Round-2
+notes already flagged this as "BLOCKED structurally" - it is blocked for
+the *on-disk/in-cache q8_0 format*, not for a fork-local cache layout.
+
+### Design sketch
+
+Fork-local KV cache layout with two separate planes per K (and V) tensor:
+
+- plane A: the `d` scales, one fp16 per 32-element block, contiguous
+  (n_kv x n_blocks_per_head_row fp16);
+- plane B: the raw `qs` bytes, 32-byte aligned rows, contiguous
+  (n_kv x 32*n_blocks int8), 16-byte aligned by construction.
+
+Loader then issues 16-byte vector loads on plane B and scalar/short loads
+on plane A, dequantizing in SRAM exactly as today. Touch points:
+
+- KV cache allocation path (llama-context / ggml-cuda KV views) - write
+  planes at cache-fill time (quantization kernel splits its output);
+- `fattn-tile.cuh` q8_0 loaders - new addressing, vectorized;
+- VEC kernel + any CPU fallback that reads the cache - either keep a
+  compatibility branch on layout version or convert them too;
+- KV cache IO (state save/load, --cache-reuse) - must serialize in the
+  standard q8_0 layout or carry a layout tag.
+
+### Expected gain
+
++10-20% deep-fill pp (216 -> ~235-260 tok/s @100k). Shallow pp: neutral
+(not KV-bound). tg: neutral (VEC path, per-row reads already hidden).
+
+### Cost / risk
+
+Invasive: cache alloc + quant kernels + 2 loaders + VEC fallback + state
+serialization. Risk of subtle correctness drift between planes. Must be
+A/B-able at runtime (env toggle) so production can fall back.
+
+### Kill criteria
+
+- Prototype loader microbench (synthetic 100k-depth q8 KV stream) shows
+  < 8% end-to-end kernel gain, or
+- e2e deep-fill pp gain < 5% after integration, or
+- any output divergence vs standard layout (token-for-token, greedy).
+
+## 2. Small fish (only if bored, sub-1% each)
+
+- Tail/verify dispatch: Q rows 3..16 now ride the 32-col tile config;
+  a cols_per_block = 8 variant for Q->ne[1] <= 8 would cut wasted Q-tile
+  compute in prompt tails and MTP verify. ~20 lines in fattn-tile.cuh
+  dispatch. Measure across a 180k prefill before keeping.
+- tg: nothing kernel-side left (weights-bandwidth-bound; acceptance is a
+  model-quality property, not kernel efficiency).
+
+## Context
+
+- q8-shadow dispatch fix (2026-08-17, fattn-tile.cuh) removed the F16
+  shadow writes that corrupted pools and capped ctx fits; ceilings were
+  re-laddered after (see scripts/trials.md, same date).
+- Measured dead, do not revisit: 64-col config (occupancy 1), nbatch_fa 64,
+  ub ladder past 384, q4 KV, -sm tensor for 4-KV-head models, HIP graphs
+  (already ON in build-vega20), n-max 3.
