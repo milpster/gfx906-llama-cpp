@@ -421,3 +421,28 @@ froggeric template, mmproj-F16 kept, same config: layer 39,21,40 -c 202000
 
 Qwen3.6 vs 3.8 at the same config: pp avg 193.3 both; tg 17.0 vs 18.4 (3.8
 faster); acc 0.652 vs 0.588. Config unchanged; only model + template swapped.
+
+## Mixed K=f16 V=q8_0 tile kernel + Q6_K_XL ladder (2026-08-17)
+
+Kernel: kv_q8_0 template flag split into k_q8_0/v_q8_0 in fattn-tile.cuh;
+new GCN dispatch for F16 K + q8_0 V (gate ggml_cuda_fattn_tile_v_q8_0_native
+in fattn.cu, same Q->ne[1] > 2 sync rule; no F16 shadow for the V side).
+Motivation: -ctk f16 -ctv q8_0 = 0.75x KV bytes, K precision kept.
+
+Q6_K_XL + mmproj + vision, layer 39,21,40 + nextn-ot, one-batch protocol:
+
+| KV | max full-speed ctx | first-batch | notes |
+|---|---:|---:|---|
+| f16+f16 | 165k (170k fails fit) | 319.5 | llama-start-q6v.sh v1 |
+| f16+q8_0 | **210k** | **297** | 215k = VK1 sysmem-spill cliff -> 248; reproduced 2x each |
+| q8_0+q8_0 | 295k (validated 110k fill) | 263 | 305k startup ceiling |
+
+VK1 cliff detail (mixed KV): 210k->215k crosses VK1 context ~2607->2666 MiB
+with ~72 MiB free; NVIDIA Vulkan driver silently backs memory with sysmem
+past exhaustion (deterministic, reproduced). -ot ffn blk.26->ROCm1 freed
+229 MiB on VK1: 215k recovered to 287 but cross-device copies net below
+210k baseline. Whole-layer -ts moves (40,17,43 / 39,18,43) kill the MTP
+context (~1032 MiB) on the receiving ROCm at 205k+ - tested 220k/215k/210k.
+
+Verdict: 210k mixed is the sweet spot (+45k ctx over F16 for -22 t/s).
+llama-start-q6v.sh = Q6 + mixed KV + 210k.
