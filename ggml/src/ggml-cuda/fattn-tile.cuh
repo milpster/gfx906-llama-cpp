@@ -564,7 +564,7 @@ static __device__ __forceinline__ void flash_attn_tile_load_tile_q8_0(
 
 // Function that performs a single iteration in for the KQ matrix multiplication:
 template <int warp_size, int nwarps, int ncols1, int ncols2, int DKQ, int nbatch_fa, int nbatch_K,
-    bool use_logit_softcap, bool oob_check, typename T_vec_dot, bool kv_q8_0 = false>
+    bool use_logit_softcap, bool oob_check, typename T_vec_dot, bool k_q8_0 = false>
 static __device__ __forceinline__ void flash_attn_tile_iter_KQ(
         T_vec_dot   * const Q_tmp,
         const half2 * const __restrict__ K_h2,
@@ -583,7 +583,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter_KQ(
     constexpr int cpw   = ncols > nwarps ? ncols/nwarps : 1; // Q columns per warp
     constexpr int np    = nwarps > ncols ? nwarps/ncols : 1; // number of parallel warps per Q column
 
-    if constexpr (kv_q8_0) {
+    if constexpr (k_q8_0) {
         static_assert(nbatch_K % 32 == 0, "bad nbatch_K");
         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
             (K_q8 + int64_t(k_VKQ_0)*stride_K_q8 + k_KQ_0/32, KV_tmp, stride_K_q8, k_VKQ_sup);
@@ -647,7 +647,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter_KQ(
 
 // Function that performs a single iteration of the main loop over up to nbatch_fa tokens.
 template <int warp_size, int nwarps, int ncols1, int ncols2, int DKQ, int DV, int nbatch_fa, int nbatch_K,
-    bool use_logit_softcap, bool oob_check, bool kv_q8_0, typename T_vec_dot, typename T_KQ, typename T_acc>
+    bool use_logit_softcap, bool oob_check, bool k_q8_0, bool v_q8_0, typename T_vec_dot, typename T_KQ, typename T_acc>
 static __device__ __forceinline__ void flash_attn_tile_iter(
         T_vec_dot * const Q_tmp,
         const half2 * const __restrict__ K_h2,
@@ -702,12 +702,12 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
     constexpr int nbatch_K_last = DKQ % nbatch_K;
 #pragma unroll
     for (int k_KQ_0 = 0; k_KQ_0 < DKQ - nbatch_K_last; k_KQ_0 += nbatch_K) {
-        flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, T_vec_dot, kv_q8_0>(
+        flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
             Q_tmp, K_h2, K_q8, KV_tmp, stride_K2, stride_K_q8, k_VKQ_0, k_VKQ_sup, k_KQ_0, KQ_acc);
     }
     if (nbatch_K_last > 0) {
         constexpr int k_KQ_0 = DKQ - nbatch_K_last;
-        flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, kv_q8_0>(
+        flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
             Q_tmp, K_h2, K_q8, KV_tmp, stride_K2, stride_K_q8, k_VKQ_0, k_VKQ_sup, k_KQ_0, KQ_acc);
     }
 
@@ -813,7 +813,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
     static_assert(nbatch_V % np == 0, "bad nbatch_V");
 #pragma unroll
     for (int k0 = 0; k0 < nbatch_fa; k0 += nbatch_V) {
-        if constexpr (kv_q8_0) {
+        if constexpr (v_q8_0) {
             static_assert(DV % 32 == 0, "bad DV");
             flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_V, DV, 0, oob_check>
                 (V_q8 + int64_t(k_VKQ_0 + k0)*stride_V_q8, KV_tmp, stride_V_q8, k_VKQ_sup - k0);
@@ -889,7 +889,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
     }
 }
 
-template<int DKQ, int DV, int ncols1, int ncols2, bool use_logit_softcap, bool kv_q8_0 = false> // D == head size
+template<int DKQ, int DV, int ncols1, int ncols2, bool use_logit_softcap, bool k_q8_0 = false, bool v_q8_0 = false> // D == head size
 __launch_bounds__(ggml_cuda_fattn_tile_get_nthreads(DKQ, DV, ncols1*ncols2), ggml_cuda_fattn_tile_get_occupancy(DKQ, DV, ncols1*ncols2))
 static __global__ void flash_attn_tile(
         const char * Q_ptr,
@@ -965,8 +965,10 @@ static __global__ void flash_attn_tile(
 
     const block_q8_0 * K_q8 = nullptr;
     const block_q8_0 * V_q8 = nullptr;
-    if constexpr (kv_q8_0) {
+    if constexpr (k_q8_0) {
         K_q8 = (const block_q8_0 *) (K + nb13*sequence + nb12*(head0 / gqa_ratio));
+    }
+    if constexpr (v_q8_0) {
         V_q8 = (const block_q8_0 *) (V + nb23*sequence + nb22*(head0 / gqa_ratio));
     }
 
@@ -1072,14 +1074,14 @@ static __global__ void flash_attn_tile(
         int k_VKQ_0 = blockIdx.y*nbatch_fa;
         while (k_VKQ_0 < k_VKQ_max - nbatch_fa) {
             constexpr bool oob_check = false;
-            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, kv_q8_0>
+            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
                 (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
             k_VKQ_0 += gridDim.y*nbatch_fa;
         }
         if (k_VKQ_0 < k_VKQ_max) {
             constexpr bool oob_check = true;
-            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, kv_q8_0>
+            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
                 (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
         }
@@ -1087,7 +1089,7 @@ static __global__ void flash_attn_tile(
         // Branch without out-of-bounds checks.
         for (int k_VKQ_0 = blockIdx.y*nbatch_fa; k_VKQ_0 < k_VKQ_max; k_VKQ_0 += gridDim.y*nbatch_fa) {
             constexpr bool oob_check = false;
-            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, kv_q8_0>
+            flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
                 (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
         }
@@ -1288,7 +1290,20 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
             const ggml_tensor * K = dst->src[1];
             const ggml_tensor * V = dst->src[2];
             if (K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
-                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true>;
+                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+                launch_fattn<DV, cols_per_block/ncols2, ncols2>
+                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
+                return;
+            }
+        }
+        // F16 K + q8_0 V: K loads stay on the native half2 path, only V dequantizes in-kernel.
+        // Same sync rule with ggml_cuda_fattn_tile_v_q8_0_native() in fattn.cu (Q->ne[1] > 2).
+        constexpr bool v_q8_ok = DV % 32 == 0;
+        if constexpr (v_q8_ok) {
+            const ggml_tensor * K = dst->src[1];
+            const ggml_tensor * V = dst->src[2];
+            if (K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
+                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, false, true>;
                 launch_fattn<DV, cols_per_block/ncols2, ncols2>
                     (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
                 return;

@@ -355,6 +355,21 @@ static bool ggml_cuda_fattn_tile_q8_0_native(const int device, const ggml_tensor
     return cfg != 0 && nbatch_K % 32 == 0 && K->ne[0] % nbatch_K == 0;
 }
 
+// Mixed F16 K + q8_0 V on GCN: K keeps the native half2 tile loads, V dequantizes in-kernel.
+// Same shadow skip and Q->ne[1] > 2 rule as the full q8_0 path above.
+static bool ggml_cuda_fattn_tile_v_q8_0_native(const int device, const ggml_tensor * dst) {
+    const ggml_tensor * Q = dst->src[0];
+    const ggml_tensor * K = dst->src[1];
+    const ggml_tensor * V = dst->src[2];
+    const int cc = ggml_cuda_info().devices[device].cc;
+    if (!(K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && GGML_CUDA_CC_IS_GCN(cc) &&
+            K->ne[0] == V->ne[0] && V->ne[0] <= 256 && V->ne[0] % 32 == 0 && Q->ne[1] > 2)) {
+        return false;
+    }
+    const uint32_t cfg = ggml_cuda_fattn_tile_get_config_amd(K->ne[0], V->ne[0], K->ne[0] <= 128 ? 64 : 32);
+    return cfg != 0;
+}
+
 static bool ggml_cuda_fattn_kv_type_supported(ggml_type type) {
     switch (type) {
         case GGML_TYPE_F32:
@@ -482,7 +497,8 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
     // VEC dequantizes in-register and is also the safe path on RDNA2.
     if ((ggml_is_quantized(K->type) || ggml_is_quantized(V->type)) && can_use_vector_kernel) {
         // Exception: on GCN, batched prompts with q8_0 K/V use the tile kernel with in-kernel dequant.
-        if (ggml_cuda_fattn_tile_q8_0_native(device, dst)) {
+        if (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
+                ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
             return BEST_FATTN_KERNEL_TILE;
         }
         return BEST_FATTN_KERNEL_VEC;
@@ -589,7 +605,8 @@ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * d
 
     switch (kernel) {
         case BEST_FATTN_KERNEL_TILE:
-            if (ggml_cuda_fattn_tile_q8_0_native(device, dst)) {
+            if (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
+                    ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
                 break; // q8_0 is dequantized in-kernel, no F16 shadow needed
             }
             need_f16_K = true;
