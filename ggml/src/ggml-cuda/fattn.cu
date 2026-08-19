@@ -310,6 +310,8 @@ static void ggml_cuda_flash_attn_ext_vec(ggml_backend_cuda_context & ctx, ggml_t
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q5_1, GGML_TYPE_Q8_0)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q8_0, GGML_TYPE_Q8_0)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_BF16, GGML_TYPE_Q8_0)
+    FATTN_VEC_CASES_ALL_D(GGML_TYPE_F16,  GGML_TYPE_Q8_0S)
+    FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q8_0S, GGML_TYPE_Q8_0S)
 
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_F16,  GGML_TYPE_BF16)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q4_0, GGML_TYPE_BF16)
@@ -322,6 +324,8 @@ static void ggml_cuda_flash_attn_ext_vec(ggml_backend_cuda_context & ctx, ggml_t
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_F16,  GGML_TYPE_F16)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q4_0, GGML_TYPE_Q4_0)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q8_0, GGML_TYPE_Q8_0)
+    FATTN_VEC_CASES_ALL_D(GGML_TYPE_F16,  GGML_TYPE_Q8_0S)
+    FATTN_VEC_CASES_ALL_D(GGML_TYPE_Q8_0S, GGML_TYPE_Q8_0S)
     FATTN_VEC_CASES_ALL_D(GGML_TYPE_BF16, GGML_TYPE_BF16)
 #endif // GGML_CUDA_FA_ALL_QUANTS
 
@@ -346,7 +350,11 @@ static bool ggml_cuda_fattn_tile_q8_0_native(const int device, const ggml_tensor
     const ggml_tensor * K = dst->src[1];
     const ggml_tensor * V = dst->src[2];
     const int cc = ggml_cuda_info().devices[device].cc;
-    if (!(K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && GGML_CUDA_CC_IS_GCN(cc) &&
+    const bool kv_q8_0  = K->type == GGML_TYPE_Q8_0  && V->type == GGML_TYPE_Q8_0;
+    const bool kv_q8_0s = K->type == GGML_TYPE_Q8_0S && V->type == GGML_TYPE_Q8_0S;
+    // split-plane rows need (ne0/32)*34 % 16 == 0 for the 16B vector loads (D=256 yes, D=128 no)
+    const bool s_ok = !kv_q8_0s || (K->ne[0]/32*34) % 16 == 0;
+    if (!((kv_q8_0 || (kv_q8_0s && s_ok)) && GGML_CUDA_CC_IS_GCN(cc) &&
             K->ne[0] == V->ne[0] && K->ne[0] <= 256 && K->ne[0] % 32 == 0 && Q->ne[1] > 2)) {
         return false;
     }
@@ -362,7 +370,9 @@ static bool ggml_cuda_fattn_tile_v_q8_0_native(const int device, const ggml_tens
     const ggml_tensor * K = dst->src[1];
     const ggml_tensor * V = dst->src[2];
     const int cc = ggml_cuda_info().devices[device].cc;
-    if (!(K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && GGML_CUDA_CC_IS_GCN(cc) &&
+    const bool v_q8_0  = V->type == GGML_TYPE_Q8_0;
+    const bool v_q8_0s = V->type == GGML_TYPE_Q8_0S && (V->ne[0]/32*34) % 16 == 0;
+    if (!(K->type == GGML_TYPE_F16 && (v_q8_0 || v_q8_0s) && GGML_CUDA_CC_IS_GCN(cc) &&
             K->ne[0] == V->ne[0] && V->ne[0] <= 256 && V->ne[0] % 32 == 0 && Q->ne[1] > 2)) {
         return false;
     }
@@ -383,6 +393,7 @@ static bool ggml_cuda_fattn_kv_type_supported(ggml_type type) {
 #endif // GGML_CUDA_FA_ALL_QUANTS
         case GGML_TYPE_Q4_0:
         case GGML_TYPE_Q8_0:
+        case GGML_TYPE_Q8_0S:
         case GGML_TYPE_BF16:
             return true;
         default:

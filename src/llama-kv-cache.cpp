@@ -228,8 +228,22 @@ llama_kv_cache::llama_kv_cache(
         const bool has_k = true;
         const bool has_v = !is_mla;
 
-        ggml_tensor * k = has_k ? ggml_new_tensor_3d(ctx, type_k, n_embd_k_gqa, kv_size, n_stream) : nullptr;
-        ggml_tensor * v = has_v ? ggml_new_tensor_3d(ctx, type_v, n_embd_v_gqa, kv_size, n_stream) : nullptr;
+        // fork: split-plane q8_0S KV on HIP ROCm devices (vectorized tile loaders, see fattn-tile.cuh)
+        // env value: "kv" (default), "k", or "v"
+        ggml_type type_k_l = type_k;
+        ggml_type type_v_l = type_v;
+        if (offload) {
+            const char * split_env = getenv("GGML_KV_SPLIT_Q8");
+            if (split_env && strncmp(ggml_backend_dev_name(model.dev_layer(il)), "ROCm", 4) == 0) {
+                const bool do_k = type_k_l == GGML_TYPE_Q8_0 && (strchr(split_env, 'k') != nullptr);
+                const bool do_v = type_v_l == GGML_TYPE_Q8_0 && (strchr(split_env, 'v') != nullptr);
+                if (do_k) type_k_l = GGML_TYPE_Q8_0S;
+                if (do_v) type_v_l = GGML_TYPE_Q8_0S;
+            }
+        }
+
+        ggml_tensor * k = has_k ? ggml_new_tensor_3d(ctx, type_k_l, n_embd_k_gqa, kv_size, n_stream) : nullptr;
+        ggml_tensor * v = has_v ? ggml_new_tensor_3d(ctx, type_v_l, n_embd_v_gqa, kv_size, n_stream) : nullptr;
 
         has_k && ggml_format_name(k, "cache_k_l%d", il);
         has_v && ggml_format_name(v, "cache_v_l%d", il);

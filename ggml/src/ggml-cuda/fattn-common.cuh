@@ -328,6 +328,36 @@ static __device__ __forceinline__ float vec_dot_fattn_vec_KQ_q8_0(
     return sum;
 }
 
+// fork: split-plane q8_0S row layout = [D/32 fp16 d][D int8 qs], K_c points at the row start
+template <int D, int nthreads>
+static __device__ __forceinline__ float vec_dot_fattn_vec_KQ_q8_0s(
+    const char * __restrict__ K_c, const void * __restrict__ Q_v, const int * __restrict__ Q_q8, const void * __restrict__ Q_ds_v) {
+
+    const half * GGML_RESTRICT K_d = (const half *) K_c;
+    const char * GGML_RESTRICT K_qs = K_c + (D/QK8_0)*sizeof(half);
+    GGML_UNUSED(Q_v);
+
+    float sum = 0.0f;
+
+#pragma unroll
+    for (int k_KQ_0 = 0; k_KQ_0 < int(D/sizeof(int)); k_KQ_0 += nthreads) {
+        const int k_KQ = k_KQ_0 + (nthreads == WARP_SIZE ? threadIdx.x : threadIdx.x % nthreads);
+
+        const int ib  = k_KQ / QI8_0;
+        const int iqs = k_KQ % QI8_0;
+
+        int v;
+        ggml_cuda_memcpy_1<sizeof(v), 4>(&v, K_qs + ib*QK8_0 + 4*iqs);
+
+        const float2 * Q_ds = (const float2 *) Q_ds_v;
+        const float Q_d = Q_ds[k_KQ_0/nthreads].x;
+
+        sum += vec_dot_q8_0_q8_1_impl<float, 1>(&v, &Q_q8[k_KQ_0/nthreads], K_d[ib], Q_d);
+    }
+
+    return sum;
+}
+
 template <typename Tds, int ni>
 static __device__ __forceinline__ void quantize_q8_1_to_shared(
     const float * __restrict__ x, const float scale, int * __restrict__ yq32, void * __restrict__ yds) {
@@ -613,7 +643,45 @@ static __device__ __forceinline__ void dequantize_V_q8_0(const void * __restrict
             ((float *) dst)[l] = d * qs[l];
         }
     } else {
-        static_assert(std::is_same_v<T, void>, "unsupported type");
+        static_assert(std::is_same<T, void>::value, "unsupported type");
+    }
+}
+
+// fork: split-plane q8_0S row layout = [D/32 fp16 d][D int8 qs], vx points at the row start
+template <typename T, int ne, int D = 0>
+static __device__ __forceinline__ void dequantize_V_q8_0s(const void * __restrict__ vx, void * __restrict__ dst, const int64_t i0) {
+    const char * x = (const char *) vx;
+
+    const int64_t ib  = i0 / QK8_0;
+    const int     iqs = i0 % QK8_0;
+
+    static_assert(D % QK8_0 == 0, "D required for split-plane V");
+    const half * GGML_RESTRICT d_plane = (const half *) x;
+    const char * GGML_RESTRICT qs_plane = x + (D/QK8_0)*sizeof(half);
+
+    static_assert(ne % 2 == 0, "bad ne");
+    int8_t qs[ne];
+    ggml_cuda_memcpy_1<ne, 4>(qs, qs_plane + ib*QK8_0 + iqs);
+
+#ifdef FP16_AVAILABLE
+    if constexpr (std::is_same<T, half>::value) {
+        const half2 d = __half2half2(d_plane[ib]);
+
+#pragma unroll
+        for (int l0 = 0; l0 < ne; l0 += 2) {
+            ((half2 *) dst)[l0/2] = d * make_half2(qs[l0 + 0], qs[l0 + 1]);
+        }
+    } else
+#endif // FP16_AVAILABLE
+    if constexpr (std::is_same<T, float>::value) {
+        const float d = d_plane[ib];
+
+#pragma unroll
+        for (int l = 0; l < ne; ++l) {
+            ((float *) dst)[l] = d * qs[l];
+        }
+    } else {
+        static_assert(std::is_same<T, void>::value, "unsupported type");
     }
 }
 
@@ -631,6 +699,8 @@ constexpr __device__ vec_dot_KQ_t get_vec_dot_KQ() {
         return vec_dot_fattn_vec_KQ_q5_1<D, nthreads>;
     } else if constexpr (type_K == GGML_TYPE_Q8_0) {
         return vec_dot_fattn_vec_KQ_q8_0<D, nthreads>;
+    } else if constexpr (type_K == GGML_TYPE_Q8_0S) {
+        return vec_dot_fattn_vec_KQ_q8_0s<D, nthreads>;
     } else if constexpr (type_K == GGML_TYPE_BF16) {
         return vec_dot_fattn_vec_KQ_bf16<D, nthreads>;
     } else {
@@ -639,7 +709,7 @@ constexpr __device__ vec_dot_KQ_t get_vec_dot_KQ() {
     }
 }
 
-template <ggml_type type_V, typename T, int ne>
+template <ggml_type type_V, typename T, int ne, int D = 0>
 constexpr __device__ dequantize_V_t get_dequantize_V() {
     if constexpr (type_V == GGML_TYPE_F16) {
         return dequantize_V_f16<T, ne>;
@@ -653,6 +723,8 @@ constexpr __device__ dequantize_V_t get_dequantize_V() {
         return dequantize_V_q5_1<T, ne>;
     } else if constexpr (type_V == GGML_TYPE_Q8_0) {
         return dequantize_V_q8_0<T, ne>;
+    } else if constexpr (type_V == GGML_TYPE_Q8_0S) {
+        return dequantize_V_q8_0s<T, ne, D>;
     } else if constexpr (type_V == GGML_TYPE_BF16) {
         return dequantize_V_bf16<float, ne>;
     } else {

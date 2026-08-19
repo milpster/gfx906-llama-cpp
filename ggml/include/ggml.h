@@ -430,7 +430,9 @@ extern "C" {
         GGML_TYPE_NVFP4   = 40, // NVFP4 (4 blocks, E4M3 scale)
         GGML_TYPE_Q1_0    = 41,
         GGML_TYPE_Q2_0    = 42,
-        GGML_TYPE_COUNT   = 43,
+        // fork: split-plane q8_0 (separate fp16 scale plane + 16B-aligned quant plane), KV-cache only
+        GGML_TYPE_Q8_0S   = 43,
+        GGML_TYPE_COUNT   = 44,
     };
 
     // precision

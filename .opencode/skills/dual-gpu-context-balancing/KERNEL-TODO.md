@@ -5,10 +5,46 @@ Each entry: what, why, expected gain, cost/risk, kill criteria.
 
 ## 1. Split-plane q8_0 KV layout -> vectorized tile loaders
 
-Status: NOT STARTED (design sketch only). This is the main remaining
-deep-fill pp lever on the HIP side.
+Status: IMPLEMENTED, MEASURED, KILLED (2026-08-18). Do not revisit without
+a new microarchitectural insight.
 
-### Problem
+Verdict (matched pairs, clean build, Q6_K_XL + q8/q8 KV @ 262k cap,
+-ts 39,21,40 -sm layer, 110k-token fill):
+
+- first 16384-token batch: canonical 323.6 t/s vs split 319.1 (-1.4%)
+- 110k whole-fill average: canonical 192.2 t/s vs split 176.6 (-8.1%)
+- harness pp1: 322.6 vs 315.3 (-2.3%); tg 19.8 vs 18.9 (-4.5%)
+
+Mixed KV (F16 K + q8 V, V-split only, production q6v config @ 210k,
+matched pair 2026-08-18): first batch 341.0 vs 333.5 (-2.2%), 110k
+whole-fill avg 205.8 vs 188.9 (-8.2%), tg@110k 20.21 vs 20.24 (neutral).
+The earlier "+6.5% mixed" was also a stale-baseline artifact (and was
+measured on the broken-stride binary). Same -8% deep-fill pattern as
+q8/q8: the 16B-vector split V loader loses to the coalesced scalar-ushort
+canonical loader on gfx906 at depth, in every KV combination tested.
+
+The regression grows with depth - opposite of the design hypothesis. On
+gfx906 the fork's canonical scalar-ushort q8_0 loader (consecutive threads
+read consecutive ushorts -> coalesced) beats 16B vector loads with split
+d/qs addressing. The earlier "+18.8% split" session number was measured
+against a stale pre-shadow-fix canonical binary (263.5); the real canonical
+on the same build is 322.
+
+Correctness work that landed and is kept (env-gated, default OFF):
+
+- GGML_TYPE_Q8_0S (43), type_size = 34 B/block (2 d + 32 qs, NOT 36 -
+  virtual strides must match the physical 272 B head-slice layout)
+- row/slice layout: per-256-elem head slice = [8 x fp16 d][256 int8 qs]
+- writers: cpy_f32_q8_0s, k_set_rows_q8_0s, CPU quantize_row_q8_0s_ref
+- readers: fattn tile loaders q8_0s (16B vector qs), vec dot/dequant
+- llama-kv-cache remap via GGML_KV_SPLIT_Q8=k|v|kv (ROCm layers only,
+  head-dim 256 gate in dispatch)
+- verified token-identical vs canonical at 8k ctx, deterministic across runs
+
+Re-enable for experiments with GGML_KV_SPLIT_Q8=kv - but any future attempt
+needs a different loader design, not this one.
+
+### Original problem (kept for context)
 
 q8_0 blocks are 34 bytes: fp16 scale `d` then 32 int8 quants (`qs`).
 In the KV cache, `qs` therefore sits at offset 2 of a 34-byte row stride,

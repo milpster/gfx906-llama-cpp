@@ -310,6 +310,21 @@ static __global__ void quantize_mmq_mxfp4(const float * __restrict__ x,
     GGML_UNUSED(n_expert_used);
 }
 
+// fork: scale-free MMQ activation (see quantize.cuh)
+bool ggml_cuda_mmq_sf_active(const ggml_type type_src0) {
+    static const bool enabled = []() {
+        const char * env = getenv("GGML_CUDA_MMQ_SCALE_FREE");
+        if (!env || !atoi(env)) {
+            return false;
+        }
+        const int id = ggml_cuda_get_device();
+        const int cc = ggml_cuda_info().devices[id].cc;
+        // The scale-free vec_dot/loader are only selected on the dp4a MMQ path:
+        return !ggml_cuda_mmq_get_config(GGML_TYPE_Q8_0, 64, false, cc).use_mma_data_layout(cc);
+    }();
+    return enabled && type_src0 == GGML_TYPE_Q8_0;
+}
+
 // scatter: grid over tokens, quantize once, write to all the token's compact rows
 template <mmq_q8_1_ds_layout ds_layout, bool scatter>
 static __global__ void quantize_mmq_q8_1(
@@ -317,7 +332,8 @@ static __global__ void quantize_mmq_q8_1(
         const int64_t ne00, const int64_t s01, const int64_t s02, const int64_t s03,
         const int64_t ne0, const int ne1, const int ne2, const int n_expert_used) {
 
-    constexpr int vals_per_scale = ds_layout == MMQ_Q8_1_DS_LAYOUT_D2S6 ? 64 : 32;
+    constexpr int vals_per_scale = ds_layout == MMQ_Q8_1_DS_LAYOUT_D2S6 ? 64 :
+        (ds_layout == MMQ_Q8_1_DS_LAYOUT_SF ? 128 : 32);
     constexpr int vals_per_sum   = ds_layout == MMQ_Q8_1_DS_LAYOUT_D2S6 ? 16 : 32;
 
     const int64_t i0 = ((int64_t)blockDim.x*blockIdx.y + threadIdx.x)*4;
@@ -359,7 +375,7 @@ static __global__ void quantize_mmq_q8_1(
     }
 
     float sum;
-    if (ds_layout != MMQ_Q8_1_DS_LAYOUT_D4) {
+    if (ds_layout != MMQ_Q8_1_DS_LAYOUT_D4 && ds_layout != MMQ_Q8_1_DS_LAYOUT_SF) {
         sum = xi.x + xi.y + xi.z + xi.w;
 
         // Calculate sums across vals_per_sum/4 threads.
@@ -401,6 +417,10 @@ static __global__ void quantize_mmq_q8_1(
                     y[ib].d2s6[iqs/64] = d;
                 }
             }
+        } else if (ds_layout == MMQ_Q8_1_DS_LAYOUT_SF) {
+            if (iqs == 0) {
+                y[ib].d4[0] = d; // single scale per 128-value block
+            }
         } else if (iqs % 32 == 0) {
             if (ds_layout == MMQ_Q8_1_DS_LAYOUT_DS4) {
                 y[ib].ds4[iqs/32] = make_half2(d, sum);
@@ -440,7 +460,7 @@ void quantize_mmq_q8_1_cuda(
     const int64_t block_num_y = (ne0 + 4*CUDA_QUANTIZE_BLOCK_SIZE_MMQ - 1) / (4*CUDA_QUANTIZE_BLOCK_SIZE_MMQ);
     const dim3 num_blocks(ne1, block_num_y, ne2*ne3);
     const dim3 block_size(CUDA_QUANTIZE_BLOCK_SIZE_MMQ, 1, 1);
-    switch (mmq_get_q8_1_ds_layout(type_src0)) {
+    switch (ggml_cuda_mmq_sf_active(type_src0) ? MMQ_Q8_1_DS_LAYOUT_SF : mmq_get_q8_1_ds_layout(type_src0)) {
         case MMQ_Q8_1_DS_LAYOUT_D4:
             quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_D4, false>
                 <<<num_blocks, block_size, 0, stream>>>(x, ids, vy, ne00, s01, s02, s03, ne0, ne1, ne2, /*n_expert_used=*/0);
@@ -451,6 +471,10 @@ void quantize_mmq_q8_1_cuda(
             break;
         case MMQ_Q8_1_DS_LAYOUT_D2S6:
             quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_D2S6, false>
+                <<<num_blocks, block_size, 0, stream>>>(x, ids, vy, ne00, s01, s02, s03, ne0, ne1, ne2, /*n_expert_used=*/0);
+            break;
+        case MMQ_Q8_1_DS_LAYOUT_SF:
+            quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_SF, false>
                 <<<num_blocks, block_size, 0, stream>>>(x, ids, vy, ne00, s01, s02, s03, ne0, ne1, ne2, /*n_expert_used=*/0);
             break;
         default:
@@ -470,7 +494,7 @@ void quantize_scatter_mmq_q8_1_cuda(
     const int64_t block_num_y = (ne0 + 4*CUDA_QUANTIZE_BLOCK_SIZE_MMQ - 1) / (4*CUDA_QUANTIZE_BLOCK_SIZE_MMQ);
     const dim3 num_blocks(n_tokens, block_num_y, 1);
     const dim3 block_size(CUDA_QUANTIZE_BLOCK_SIZE_MMQ, 1, 1);
-    switch (mmq_get_q8_1_ds_layout(type_src0)) {
+    switch (ggml_cuda_mmq_sf_active(type_src0) ? MMQ_Q8_1_DS_LAYOUT_SF : mmq_get_q8_1_ds_layout(type_src0)) {
         case MMQ_Q8_1_DS_LAYOUT_D4:
             quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_D4, true><<<num_blocks, block_size, 0, stream>>>(
                 x, ids_src1_inv, vy, ne00, /*s01=*/0, /*s02=*/stride_token, /*s03=*/0, ne0, /*ne1=*/(int) nrows_dst, /*ne2=*/1, n_expert_used);
@@ -481,6 +505,10 @@ void quantize_scatter_mmq_q8_1_cuda(
             break;
         case MMQ_Q8_1_DS_LAYOUT_D2S6:
             quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_D2S6, true><<<num_blocks, block_size, 0, stream>>>(
+                x, ids_src1_inv, vy, ne00, /*s01=*/0, /*s02=*/stride_token, /*s03=*/0, ne0, /*ne1=*/(int) nrows_dst, /*ne2=*/1, n_expert_used);
+            break;
+        case MMQ_Q8_1_DS_LAYOUT_SF:
+            quantize_mmq_q8_1<MMQ_Q8_1_DS_LAYOUT_SF, true><<<num_blocks, block_size, 0, stream>>>(
                 x, ids_src1_inv, vy, ne00, /*s01=*/0, /*s02=*/stride_token, /*s03=*/0, ne0, /*ne1=*/(int) nrows_dst, /*ne2=*/1, n_expert_used);
             break;
         default:

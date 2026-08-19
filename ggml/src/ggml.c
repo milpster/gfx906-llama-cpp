@@ -748,6 +748,16 @@ static const struct ggml_type_traits type_traits[GGML_TYPE_COUNT] = {
         .is_quantized             = true,
         .from_float_ref           = (ggml_from_float_t) quantize_row_q8_1_ref,
     },
+    // fork: split-plane q8_0, layout = per-256-elem slice [8 x fp16 d][256 int8 qs]
+    // 34 B per 32-elem block (same as q8_0, only reordered), so virtual strides match the physical slices
+    [GGML_TYPE_Q8_0S] = {
+        .type_name                = "q8_0S",
+        .blck_size                = QK8_0,
+        .type_size                = sizeof(ggml_half) + QK8_0,
+        .is_quantized             = true,
+        .to_float                 = (ggml_to_float_t) dequantize_row_q8_0s,
+        .from_float_ref           = (ggml_from_float_t) quantize_row_q8_0s_ref,
+    },
     [GGML_TYPE_MXFP4] = {
         .type_name                = "mxfp4",
         .blck_size                = QK_MXFP4,

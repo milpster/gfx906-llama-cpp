@@ -16,6 +16,10 @@ typedef void (*quantize_cuda_t)(
         ggml_type type_src0, int64_t ne00, int64_t s01, int64_t s02, int64_t s03,
         int64_t ne0, int64_t ne1, int64_t ne2, int64_t ne3, cudaStream_t stream);
 
+// fork: true when the scale-free MMQ path is active for this src0 type
+// (GGML_CUDA_MMQ_SCALE_FREE set, Q8_0 src0, dp4a MMQ config)
+bool ggml_cuda_mmq_sf_active(ggml_type type_src0);
+
 void quantize_row_q8_1_cuda(
         const float * x, const int32_t * ids, void * vy,
         ggml_type type_src0, int64_t ne00, int64_t s01, int64_t s02, int64_t s03,

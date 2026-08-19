@@ -139,6 +139,66 @@ template <ggml_type type, int J, bool fallback> static __device__ __forceinline_
     }
 }
 
+// Scale-free variant for Q8_0: x tiles are requantized by the loader to one scale per
+// 128-value group (one vec_dot call), y is quantized with one scale per 128-value block.
+// The inner loop is pure integer dp4a (accumulator chains seeded with the previous group
+// sum), scales are applied exactly once per call in the epilogue.
+// Only selected when GGML_CUDA_MMQ_SCALE_FREE is set and the dp4a path is used.
+template <ggml_type type, int J, bool fallback> static __device__ __forceinline__ void ggml_cuda_mmq_vec_dot_q8_0_q8_1_dp4a_sf(
+        const int * __restrict__ x, const int * __restrict__ y, float * __restrict__ sum, const int k00) {
+    constexpr int warp_size = ggml_cuda_get_physical_warp_size();
+    constexpr int nwarps    = ggml_cuda_mmq_get_nthreads(type, J, fallback) / warp_size;
+    constexpr int I         = ggml_cuda_mmq_get_I(type, J, fallback);
+
+    constexpr tile_x_sizes txs = mmq_get_dp4a_tile_x_sizes(GGML_TYPE_Q8_0, I);
+    const int   * x_qs = (const int   *) x;
+    const float * x_df = (const float *) x_qs + txs.qs;
+    const int   * y_qs = (const int   *) y + 4;
+    const float * y_df = (const float *) y;
+
+    int sumi[J/nwarps*I/warp_size] = {0};
+
+    for (int k01 = 0; k01 < MMQ_TILE_NE_K; k01 += VDR_Q8_0_Q8_1_MMQ) {
+        const int k0 = k00 + k01;
+
+#pragma unroll
+        for (int j0 = 0; j0 < J; j0 += nwarps) {
+            const int j = j0 + threadIdx.y;
+
+#pragma unroll
+            for (int i0 = 0; i0 < I; i0 += warp_size) {
+                const int i = i0 + threadIdx.x;
+                const int p = j0/nwarps*I/warp_size + i0/warp_size;
+
+                int acc = sumi[p];
+                const int * qs = &x_qs[i*(2*MMQ_TILE_NE_K + 1) + k0];
+                const int * qy = &y_qs[j*MMQ_TILE_Y_K + k0 % MMQ_TILE_NE_K];
+#pragma unroll
+                for (int l = 0; l < VDR_Q8_0_Q8_1_MMQ; l++) {
+                    acc = ggml_cuda_dp4a(qs[l], qy[l], acc);
+                }
+                sumi[p] = acc;
+            }
+        }
+    }
+
+    const int g = k00 / MMQ_TILE_NE_K;
+
+#pragma unroll
+    for (int j0 = 0; j0 < J; j0 += nwarps) {
+        const int j = j0 + threadIdx.y;
+        const float dy = y_df[j*MMQ_TILE_Y_K + 0];
+
+#pragma unroll
+        for (int i0 = 0; i0 < I; i0 += warp_size) {
+            const int i = i0 + threadIdx.x;
+            const int p = j0/nwarps*I/warp_size + i0/warp_size;
+
+            sum[p] += x_df[i*(2*MMQ_TILE_NE_K/QI8_0) + i/(QI8_0/2) + 4*g] * dy * (float) sumi[p];
+        }
+    }
+}
+
 template <ggml_type type, int J, bool fallback, mmq_q8_1_ds_layout ds_layout>
 static __device__ __forceinline__ void ggml_cuda_mmq_vec_dot_q8_0_q8_1_mma(
     const int * __restrict__ x, const int * __restrict__ y, float * __restrict__ sum, const int k00) {

@@ -443,6 +443,90 @@ template <ggml_type type, int J, bool fallback> static __device__ __forceinline_
     }
 }
 
+// Scale-free variant for Q8_0 (dp4a path): requantizes each group of 4 blocks (128 values,
+// one vec_dot call) to a common scale Dg = max(d of the group). Per-block multiplier
+// m = round(256*d/Dg), quants rescaled as q' = (q*m + 128) >> 8 (m == 256 is the identity).
+// Dg is stored in the scale plane at slot 4*g.
+template <ggml_type type, int J, bool fallback> static __device__ __forceinline__ void ggml_cuda_mmq_load_tiles_q8_0_sf(
+        const char * __restrict__ x, int * __restrict__ x_tile, const int kbx0, const int i_max, const int stride) {
+    constexpr int warp_size   = ggml_cuda_get_physical_warp_size();
+    constexpr int nwarps      = ggml_cuda_mmq_get_nthreads(type, J, fallback) / warp_size;
+    constexpr int I           = ggml_cuda_mmq_get_I(type, J, fallback);
+
+    constexpr tile_x_sizes txs = mmq_get_dp4a_tile_x_sizes(GGML_TYPE_Q8_0, I);
+    int   * x_qs = (int   *)  x_tile;
+    float * x_df = (float *) (x_qs + txs.qs);
+
+    // Pass 1: group scales.
+    constexpr int blocks_per_tile_x_row = 2*MMQ_TILE_NE_K / QI8_0;
+    constexpr int rows_per_warp = warp_size / blocks_per_tile_x_row;
+    const int kbxd = threadIdx.x % blocks_per_tile_x_row;
+
+#pragma unroll
+    for (int i0 = 0; i0 < I; i0 += nwarps * rows_per_warp) {
+        int i = i0 + threadIdx.y * rows_per_warp + threadIdx.x / blocks_per_tile_x_row;
+
+        if (fallback) {
+            i = min(i, i_max);
+        }
+
+        const block_q8_0 * bxi = (const block_q8_0 *) x + kbx0 + i*stride + kbxd;
+
+        const float d = bxi->d;
+        float dg = fmaxf(d, __shfl_xor_sync(0xFFFFFFFFu, d, 1, warp_size));
+        dg = fmaxf(dg, __shfl_xor_sync(0xFFFFFFFFu, dg, 2, warp_size));
+
+        if (kbxd % 4 == 0) {
+            x_df[i*(2*MMQ_TILE_NE_K/QI8_0) + i/(QI8_0/2) + kbxd] = dg;
+        }
+    }
+
+    __syncthreads();
+
+    // Pass 2: requantized quants.
+    constexpr int threads_per_row = 32;
+    constexpr int nrows = warp_size / threads_per_row;
+    const int txi = warp_size > threads_per_row ? threadIdx.x % threads_per_row : threadIdx.x;
+    const int kbx  = txi / QI8_0;
+    const int kqsx = txi % QI8_0;
+
+#pragma unroll
+    for (int i0 = 0; i0 < I; i0 += nrows*nwarps) {
+        int i = i0 + (nrows == 1 ? threadIdx.y : threadIdx.y*nrows + threadIdx.x/threads_per_row);
+
+        if (fallback) {
+            i = min(i, i_max);
+        }
+
+        const block_q8_0 * bxi = (const block_q8_0 *) x + kbx0 + i*stride + kbx;
+
+        const float dg0 = x_df[i*(2*MMQ_TILE_NE_K/QI8_0) + i/(QI8_0/2) + 0];
+        const float dg1 = x_df[i*(2*MMQ_TILE_NE_K/QI8_0) + i/(QI8_0/2) + 4];
+
+        const int m0 = (int) (256.0f * (float) bxi[0].d / dg0 + 0.5f);
+        const int m1 = (int) (256.0f * (float) bxi[MMQ_TILE_NE_K/QI8_0].d / dg1 + 0.5f);
+
+        int w0 = get_int_b2(bxi[0].qs,                   kqsx);
+        int w1 = get_int_b2(bxi[MMQ_TILE_NE_K/QI8_0].qs, kqsx);
+
+        char4 c0 = *reinterpret_cast<char4 *>(&w0);
+        char4 c1 = *reinterpret_cast<char4 *>(&w1);
+        c0.x = (int8_t)(((int)c0.x * m0 + 128) >> 8);
+        c0.y = (int8_t)(((int)c0.y * m0 + 128) >> 8);
+        c0.z = (int8_t)(((int)c0.z * m0 + 128) >> 8);
+        c0.w = (int8_t)(((int)c0.w * m0 + 128) >> 8);
+        c1.x = (int8_t)(((int)c1.x * m1 + 128) >> 8);
+        c1.y = (int8_t)(((int)c1.y * m1 + 128) >> 8);
+        c1.z = (int8_t)(((int)c1.z * m1 + 128) >> 8);
+        c1.w = (int8_t)(((int)c1.w * m1 + 128) >> 8);
+        w0 = *reinterpret_cast<int *>(&c0);
+        w1 = *reinterpret_cast<int *>(&c1);
+
+        x_qs[i*(2*MMQ_TILE_NE_K + 1) + 0             + txi] = w0;
+        x_qs[i*(2*MMQ_TILE_NE_K + 1) + MMQ_TILE_NE_K + txi] = w1;
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 
 template <ggml_type type, int J, bool fallback> static __device__ __forceinline__ void ggml_cuda_mmq_load_tiles_q2_K(

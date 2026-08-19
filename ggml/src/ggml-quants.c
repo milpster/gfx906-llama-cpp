@@ -566,6 +566,48 @@ void dequantize_row_q8_0(const block_q8_0 * GGML_RESTRICT x, float * GGML_RESTRI
     }
 }
 
+void quantize_row_q8_0s_ref(const float * GGML_RESTRICT x, void * GGML_RESTRICT y, int64_t k) {
+    assert(k % QK8_0 == 0);
+    const int nb = k / QK8_0;
+    char * GGML_RESTRICT yc = (char *) y;
+
+    for (int i = 0; i < nb; i++) {
+        // fork layout: per-256-elem slice = [8 fp16 d][256 int8 qs], slice stride 272B
+        char * GGML_RESTRICT slice = yc + (i/8)*272;
+        ggml_half * GGML_RESTRICT d = (ggml_half *) slice;
+        int8_t * GGML_RESTRICT qs = (int8_t *) (slice + 16) + (i % 8)*QK8_0;
+
+        float amax = 0.0f;
+        for (int j = 0; j < QK8_0; j++) {
+            amax = MAX(amax, fabsf(x[i*QK8_0 + j]));
+        }
+
+        const float dm = amax / ((1 << 7) - 1);
+        const float id = dm ? 1.0f/dm : 0.0f;
+        d[i % 8] = GGML_FP32_TO_FP16(dm);
+
+        for (int j = 0; j < QK8_0; j++) {
+            qs[j] = roundf(x[i*QK8_0 + j]*id);
+        }
+    }
+}
+
+void dequantize_row_q8_0s(const void * GGML_RESTRICT x, float * GGML_RESTRICT y, int64_t k) {
+    assert(k % QK8_0 == 0);
+    const int nb = k / QK8_0;
+    const char * GGML_RESTRICT xc = (const char *) x;
+
+    for (int i = 0; i < nb; i++) {
+        const char * GGML_RESTRICT slice = xc + (i/8)*272;
+        const float di = GGML_FP16_TO_FP32(((const ggml_half *) slice)[i % 8]);
+        const int8_t * GGML_RESTRICT qs = (const int8_t *) (slice + 16) + (i % 8)*QK8_0;
+
+        for (int j = 0; j < QK8_0; j++) {
+            y[i*QK8_0 + j] = qs[j]*di;
+        }
+    }
+}
+
 void dequantize_row_mxfp4(const block_mxfp4 * GGML_RESTRICT x, float * GGML_RESTRICT y, int64_t k) {
     static const int qk = QK_MXFP4;
 

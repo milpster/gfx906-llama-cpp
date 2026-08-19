@@ -110,6 +110,125 @@ static void set_rows_cuda_quant(
     }
 }
 
+// fork: split-plane q8_0S set_rows, row layout = [ne00/32 fp16 d][ne00 int8 qs]
+template <typename idx_t>
+static __global__ void k_set_rows_q8_0s(const float * __restrict__ src0,
+                                        const idx_t * __restrict__ src1,
+                                        char * __restrict__ dst,
+                                        const int64_t ne_total,
+                                        const int64_t nd,
+                                        const int64_t s01,
+                                        const int64_t s02,
+                                        const int64_t s03,
+                                        const int64_t s10,
+                                        const int64_t s11,
+                                        const int64_t s12,
+                                        const int64_t s1,
+                                        const int64_t s2,
+                                        const int64_t s3,
+                                        const uint3   ne00,
+                                        const uint3   ne01,
+                                        const uint3   ne02,
+                                        const uint3   ne11_fd,
+                                        const uint3   ne12_fd) {
+    const int64_t i = int64_t(blockDim.x) * blockIdx.x + threadIdx.x;
+
+    if (i >= ne_total) {
+        return;
+    }
+
+    const int64_t i_base = i * QK8_0;
+    uint32_t      tmp    = (uint32_t) i_base;
+    uint2         div_mod;
+
+    div_mod           = fast_div_modulo(tmp, ne00);
+    const int64_t i00 = div_mod.y;
+    tmp               = div_mod.x;
+
+    div_mod           = fast_div_modulo(tmp, ne01);
+    const int64_t i01 = div_mod.y;
+    tmp               = div_mod.x;
+
+    div_mod           = fast_div_modulo(tmp, ne02);
+    const int64_t i02 = div_mod.y;
+    const int64_t i03 = div_mod.x;
+
+    const int64_t i12 = fastmodulo((uint32_t) i03, ne12_fd);
+    const int64_t i11 = fastmodulo((uint32_t) i02, ne11_fd);
+    const int64_t i10 = i01;
+
+    ggml_cuda_pdl_sync();
+    const int64_t dst_row = *(src1 + i10*s10 + i11*s11 + i12*s12);
+
+    const float * src0_row = src0 + i01*s01 + i02*s02 + i03*s03;
+    char * dst_row_ptr = dst + dst_row*s1 + i02*s2 + i03*s3;
+
+    const int64_t ib = i00 / QK8_0;
+    // fork layout: per-256-elem slice = [8 fp16 d][256 int8 qs], slice stride 272B (matches fattn head views)
+    char * slice = dst_row_ptr + (ib/8)*272;
+    half * d_ptr = (half *) slice;
+    int8_t * qs_ptr = (int8_t *) (slice + 16);
+
+    const float * x = src0_row + i00;
+
+    float amax = 0.0f;
+#pragma unroll
+    for (int l = 0; l < QK8_0; l++) {
+        amax = fmaxf(amax, fabsf(x[l]));
+    }
+
+    const float dm = amax / 127.0f;
+    const float id = amax > 0.0f ? 1.0f/dm : 0.0f;
+    d_ptr[ib % 8] = __float2half(dm);
+
+    int8_t * qs = qs_ptr + (ib % 8)*QK8_0;
+#pragma unroll
+    for (int l = 0; l < QK8_0; l++) {
+        qs[l] = (int8_t) roundf(x[l]*id);
+    }
+}
+
+template <typename idx_t>
+static void set_rows_cuda_q8_0s(
+        const float * src0_d, const idx_t * src1_d, char * dst_d,
+        const int64_t ne00, const int64_t ne01, const int64_t ne02, const int64_t ne03,
+        const int64_t ne10, const int64_t ne11, const int64_t ne12, const int64_t ne13,
+        const size_t nb01, const size_t nb02, const size_t nb03,
+        const size_t nb10, const size_t nb11, const size_t nb12,
+        const size_t nb1, const size_t nb2, const size_t nb3,
+        cudaStream_t stream) {
+
+    GGML_ASSERT(ne00 % QK8_0 == 0);
+    const int64_t nd = ne00 / QK8_0;
+    const int64_t ne_total = (ne00 * ne01 * ne02 * ne03) / QK8_0;
+    const int num_blocks = (ne_total + CUDA_SET_ROWS_BLOCK_SIZE - 1) / CUDA_SET_ROWS_BLOCK_SIZE;
+    const dim3 block_size(CUDA_SET_ROWS_BLOCK_SIZE);
+    const dim3 grid_size(num_blocks);
+
+    const int64_t s01 = nb01/sizeof(float);
+    const int64_t s02 = nb02/sizeof(float);
+    const int64_t s03 = nb03/sizeof(float);
+    const int64_t s10 = nb10/sizeof(idx_t);
+    const int64_t s11 = nb11/sizeof(idx_t);
+    const int64_t s12 = nb12/sizeof(idx_t);
+    const int64_t s1  = nb1;
+    const int64_t s2  = nb2;
+    const int64_t s3  = nb3;
+
+    if (ne_total > 0 && ne00 > 0 && ne01 > 0 && ne02 > 0 && ne11 > 0 && ne12 > 0) {
+        const uint3 ne00_fd = init_fastdiv_values((uint32_t) ne00);
+        const uint3 ne01_fd = init_fastdiv_values((uint32_t) ne01);
+        const uint3 ne02_fd = init_fastdiv_values((uint32_t) ne02);
+        const uint3 ne11_fd = init_fastdiv_values((uint32_t) ne11);
+        const uint3 ne12_fd = init_fastdiv_values((uint32_t) ne12);
+
+        k_set_rows_q8_0s<idx_t><<<grid_size, block_size, 0, stream>>>(
+            src0_d, src1_d, dst_d, ne_total, nd, s01, s02, s03, s10, s11, s12, s1, s2, s3,
+            ne00_fd, ne01_fd, ne02_fd, ne11_fd, ne12_fd);
+    }
+    GGML_UNUSED(ne10); GGML_UNUSED(ne13);
+}
+
 template <typename src_t, typename idx_t, typename dst_t>
 static __global__ void k_set_rows(const src_t * src0_ptr,
                                   const idx_t * src1_ptr,
@@ -300,6 +419,16 @@ static void set_rows_cuda(ggml_backend_cuda_context & ctx, const ggml_tensor * s
     } else if (dst->type == GGML_TYPE_Q8_0) {
         set_rows_cuda_quant<idx_t, block_q8_0, QK8_0, quantize_f32_q8_0_block>(
             src0_d, src1_d, (block_q8_0*)dst->data,
+            ne00, ne01, ne02, ne03,
+            ne10, ne11, ne12, ne13,
+            nb01, nb02, nb03,
+            nb10, nb11, nb12,
+            nb1, nb2, nb3,
+            stream
+        );
+    } else if (dst->type == GGML_TYPE_Q8_0S) {
+        set_rows_cuda_q8_0s<idx_t>(
+            src0_d, src1_d, (char*)dst->data,
             ne00, ne01, ne02, ne03,
             ne10, ne11, ne12, ne13,
             nb01, nb02, nb03,
