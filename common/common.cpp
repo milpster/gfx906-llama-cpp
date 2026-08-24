@@ -2271,8 +2271,6 @@ void common_prompt_checkpoint::clear() {
     data_tgt.clear();
     data_dft.clear();
     data_spec.clear();
-    data_tgt_on_device = false;
-    data_dft_on_device = false;
 }
 
 void common_prompt_checkpoint::update_pos(
@@ -2284,50 +2282,6 @@ void common_prompt_checkpoint::update_pos(
     this->pos_max  = pos_max;
 }
 
-static void common_prompt_checkpoint_save(
-        std::vector<uint8_t> & data,
-        bool & on_device,
-        llama_context * ctx,
-        llama_seq_id seq_id,
-        llama_state_seq_flags flags,
-        const char * label) {
-    const bool requested_on_device = flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
-    on_device = false;
-
-    auto save = [&](llama_state_seq_flags save_flags) {
-        const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, save_flags);
-        if (ckpt_size == 0) {
-            return false;
-        }
-
-        std::vector<uint8_t> saved(ckpt_size);
-        const size_t n = llama_state_seq_get_data_ext(ctx, saved.data(), ckpt_size, seq_id, save_flags);
-        if (n != ckpt_size) {
-            return false;
-        }
-
-        data.swap(saved);
-        return true;
-    };
-
-    bool saved = save(flags);
-    if (requested_on_device && !saved) {
-        COM_WRN("%s: ON_DEVICE %s checkpoint save failed; retrying with host storage\n",
-                __func__, label);
-        flags &= ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
-        saved = save(flags);
-    }
-
-    if (!saved) {
-        if (flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) {
-            GGML_ABORT("checkpoint device save failed for %s\n", label);
-        }
-        GGML_ABORT("checkpoint size mismatch while saving %s\n", label);
-    }
-
-    on_device = flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
-}
-
 void common_prompt_checkpoint::update_tgt(
         llama_context * ctx,
         llama_seq_id seq_id,
@@ -2336,7 +2290,14 @@ void common_prompt_checkpoint::update_tgt(
         return;
     }
 
-    common_prompt_checkpoint_save(data_tgt, data_tgt_on_device, ctx, seq_id, flags, "target");
+    const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, flags);
+
+    data_tgt.resize(ckpt_size);
+
+    const size_t n = llama_state_seq_get_data_ext(ctx, data_tgt.data(), ckpt_size, seq_id, flags);
+    if (n != ckpt_size) {
+        GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", ckpt_size, n);
+    }
 }
 
 void common_prompt_checkpoint::update_dft(
@@ -2347,7 +2308,14 @@ void common_prompt_checkpoint::update_dft(
         return;
     }
 
-    common_prompt_checkpoint_save(data_dft, data_dft_on_device, ctx, seq_id, flags, "draft");
+    const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, flags);
+
+    data_dft.resize(ckpt_size);
+
+    const size_t n = llama_state_seq_get_data_ext(ctx, data_dft.data(), ckpt_size, seq_id, flags);
+    if (n != ckpt_size) {
+        GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", ckpt_size, n);
+    }
 }
 
 void common_prompt_checkpoint::load_tgt(
@@ -2361,9 +2329,6 @@ void common_prompt_checkpoint::load_tgt(
     if (data_tgt.empty()) {
         return;
     }
-
-    flags = (flags & ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) |
-            (data_tgt_on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0);
 
     const size_t n = llama_state_seq_set_data_ext(ctx, data_tgt.data(), data_tgt.size(), seq_id, flags);
     if (n != data_tgt.size()) {
@@ -2383,9 +2348,6 @@ void common_prompt_checkpoint::load_dft(
         return;
     }
 
-    flags = (flags & ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) |
-            (data_dft_on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0);
-
     const size_t n = llama_state_seq_set_data_ext(ctx, data_dft.data(), data_dft.size(), seq_id, flags);
     if (n != data_dft.size()) {
         GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", data_dft.size(), n);
@@ -2394,11 +2356,9 @@ void common_prompt_checkpoint::load_dft(
 
 void common_prompt_checkpoint::clear_tgt() {
     data_tgt.clear();
-    data_tgt_on_device = false;
 }
 
 void common_prompt_checkpoint::clear_dft() {
     data_dft.clear();
     data_spec.clear();
-    data_dft_on_device = false;
 }

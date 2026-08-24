@@ -1402,6 +1402,50 @@ struct batched_mul_mat_traits<GGML_TYPE_F16> {
     static inline auto convert_nc(ggml_type src_type) { return ggml_get_to_fp16_nc_cuda(src_type); }
 };
 
+// Workaround for rocBLAS 6.1 crash on gfx906: missing SS/HH fallback kernels
+// cause segfault inside Tensile::PlaceholderLibrary::loadPlaceholderLibrary()
+// for "weird" m values (e.g. m=48) that have no tuned kernel and no fallback.
+// Naive GEMM is slow but only used for small m where total cost is negligible.
+//
+// Computes C = alpha * A^T * B + beta * C  (matches cublasSgemm OP_T, OP_N).
+// A is column-major [k, m] with leading dim lda >= k.
+//   => A_logical[l, i] = A[i * lda + l], so A^T[i, l] = A[i * lda + l]
+// B is column-major [k, n] with leading dim ldb >= k.
+//   => B[l, j] = B[j * ldb + l]
+// C is column-major [m, n] with leading dim ldc >= m.
+//   => C[i, j] = C[j * ldc + i]
+// Loop: C[i, j] = alpha * sum_l A[i * lda + l] * B[j * ldb + l] + beta * C[j * ldc + i]
+__global__ void naive_sgemm_kernel(int m, int n, int k, float alpha,
+                                   const float* __restrict__ A, int lda,
+                                   const float* __restrict__ B, int ldb,
+                                   float beta, float* __restrict__ C, int ldc) {
+    int i = blockIdx.y * blockDim.y + threadIdx.y;  // output row, [0, m)
+    int j = blockIdx.x * blockDim.x + threadIdx.x;  // output col, [0, n)
+    if (i >= m || j >= n) return;
+
+    float sum = 0.0f;
+    for (int l = 0; l < k; l++) {
+        sum += A[i * lda + l] * B[j * ldb + l];
+    }
+    float result = alpha * sum;
+    if (beta != 0.0f) {
+        result += beta * C[j * ldc + i];
+    }
+    C[j * ldc + i] = result;
+}
+
+static void naive_sgemm(int m, int n, int k, float alpha,
+                        const float* A, int lda,
+                        const float* B, int ldb,
+                        float beta, float* C, int ldc,
+                        hipStream_t stream) {
+    const int BM = 16;
+    const int BN = 16;
+    dim3 block(BN, BM);
+    dim3 grid((n + BN - 1) / BN, (m + BM - 1) / BM);
+    naive_sgemm_kernel<<<grid, block, 0, stream>>>(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+}
+
 template<ggml_type compute_type>
 static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
     using traits = batched_mul_mat_traits<compute_type>;
@@ -1538,12 +1582,24 @@ static void ggml_cuda_mul_mat_cublas_impl(ggml_backend_cuda_context & ctx, const
     // However, for some old NVIDIA and AMD GPUs the strided/Ex GEMM is much slower,
     //     probably because the internal kernel selection logic is suboptimal.
     if (compute_type == GGML_TYPE_F32 && ne12 == 1 && ne13 == 1) {
-        CUBLAS_CHECK(
-            cublasSgemm(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
-                    ne01, ne11, ne10,
-                    (const float *) alpha, (const float *) src0_ptr, s01,
-                                           (const float *) src1_ptr, s11,
-                    (const float *) beta,  (float       *)  dst_ptr, ne0));
+        // WORKAROUND: rocBLAS 6.1 crashes for small m on gfx906 (no SS fallback kernel).
+        // Use naive HIP kernel for small m. Cost is negligible (m=48,k=5120,n=384 ~ 50us).
+        if (ne01 <= 64) {
+            naive_sgemm((int)ne01, (int)ne11, (int)ne10,
+                        *(const float *) alpha,
+                        (const float *) src0_ptr, (int)s01,
+                        (const float *) src1_ptr, (int)s11,
+                        *(const float *) beta,
+                        (float *)       dst_ptr,  (int)ne0,
+                        main_stream);
+        } else {
+            CUBLAS_CHECK(
+                cublasSgemm(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
+                        ne01, ne11, ne10,
+                        (const float *) alpha, (const float *) src0_ptr, s01,
+                                               (const float *) src1_ptr, s11,
+                        (const float *) beta,  (float       *)  dst_ptr, ne0));
+        }
     } else if (ne12 == 1 && ne13 == 1) {
         CUBLAS_CHECK(
             cublasGemmEx(ctx.cublas_handle(), CUBLAS_OP_T, CUBLAS_OP_N,
@@ -1642,6 +1698,14 @@ static void ggml_cuda_mul_mat_cublas(ggml_backend_cuda_context & ctx, const ggml
         } else if (env_cpp != "auto") {
             GGML_LOG_WARN("%s: unknown value for GGML_CUDA_CUBLAS_COMPUTE_TYPE: %s", __func__, env_cpp.c_str());
         }
+    }
+
+    // WORKAROUND: rocBLAS 6.1 crashes on gfx906 for small m (e.g. m=48) on all
+    // compute types (F32, F16, BF16) due to missing fallback kernels. Force F32
+    // compute for small m so we hit the naive_sgemm workaround in the F32 impl.
+    // The conversion to F32 is handled inside the impl via traits::convert.
+    if (src0->ne[1] <= 64) {
+        compute_type = GGML_TYPE_F32;
     }
 
     switch (compute_type) {

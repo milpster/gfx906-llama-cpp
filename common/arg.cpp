@@ -1292,9 +1292,6 @@ bool common_params_parse(int argc, char ** argv, common_params & params, llama_e
             ctx_arg.params = params_org;
             return false;
         }
-        if (ctx_arg.params.speculative.draft.n_rs_seq > ctx_arg.params.speculative.draft.n_max) {
-            throw std::invalid_argument("--spec-mtp-rs-depth must not exceed --spec-draft-n-max");
-        }
         if (ctx_arg.params.usage) {
             common_params_print_usage(ctx_arg);
             if (ctx_arg.print_usage) {
@@ -4128,16 +4125,6 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             params.speculative.draft.n_max = value;
         }
     ).set_spec().set_examples({LLAMA_EXAMPLE_SPECULATIVE, LLAMA_EXAMPLE_LOOKUP, LLAMA_EXAMPLE_SERVER, LLAMA_EXAMPLE_CLI}).set_env("LLAMA_ARG_SPEC_DRAFT_N_MAX"));
-    add_opt(common_arg(
-        {"--spec-mtp-rs-depth"}, "N",
-        "number of target recurrent-state rollback snapshots for MTP; lower values save memory but replay accepted tokens after deep rejection (default: --spec-draft-n-max)",
-        [](common_params & params, int value) {
-            if (value < 1) {
-                throw std::invalid_argument("--spec-mtp-rs-depth must be at least 1");
-            }
-            params.speculative.draft.n_rs_seq = value;
-        }
-    ).set_spec().set_examples({LLAMA_EXAMPLE_SPECULATIVE, LLAMA_EXAMPLE_SERVER, LLAMA_EXAMPLE_CLI}).set_env("LLAMA_ARG_SPEC_MTP_RS_DEPTH"));
     add_opt(common_arg(
         {"--spec-draft-n-min"}, "N",
         string_format("minimum number of draft tokens to use for speculative decoding (default: %d)", params.speculative.draft.n_min),

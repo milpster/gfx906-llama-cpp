@@ -2730,12 +2730,10 @@ private:
 
 class llama_io_write_device : public llama_io_write_i {
 public:
-    llama_io_write_device(
-            uint8_t * p, size_t len, llama_memory_buffers & mbufs, bool copy_tensors = true) :
-        ptr(p), buf_size(len), mbufs(mbufs), copy_tensors(copy_tensors) {
+    llama_io_write_device(uint8_t * p, size_t len, llama_memory_buffers & mbufs) : ptr(p), buf_size(len), mbufs(mbufs)  {
     }
 
-    void finish() {
+    ~llama_io_write_device() {
         llama_memory_buffers mbufs_new;
 
         for (const auto & winfo : winfos) {
@@ -2797,21 +2795,11 @@ public:
 
             if (need_alloc) {
                 if (!mbuf_cur.buf || mbuf_cur.total_size != mbuf.total_size) {
-                    ggml_backend_buffer_ptr buf {
-                        ggml_backend_alloc_ctx_tensors_from_buft(mbuf.ctx.get(), buft)
-                    };
-                    if (!buf) {
-                        throw std::runtime_error(
-                            std::string("failed to allocate device checkpoint buffer from '") +
-                            ggml_backend_buft_name(buft) + "'");
-                    }
-
-                    const size_t allocated_size = ggml_backend_buffer_get_size(buf.get());
-                    mbuf.buf = std::move(buf);
                     mbuf_cur = std::move(mbuf);
 
-                    LLAMA_LOG_INFO("%s: allocated '%s' buffer %.3f MiB\n", __func__,
-                            ggml_backend_buft_name(buft), allocated_size/1024.0/1024.0);
+                    mbuf_cur.buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(mbuf_cur.ctx.get(), buft));
+
+                    LLAMA_LOG_INFO("%s: allocated '%s' buffer %.3f MiB\n", __func__, ggml_backend_buft_name(buft), mbuf.total_size/1024.0/1024.0);
                 } else {
                     //LLAMA_LOG_INFO("%s: reallocating tensors in '%s' buffer %.3f MiB\n", __func__, ggml_backend_buft_name(buft), mbuf.total_size/1024.0/1024.0);
 
@@ -2831,10 +2819,8 @@ public:
                 }
             }
 
-            if (copy_tensors) {
-                for (size_t i = 0; i < mbuf_cur.org.size(); ++i) {
-                    ggml_backend_tensor_copy(mbuf_cur.org[i], mbuf_cur.cpy[i]);
-                }
+            for (size_t i = 0; i < mbuf_cur.org.size(); ++i) {
+                ggml_backend_tensor_copy(mbuf_cur.org[i], mbuf_cur.cpy[i]);
             }
         }
     }
@@ -2843,16 +2829,14 @@ public:
         if (size > buf_size) {
             throw std::runtime_error("unexpectedly reached end of buffer");
         }
-        if (ptr != nullptr) {
-            memcpy(ptr, src, size);
-            ptr += size;
-        }
+        memcpy(ptr, src, size);
+        ptr += size;
         size_written += size;
         buf_size -= size;
     }
 
     void write_tensor(ggml_tensor * tensor, size_t offset, size_t size) override {
-        // save the write until finish(), after all state tensors are known
+        // save the write for later during destruction
         winfos.push_back({tensor, ptr, size, offset});
     }
 
@@ -2874,7 +2858,6 @@ private:
     std::vector<write_info> winfos;
 
     llama_memory_buffers & mbufs;
-    const bool copy_tensors;
 };
 
 class llama_io_read_device : public llama_io_read_i {
@@ -3013,11 +2996,8 @@ size_t llama_context::state_seq_get_size(llama_seq_id seq_id, llama_state_seq_fl
 
 size_t llama_context::state_seq_get_data(llama_seq_id seq_id, uint8_t * dst, size_t size, llama_state_seq_flags flags) {
     std::unique_ptr<llama_io_write_i> io;
-    llama_io_write_device * io_device = nullptr;
     if (flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) {
-        auto device = std::make_unique<llama_io_write_device>(dst, size, mem_storage[seq_id]);
-        io_device = device.get();
-        io = std::move(device);
+        io = std::make_unique<llama_io_write_device>(dst, size, mem_storage[seq_id]);
     } else {
         io = std::make_unique<llama_io_write_host>(dst, size);
     }
@@ -3026,11 +3006,7 @@ size_t llama_context::state_seq_get_data(llama_seq_id seq_id, uint8_t * dst, siz
         io->write(&io_magic, sizeof(io_magic));
         io->write(&seq_id, sizeof(seq_id));
 
-        const size_t n = state_seq_write_data(*io, seq_id, flags);
-        if (io_device) {
-            io_device->finish();
-        }
-        return n;
+        return state_seq_write_data(*io, seq_id, flags);
     } catch (const std::exception & err) {
         LLAMA_LOG_ERROR("%s: error saving state: %s\n", __func__, err.what());
         return 0;
@@ -3325,30 +3301,6 @@ llama_memory_breakdown llama_context::memory_breakdown() const {
         }
     }
     return ret;
-}
-
-std::map<ggml_backend_buffer_type_t, size_t> llama_context::state_seq_device_buffer_sizes() const {
-    return memory ? memory->state_seq_device_buffer_sizes()
-                  : std::map<ggml_backend_buffer_type_t, size_t> {};
-}
-
-bool llama_context::state_seq_reserve_device_buffers() {
-    if (!memory || memory->state_seq_device_buffer_sizes().empty()) {
-        return false;
-    }
-
-    try {
-        for (llama_seq_id seq_id = 0; seq_id < static_cast<llama_seq_id>(cparams.n_seq_max); ++seq_id) {
-            llama_io_write_device io(nullptr, std::numeric_limits<size_t>::max(), mem_storage[seq_id], false);
-            memory->state_seq_write_device_layout(io);
-            io.finish();
-        }
-        return true;
-    } catch (const std::exception & err) {
-        mem_storage.clear();
-        LLAMA_LOG_ERROR("%s: failed to reserve device checkpoint buffers: %s\n", __func__, err.what());
-        return false;
-    }
 }
 
 //
@@ -4277,15 +4229,6 @@ void llama_opt_epoch(
 
 llama_memory_breakdown llama_get_memory_breakdown(const struct llama_context * ctx) {
     return ctx->memory_breakdown();
-}
-
-std::map<ggml_backend_buffer_type_t, size_t> llama_get_state_seq_device_buffer_sizes(
-        const struct llama_context * ctx) {
-    return ctx->state_seq_device_buffer_sizes();
-}
-
-bool llama_state_seq_reserve_device_buffers(struct llama_context * ctx) {
-    return ctx->state_seq_reserve_device_buffers();
 }
 
 llama_context * llama_get_ctx_other(struct llama_context * ctx) {

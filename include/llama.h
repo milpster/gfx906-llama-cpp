@@ -935,11 +935,6 @@ extern "C" {
                     llama_seq_id   seq_id,
            llama_state_seq_flags   flags);
 
-    // Allocate and pin all configured per-sequence device checkpoint buffers.
-    // Returns false when the context has no device checkpoint layout or an
-    // allocation fails.
-    LLAMA_API bool llama_state_seq_reserve_device_buffers(struct llama_context * ctx);
-
     LLAMA_API size_t llama_state_seq_set_data_ext(
             struct llama_context * ctx,
                    const uint8_t * src,

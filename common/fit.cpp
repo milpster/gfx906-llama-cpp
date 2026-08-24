@@ -34,8 +34,7 @@ static std::vector<llama_device_memory_data> common_get_device_memory_data_impl(
         uint32_t & hp_ngl,
         uint32_t & hp_n_ctx_train,
         uint32_t & hp_n_expert,
-        ggml_log_level log_level,
-        std::vector<size_t> * checkpoint_sizes = nullptr) {
+        ggml_log_level log_level) {
     struct user_data_t {
         struct {
             ggml_log_callback callback;
@@ -93,28 +92,6 @@ static std::vector<llama_device_memory_data> common_get_device_memory_data_impl(
                 ret[i].mb.context += mb.context;
                 ret[i].mb.compute += mb.compute;
                 break;
-            }
-        }
-    }
-
-    if (checkpoint_sizes) {
-        checkpoint_sizes->assign(nd + 1, 0);
-        const auto checkpoint_breakdown = llama_get_state_seq_device_buffer_sizes(ctx);
-        for (const auto & [buft, size] : checkpoint_breakdown) {
-            if (ggml_backend_buft_is_host(buft)) {
-                checkpoint_sizes->back() += size;
-                continue;
-            }
-
-            ggml_backend_dev_t dev = ggml_backend_buft_get_device(buft);
-            if (!dev) {
-                continue;
-            }
-            for (size_t i = 0; i < nd; ++i) {
-                if (dev == llama_model_get_device(model, i)) {
-                    (*checkpoint_sizes)[i] += size;
-                    break;
-                }
             }
         }
     }
@@ -184,10 +161,8 @@ common_device_memory_data_vec common_get_device_memory_data(
         uint32_t & hp_n_ctx_train,
         uint32_t & hp_n_expert,
         ggml_log_level log_level) {
-    std::vector<size_t> checkpoint_sizes;
     std::vector<llama_device_memory_data> impl = common_get_device_memory_data_impl(
-            path_model, mparams, cparams, devs, hp_ngl, hp_n_ctx_train, hp_n_expert, log_level,
-            &checkpoint_sizes);
+            path_model, mparams, cparams, devs, hp_ngl, hp_n_ctx_train, hp_n_expert, log_level);
 
     common_device_memory_data_vec ret(impl.size());
     for (size_t i = 0; i < impl.size(); i++) {
@@ -196,7 +171,6 @@ common_device_memory_data_vec common_get_device_memory_data(
         ret[i].model   = impl[i].mb.model;
         ret[i].context = impl[i].mb.context;
         ret[i].compute = impl[i].mb.compute;
-        ret[i].checkpoint = checkpoint_sizes[i];
     }
     return ret;
 }
