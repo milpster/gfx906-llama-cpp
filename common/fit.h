@@ -40,6 +40,7 @@ struct common_device_memory_data {
     size_t  model;
     size_t  context;
     size_t  compute;
+    size_t  checkpoint;
 };
 
 using common_device_memory_data_vec = std::vector<common_device_memory_data>;

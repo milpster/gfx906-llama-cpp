@@ -187,6 +187,14 @@ std::map<ggml_backend_buffer_type_t, size_t> llama_memory_hybrid::memory_breakdo
     return mb;
 }
 
+std::map<ggml_backend_buffer_type_t, size_t> llama_memory_hybrid::state_seq_device_buffer_sizes() const {
+    return mem_recr->state_seq_device_buffer_sizes();
+}
+
+void llama_memory_hybrid::state_seq_write_device_layout(llama_io_write_i & io) const {
+    mem_recr->state_seq_write_device_layout(io);
+}
+
 void llama_memory_hybrid::state_write(llama_io_write_i & io, llama_seq_id seq_id, llama_state_seq_flags flags) const {
     if ((flags & LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY) == 0) {
         mem_attn->state_write(io, seq_id, flags);

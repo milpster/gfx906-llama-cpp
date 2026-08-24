@@ -2443,6 +2443,13 @@ extern "C" {
     GGML_API enum ggml_prec ggml_flash_attn_ext_get_prec(
             const struct ggml_tensor * a);
 
+    GGML_API void ggml_flash_attn_ext_set_force_vec(
+            struct ggml_tensor * a,
+            bool                 force_vec);
+
+    GGML_API bool ggml_flash_attn_ext_get_force_vec(
+            const struct ggml_tensor * a);
+
     GGML_API void ggml_flash_attn_ext_add_sinks(
             struct ggml_tensor * a,
             struct ggml_tensor * sinks);

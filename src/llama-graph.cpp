@@ -2560,6 +2560,7 @@ ggml_tensor * llm_graph_context::build_attn_mha(
 
         ggml_flash_attn_ext_add_sinks(cur, sinks);
         ggml_flash_attn_ext_set_prec (cur, GGML_PREC_F32);
+        ggml_flash_attn_ext_set_force_vec(cur, cparams.hip_fa_force_vec);
 
         if (v_mla) {
 #if 0

@@ -1294,6 +1294,29 @@ common_init_result::common_init_result(common_params & params, bool model_only) 
     if (params.fit_params) {
         COM_TRC("%s", "fitting params to device memory ...\n");
         COM_TRC("%s", "(for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)\n");
+
+        // the draft context is created from the same base params and follows the main context, fit both together
+        const bool has_draft = params.speculative.has_dft();
+        const bool spec_mtp  = std::find(params.speculative.types.begin(), params.speculative.types.end(),
+            COMMON_SPECULATIVE_TYPE_DRAFT_MTP) != params.speculative.types.end();
+
+        common_params params_dft = common_base_params_to_speculative(params);
+
+        auto mparams_dft = common_model_params_to_llama(params_dft);
+        auto cparams_dft = common_context_params_to_llama(params_dft);
+        if (spec_mtp) {
+            cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+            cparams_dft.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED;
+        }
+        cparams_dft.n_rs_seq = 0;
+
+        const common_fit_extra_model extra = {
+            /*.path_model   =*/ params_dft.model.path.c_str(),
+            /*.mparams      =*/ &mparams_dft,
+            /*.cparams      =*/ &cparams_dft,
+            /*.shares_model =*/ !has_draft, // an MTP context runs on the weights of the main model
+        };
+
         common_fit_params(params.model.path.c_str(), &mparams, &cparams,
             params.tensor_split,
             params.tensor_buft_overrides.data(),
@@ -1717,6 +1740,7 @@ struct llama_context_params common_context_params_to_llama(const common_params &
     cparams.pooling_type      = params.pooling_type;
     cparams.attention_type    = params.attention_type;
     cparams.flash_attn_type   = params.flash_attn_type;
+    cparams.hip_fa_force_vec  = params.hip_fa_force_vec;
     cparams.pipeline_parallel_type = params.pipeline_parallel_type;
     cparams.cb_eval           = params.cb_eval;
     cparams.cb_eval_user_data = params.cb_eval_user_data;
@@ -2246,6 +2270,8 @@ void common_prompt_checkpoint::clear() {
     data_tgt.clear();
     data_dft.clear();
     data_spec.clear();
+    data_tgt_on_device = false;
+    data_dft_on_device = false;
 }
 
 void common_prompt_checkpoint::update_pos(
@@ -2257,6 +2283,50 @@ void common_prompt_checkpoint::update_pos(
     this->pos_max  = pos_max;
 }
 
+static void common_prompt_checkpoint_save(
+        std::vector<uint8_t> & data,
+        bool & on_device,
+        llama_context * ctx,
+        llama_seq_id seq_id,
+        llama_state_seq_flags flags,
+        const char * label) {
+    const bool requested_on_device = flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+    on_device = false;
+
+    auto save = [&](llama_state_seq_flags save_flags) {
+        const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, save_flags);
+        if (ckpt_size == 0) {
+            return false;
+        }
+
+        std::vector<uint8_t> saved(ckpt_size);
+        const size_t n = llama_state_seq_get_data_ext(ctx, saved.data(), ckpt_size, seq_id, save_flags);
+        if (n != ckpt_size) {
+            return false;
+        }
+
+        data.swap(saved);
+        return true;
+    };
+
+    bool saved = save(flags);
+    if (requested_on_device && !saved) {
+        COM_WRN("%s: ON_DEVICE %s checkpoint save failed; retrying with host storage\n",
+                __func__, label);
+        flags &= ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+        saved = save(flags);
+    }
+
+    if (!saved) {
+        if (flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) {
+            GGML_ABORT("checkpoint device save failed for %s\n", label);
+        }
+        GGML_ABORT("checkpoint size mismatch while saving %s\n", label);
+    }
+
+    on_device = flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+}
+
 void common_prompt_checkpoint::update_tgt(
         llama_context * ctx,
         llama_seq_id seq_id,
@@ -2265,14 +2335,7 @@ void common_prompt_checkpoint::update_tgt(
         return;
     }
 
-    const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, flags);
-
-    data_tgt.resize(ckpt_size);
-
-    const size_t n = llama_state_seq_get_data_ext(ctx, data_tgt.data(), ckpt_size, seq_id, flags);
-    if (n != ckpt_size) {
-        GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", ckpt_size, n);
-    }
+    common_prompt_checkpoint_save(data_tgt, data_tgt_on_device, ctx, seq_id, flags, "target");
 }
 
 void common_prompt_checkpoint::update_dft(
@@ -2283,14 +2346,7 @@ void common_prompt_checkpoint::update_dft(
         return;
     }
 
-    const size_t ckpt_size = llama_state_seq_get_size_ext(ctx, seq_id, flags);
-
-    data_dft.resize(ckpt_size);
-
-    const size_t n = llama_state_seq_get_data_ext(ctx, data_dft.data(), ckpt_size, seq_id, flags);
-    if (n != ckpt_size) {
-        GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", ckpt_size, n);
-    }
+    common_prompt_checkpoint_save(data_dft, data_dft_on_device, ctx, seq_id, flags, "draft");
 }
 
 void common_prompt_checkpoint::load_tgt(
@@ -2304,6 +2360,9 @@ void common_prompt_checkpoint::load_tgt(
     if (data_tgt.empty()) {
         return;
     }
+
+    flags = (flags & ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) |
+            (data_tgt_on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0);
 
     const size_t n = llama_state_seq_set_data_ext(ctx, data_tgt.data(), data_tgt.size(), seq_id, flags);
     if (n != data_tgt.size()) {
@@ -2323,6 +2382,9 @@ void common_prompt_checkpoint::load_dft(
         return;
     }
 
+    flags = (flags & ~LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) |
+            (data_dft_on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0);
+
     const size_t n = llama_state_seq_set_data_ext(ctx, data_dft.data(), data_dft.size(), seq_id, flags);
     if (n != data_dft.size()) {
         GGML_ABORT("checkpoint size mismatch: expected %zu, got %zu\n", data_dft.size(), n);
@@ -2331,9 +2393,11 @@ void common_prompt_checkpoint::load_dft(
 
 void common_prompt_checkpoint::clear_tgt() {
     data_tgt.clear();
+    data_tgt_on_device = false;
 }
 
 void common_prompt_checkpoint::clear_dft() {
     data_dft.clear();
     data_spec.clear();
+    data_dft_on_device = false;
 }

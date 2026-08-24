@@ -70,6 +70,8 @@ public:
     llama_pos seq_pos_max(llama_seq_id seq_id) const override;
 
     std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const override;
+    std::map<ggml_backend_buffer_type_t, size_t> state_seq_device_buffer_sizes() const override;
+    void state_seq_write_device_layout(llama_io_write_i & io) const override;
 
     // state write/load
 

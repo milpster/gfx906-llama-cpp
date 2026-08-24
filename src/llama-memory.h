@@ -118,6 +118,15 @@ struct llama_memory_i {
 
     virtual std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const = 0;
 
+    // Exact backend-buffer sizes needed to keep one sequence-state checkpoint
+    // per configured sequence. Memory types without device checkpoint data
+    // return an empty map.
+    virtual std::map<ggml_backend_buffer_type_t, size_t> state_seq_device_buffer_sizes() const { return {}; }
+
+    // Describe the tensor data for one device-resident sequence checkpoint.
+    // This is used to allocate the real checkpoint buffers before evaluation.
+    virtual void state_seq_write_device_layout(llama_io_write_i & io) const { GGML_UNUSED(io); }
+
     //
     // state write/read
     //

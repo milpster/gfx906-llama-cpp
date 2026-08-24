@@ -192,6 +192,7 @@ ggml_tensor * llama_model_minimax_m3::graph::build_attn_msa_fa(
     ggml_tensor * o = ggml_flash_attn_ext(ctx0, q, k, v, mask, kq_scale,
                                           hparams.f_max_alibi_bias, 0.0f);
     ggml_flash_attn_ext_set_prec(o, GGML_PREC_F32);
+    ggml_flash_attn_ext_set_force_vec(o, cparams.hip_fa_force_vec);
     cb(o, "msa_fattn", il);
 
     // [D, Gp, R, C] -> [D, Gp, C, R] -> [n_embd, T]

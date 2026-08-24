@@ -8,13 +8,102 @@
 #include <cstdio>
 #include <vector>
 
-static llama_context * make_ctx(const common_params & params, llama_model * model) {
+static llama_context * make_ctx(
+        const common_params & params,
+        llama_model * model,
+        uint32_t n_rs_seq = 8,
+        uint32_t n_seq_max = 1) {
     auto cparams = common_context_params_to_llama(params);
-    cparams.n_seq_max = 1;
-    cparams.n_rs_seq  = 8;
+    cparams.n_seq_max = n_seq_max;
+    cparams.n_rs_seq  = n_rs_seq;
     cparams.n_batch   = std::max(cparams.n_batch,  (uint32_t) (cparams.n_rs_seq + 1));
     cparams.n_ubatch  = std::max(cparams.n_ubatch, (uint32_t) (cparams.n_rs_seq + 1));
     return llama_init_from_model(model, cparams);
+}
+
+static bool test_fragmented_on_device_fallback(
+        const common_params & params,
+        llama_model * model,
+        const std::vector<llama_token> & tokens) {
+    llama_context * ctx = make_ctx(params, model, 1, 3);
+    if (ctx == nullptr) {
+        fprintf(stderr, "%s : failed to initialize fragmented context\n", __func__);
+        return false;
+    }
+
+    llama_batch batch = llama_batch_init(3, 0, 3);
+    for (llama_seq_id seq_id = 0; seq_id < 3; ++seq_id) {
+        common_batch_add(batch, tokens[seq_id % tokens.size()], 0, { seq_id }, seq_id == 2);
+    }
+    bool ok = llama_decode(ctx, batch) == 0;
+    llama_batch_free(batch);
+
+    if (ok) {
+        ok = llama_memory_seq_rm(llama_get_memory(ctx), 1, -1, -1);
+    }
+
+    common_prompt_checkpoint ckpt;
+    constexpr llama_state_seq_flags flags =
+        LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+    if (ok) {
+        ckpt.update_tgt(ctx, -1, flags);
+        if (ckpt.data_tgt_on_device) {
+            fprintf(stderr, "%s : fragmented checkpoint did not fall back to host storage\n", __func__);
+            ok = false;
+        }
+    }
+    if (ok) {
+        // The caller still requests ON_DEVICE here. load_tgt() must use the
+        // actual host mode recorded when the checkpoint was saved.
+        ckpt.load_tgt(ctx, -1, flags);
+    }
+
+    llama_free(ctx);
+    return ok;
+}
+
+static bool test_preallocated_device_checkpoints(
+        const common_params & params,
+        llama_model * model,
+        const std::vector<llama_token> & tokens) {
+    constexpr int32_t n_seq = 2;
+    llama_context * ctx = make_ctx(params, model, 1, n_seq);
+    if (ctx == nullptr) {
+        fprintf(stderr, "%s : failed to initialize multi-sequence context\n", __func__);
+        return false;
+    }
+
+    bool ok = llama_state_seq_reserve_device_buffers(ctx);
+    if (!ok) {
+        fprintf(stderr, "%s : failed to preallocate device checkpoints\n", __func__);
+    }
+
+    llama_batch batch = llama_batch_init(n_seq, 0, n_seq);
+    for (llama_seq_id seq_id = 0; seq_id < n_seq; ++seq_id) {
+        common_batch_add(batch, tokens[seq_id % tokens.size()], 0, { seq_id }, true);
+    }
+    if (ok) {
+        ok = llama_decode(ctx, batch) == 0;
+    }
+    llama_batch_free(batch);
+
+    constexpr llama_state_seq_flags flags =
+        LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+    std::vector<common_prompt_checkpoint> checkpoints(n_seq);
+    for (llama_seq_id seq_id = 0; ok && seq_id < n_seq; ++seq_id) {
+        checkpoints[seq_id].update_tgt(ctx, seq_id, flags);
+        if (!checkpoints[seq_id].data_tgt_on_device) {
+            fprintf(stderr, "%s : sequence %d did not reuse its preallocated device checkpoint\n",
+                    __func__, seq_id);
+            ok = false;
+        }
+    }
+    for (llama_seq_id seq_id = 0; ok && seq_id < n_seq; ++seq_id) {
+        checkpoints[seq_id].load_tgt(ctx, seq_id, flags);
+    }
+
+    llama_free(ctx);
+    return ok;
 }
 
 static bool decode_tokens(llama_context * ctx, const std::vector<llama_token> & tokens, uint32_t count) {
@@ -33,6 +122,156 @@ static bool decode_one(llama_context * ctx, llama_token tok, llama_pos pos) {
     const bool ok = llama_decode(ctx, batch) == 0;
     llama_batch_free(batch);
     return ok;
+}
+
+static bool decode_range(
+        llama_context * ctx,
+        const std::vector<llama_token> & tokens,
+        uint32_t first,
+        uint32_t count) {
+    if (count == 0) {
+        return true;
+    }
+
+    llama_batch batch = llama_batch_init(count, 0, 1);
+    for (uint32_t i = 0; i < count; ++i) {
+        common_batch_add(batch, tokens[first + i], first + i, { 0 }, i + 1 == count);
+    }
+    const bool ok = llama_decode(ctx, batch) == 0;
+    llama_batch_free(batch);
+    return ok;
+}
+
+static bool compare_logits(
+        llama_context * ctx_full,
+        llama_context * ctx_depth,
+        int n_vocab,
+        uint32_t n_accepted,
+        const char * stage,
+        float eps) {
+    const float * logits_full  = llama_get_logits(ctx_full);
+    const float * logits_depth = llama_get_logits(ctx_depth);
+    if (logits_full == nullptr || logits_depth == nullptr) {
+        fprintf(stderr, "%s : missing %s logits after accepting %u draft tokens\n", __func__, stage, n_accepted);
+        return false;
+    }
+
+    int argmax_full  = 0;
+    int argmax_depth = 0;
+    float max_diff = 0.0f;
+    for (int token = 0; token < n_vocab; ++token) {
+        if (logits_full[token] > logits_full[argmax_full]) {
+            argmax_full = token;
+        }
+        if (logits_depth[token] > logits_depth[argmax_depth]) {
+            argmax_depth = token;
+        }
+
+        const float diff = std::fabs(logits_full[token] - logits_depth[token]);
+        max_diff = std::max(max_diff, diff);
+        if (eps >= 0.0f && diff > eps) {
+            fprintf(stderr, "%s : %s logits mismatch after accepting %u draft tokens, token %d (%g != %g)\n",
+                    __func__, stage, n_accepted, token, (double) logits_full[token], (double) logits_depth[token]);
+            return false;
+        }
+    }
+    if (eps < 0.0f && argmax_full != argmax_depth) {
+        fprintf(stderr, "%s : %s greedy token mismatch after accepting %u draft tokens (%d != %d, max logit diff %g)\n",
+                __func__, stage, n_accepted, argmax_full, argmax_depth, (double) max_diff);
+        return false;
+    }
+    if (eps < 0.0f) {
+        fprintf(stderr, "%s : %s greedy token %d preserved after accepting %u draft tokens (max logit diff %g)\n",
+                __func__, stage, argmax_full, n_accepted, (double) max_diff);
+    }
+    return true;
+}
+
+static bool test_recompute_fallback(
+        const common_params & params,
+        llama_model * model,
+        const std::vector<llama_token> & input_tokens,
+        int n_vocab) {
+    constexpr uint32_t n_prefix = 4;
+    constexpr uint32_t n_draft  = 5;
+    constexpr uint32_t n_verify = n_draft + 1;
+
+    std::vector<llama_token> tokens = input_tokens;
+    tokens.resize(n_prefix + n_verify + 2, tokens.back());
+
+    for (uint32_t n_accepted = 0; n_accepted < n_draft; ++n_accepted) {
+        llama_context * ctx_full  = make_ctx(params, model, n_draft);
+        llama_context * ctx_depth = make_ctx(params, model, 1);
+        if (ctx_full == nullptr || ctx_depth == nullptr) {
+            fprintf(stderr, "%s : failed to initialize fallback contexts\n", __func__);
+            llama_free(ctx_full);
+            llama_free(ctx_depth);
+            return false;
+        }
+
+        bool ok = decode_range(ctx_full, tokens, 0, n_prefix) &&
+                  decode_range(ctx_depth, tokens, 0, n_prefix);
+        if (ok) {
+            ok = compare_logits(ctx_full, ctx_depth, n_vocab, n_accepted, "prefix", 1e-5f);
+        }
+
+        constexpr llama_state_seq_flags partial_flags =
+            LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+        common_prompt_checkpoint ckpt;
+        if (ok) {
+            ckpt.update_tgt(ctx_depth, 0, partial_flags);
+            if (!ckpt.data_tgt_on_device) {
+                fprintf(stderr, "%s : contiguous recurrent checkpoint unexpectedly fell back to host storage\n", __func__);
+                ok = false;
+            }
+        }
+        if (ok) {
+            ok = decode_range(ctx_full, tokens, n_prefix, n_verify) &&
+                 decode_range(ctx_depth, tokens, n_prefix, n_verify);
+        }
+
+        const llama_pos rollback_pos = n_prefix + 1 + n_accepted;
+        const uint32_t n_rollback = n_draft - n_accepted;
+        if (ok) {
+            ok = llama_memory_seq_rm(llama_get_memory(ctx_full), 0, rollback_pos, -1);
+        }
+        if (ok && n_rollback <= 1) {
+            ok = llama_memory_seq_rm(llama_get_memory(ctx_depth), 0, rollback_pos, -1);
+        } else if (ok) {
+            ckpt.load_tgt(ctx_depth, 0, partial_flags);
+            ok = llama_memory_seq_rm(llama_get_memory(ctx_depth), 0, n_prefix, -1);
+        }
+
+        const llama_pos replacement_pos = rollback_pos;
+        if (ok && n_rollback <= 1) {
+            ok = decode_one(ctx_full, tokens[n_prefix + n_verify], replacement_pos) &&
+                 decode_one(ctx_depth, tokens[n_prefix + n_verify], replacement_pos);
+        } else if (ok) {
+            std::vector<llama_token> replay_tokens = tokens;
+            replay_tokens[replacement_pos] = tokens[n_prefix + n_verify];
+            ok = decode_one(ctx_full, tokens[n_prefix + n_verify], replacement_pos) &&
+                 decode_range(ctx_depth, replay_tokens, n_prefix, 2 + n_accepted);
+        }
+        if (ok) {
+            ok = compare_logits(ctx_full, ctx_depth, n_vocab, n_accepted, "replacement", -1.0f);
+        }
+        if (ok) {
+            ok = decode_one(ctx_full, tokens[n_prefix + n_verify + 1], replacement_pos + 1) &&
+                 decode_one(ctx_depth, tokens[n_prefix + n_verify + 1], replacement_pos + 1) &&
+                 compare_logits(ctx_full, ctx_depth, n_vocab, n_accepted, "continuation", -1.0f);
+        }
+
+        llama_free(ctx_full);
+        llama_free(ctx_depth);
+
+        if (!ok) {
+            fprintf(stderr, "%s : fallback validation failed after accepting %u draft tokens\n", __func__, n_accepted);
+            return false;
+        }
+    }
+
+    fprintf(stderr, "%s : depth-1 recomputation preserves depth-5 greedy decisions at every rejection position\n", __func__);
+    return true;
 }
 
 int main(int argc, char ** argv) {
@@ -65,6 +304,26 @@ int main(int argc, char ** argv) {
     const llama_vocab * vocab   = llama_model_get_vocab(model);
     const int           n_vocab = llama_vocab_n_tokens(vocab);
 
+    std::vector<llama_token> tokens;
+    if (llama_vocab_type(vocab) == LLAMA_VOCAB_TYPE_NONE) {
+        tokens = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    } else {
+        tokens = common_tokenize(vocab, "The quick brown fox jumps over the lazy dog", true);
+    }
+    if (tokens.empty()) {
+        fprintf(stderr, "%s : not enough prompt tokens\n", __func__);
+        return 1;
+    }
+    if (!test_fragmented_on_device_fallback(params, model, tokens)) {
+        return 1;
+    }
+    if (!test_preallocated_device_checkpoints(params, model, tokens)) {
+        return 1;
+    }
+    if (!test_recompute_fallback(params, model, tokens, n_vocab)) {
+        return 1;
+    }
+
     llama_context * ctx_src = make_ctx(params, model);
     llama_context * ctx_dst = make_ctx(params, model);
     if (ctx_src == nullptr || ctx_dst == nullptr) {
@@ -79,12 +338,6 @@ int main(int argc, char ** argv) {
         return 0;
     }
 
-    std::vector<llama_token> tokens;
-    if (llama_vocab_type(vocab) == LLAMA_VOCAB_TYPE_NONE) {
-        tokens = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    } else {
-        tokens = common_tokenize(ctx_src, "The quick brown fox jumps over the lazy dog", true);
-    }
     const uint32_t n_rs_seq = llama_n_rs_seq(ctx_src);
     constexpr uint32_t n_rollback = 3;
     if (n_rs_seq < n_rollback) {
@@ -92,10 +345,6 @@ int main(int argc, char ** argv) {
         llama_free(ctx_src);
         llama_free(ctx_dst);
         return 0;
-    }
-    if (tokens.empty()) {
-        fprintf(stderr, "%s : not enough prompt tokens\n", __func__);
-        return 1;
     }
     tokens.resize(n_rs_seq + 1, tokens.back());
 
@@ -161,6 +410,10 @@ int main(int argc, char ** argv) {
     constexpr llama_state_seq_flags partial_flags = LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY;
     common_prompt_checkpoint ckpt_partial;
     ckpt_partial.update_tgt(ctx_src, 0, partial_flags);
+    if (ckpt_partial.data_tgt_on_device) {
+        fprintf(stderr, "%s : host recurrent checkpoint recorded device storage\n", __func__);
+        return 1;
+    }
     ckpt_partial.load_tgt(ctx_dst, 0, partial_flags);
 
     if (!replay_and_compare("partial")) {

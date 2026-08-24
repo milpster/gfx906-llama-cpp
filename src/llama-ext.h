@@ -90,6 +90,11 @@ LLAMA_API ggml_backend_dev_t llama_model_get_device(const struct llama_model * m
 
 LLAMA_API llama_memory_breakdown llama_get_memory_breakdown(const struct llama_context * ctx);
 
+// Exact backend-buffer sizes needed for one device-resident sequence-state
+// checkpoint per configured sequence.
+LLAMA_API std::map<ggml_backend_buffer_type_t, size_t> llama_get_state_seq_device_buffer_sizes(
+        const struct llama_context * ctx);
+
 // Set whether the context outputs nextn embeddings or not
 // If masked == true,  output the embeddings only for the tokens with batch.logits != 0
 // If masked == false, output the embeddings for all tokens in the batch regardless of batch.logits

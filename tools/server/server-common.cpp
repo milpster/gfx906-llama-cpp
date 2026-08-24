@@ -83,6 +83,10 @@ json server_slot_stats::to_json() const {
         base["draft_n"]          = n_draft_tokens;
         base["draft_n_accepted"] = n_draft_accepted;
     }
+    if (n_draft_replay_count > 0) {
+        base["draft_replay_count"] = n_draft_replay_count;
+        base["draft_replay_n"]     = n_draft_replay_tokens;
+    }
 
     return base;
 }

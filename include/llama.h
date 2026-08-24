@@ -421,6 +421,8 @@ extern "C" {
         // a source/target/parent context
         // can be utilized in various ways, for example by sharing results or llama_memory between 2 contexts
         struct llama_context * ctx_other;
+
+        bool hip_fa_force_vec; // force HIP quantized-KV FA onto VEC when supported
     };
 
     struct llama_model_tensor_override {
@@ -932,6 +934,11 @@ extern "C" {
                           size_t   size,
                     llama_seq_id   seq_id,
            llama_state_seq_flags   flags);
+
+    // Allocate and pin all configured per-sequence device checkpoint buffers.
+    // Returns false when the context has no device checkpoint layout or an
+    // allocation fails.
+    LLAMA_API bool llama_state_seq_reserve_device_buffers(struct llama_context * ctx);
 
     LLAMA_API size_t llama_state_seq_set_data_ext(
             struct llama_context * ctx,

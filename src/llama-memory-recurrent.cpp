@@ -1,5 +1,6 @@
 #include "llama-memory-recurrent.h"
 
+#include "ggml-alloc.h"
 #include "ggml-backend.h"
 #include "llama-impl.h"
 #include "llama-io.h"
@@ -404,6 +405,64 @@ std::map<ggml_backend_buffer_type_t, size_t> llama_memory_recurrent::memory_brea
     return ret;
 }
 
+std::map<ggml_backend_buffer_type_t, size_t> llama_memory_recurrent::state_seq_device_buffer_sizes() const {
+    struct layout {
+        size_t n_tensors = 0;
+        std::vector<std::pair<ggml_type, int64_t>> tensors;
+    };
+
+    std::map<ggml_backend_buffer_type_t, layout> layouts;
+    const uint32_t n_layer = hparams.n_layer();
+
+    auto add_row = [&](ggml_tensor * tensor, uint32_t n_embd) {
+        if (tensor == nullptr) {
+            return;
+        }
+        const uint64_t row_size = ggml_row_size(tensor->type, n_embd);
+        auto * buft = ggml_backend_buffer_get_type(tensor->buffer);
+        auto & cur = layouts[buft];
+        cur.n_tensors++;
+        cur.tensors.emplace_back(tensor->type, row_size / ggml_element_size(tensor));
+    };
+
+    for (uint32_t il = 0; il < n_layer; ++il) {
+        add_row(r_l[il], hparams.n_embd_r());
+    }
+    for (uint32_t il = 0; il < n_layer; ++il) {
+        add_row(s_l[il], hparams.n_embd_s());
+    }
+
+    std::map<ggml_backend_buffer_type_t, size_t> ret;
+    for (const auto & [buft, layout] : layouts) {
+        ggml_init_params params = {
+            /*.mem_size   =*/ layout.n_tensors * ggml_tensor_overhead(),
+            /*.mem_buffer =*/ nullptr,
+            /*.no_alloc   =*/ true,
+        };
+        ggml_context_ptr ctx { ggml_init(params) };
+        if (!ctx) {
+            throw std::runtime_error("failed to create recurrent checkpoint sizing context");
+        }
+        for (const auto & [type, n] : layout.tensors) {
+            ggml_new_tensor_1d(ctx.get(), type, n);
+        }
+
+        const size_t one_seq = ggml_backend_alloc_ctx_tensors_from_buft_size(ctx.get(), buft);
+        if (n_seq_max != 0 && one_seq > std::numeric_limits<size_t>::max() / n_seq_max) {
+            throw std::runtime_error("recurrent checkpoint size overflow");
+        }
+        ret[buft] = one_seq * n_seq_max;
+    }
+    return ret;
+}
+
+void llama_memory_recurrent::state_seq_write_device_layout(llama_io_write_i & io) const {
+    // One logical recurrent row is the complete per-sequence checkpoint.  The
+    // actual save may select a rollback plane, but its tensor shapes and buffer
+    // sizes are identical to row zero.
+    state_write_data(io, {{0, 1}});
+}
+
 llama_memory_context_ptr llama_memory_recurrent::init_batch(llama_batch_allocr & balloc, uint32_t n_ubatch, bool embd_all) {
     do {
         balloc.split_reset();
@@ -788,7 +847,7 @@ void llama_memory_recurrent::state_write(llama_io_write_i & io, llama_seq_id seq
     }
 
     if ((flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) && cell_ranges.size() > 1) {
-        GGML_ABORT("cannot save/load multiple ranges of cells to/from device memory\n");
+        throw std::runtime_error("cannot save/load multiple ranges of cells to/from device memory");
     }
 
     // DEBUG CHECK: Sum of cell counts in ranges should equal the total cell count

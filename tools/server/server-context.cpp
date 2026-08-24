@@ -636,6 +636,12 @@ struct server_slot {
                     "     acc per pos = (%s)\n", acceptance_rates_per_pos.c_str());
         }
 
+        if (stats.n_draft_replay_count > 0) {
+            SLT_INF(*this,
+                    "     MTP replays = %10" PRIu64 " events / %5" PRIu64 " tokens\n",
+                    stats.n_draft_replay_count, stats.n_draft_replay_tokens);
+        }
+
         common_speculative_print_stats(spec);
     }
 
@@ -846,6 +852,7 @@ private:
 
     common_context_seq_rm_type ctx_tgt_seq_rm_type = COMMON_CONTEXT_SEQ_RM_TYPE_NO;
     common_context_seq_rm_type ctx_dft_seq_rm_type = COMMON_CONTEXT_SEQ_RM_TYPE_NO;
+    bool spec_mtp_device_checkpoint = false;
 
     common_speculative_ptr spec;
 
@@ -1039,119 +1046,91 @@ private:
             }
         }
 
-        // optionally reserve VRAM for the draft / MTP context before fitting the target model
-        if (params_base.fit_params) {
-            if (has_spec) {
-                // MTP draft context lives on the target model, only context+compute are new
-                bool measure_model_bytes = has_draft;
-
-                common_params params_dft = common_base_params_to_speculative(params_base);
-
-                auto mparams_dft = common_model_params_to_llama(params_dft);
-                auto cparams_dft = common_context_params_to_llama(params_dft);
-                if (spec_mtp) {
-                    cparams_dft.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
-                    cparams_dft.pipeline_parallel_type = LLAMA_PIPELINE_PARALLEL_TYPE_DISABLED;
-                    // MTP draft uses the target's (possibly fit-reduced) n_ctx at runtime.
-                    // Estimate with the same n_ctx to avoid over-reserving fit_params_target.
-                    {
-                        auto mparams_tgt = common_model_params_to_llama(params_base);
-                        auto cparams_tgt = common_context_params_to_llama(params_base);
-                        common_fit_params(params_dft.model.path.c_str(), &mparams_tgt, &cparams_tgt,
-                            params_base.tensor_split,
-                            params_base.tensor_buft_overrides.data(),
-                            params_base.fit_params_target.data(),
-                            params_base.fit_params_min_ctx,
-                            GGML_LOG_LEVEL_ERROR);
-                        cparams_dft.n_ctx = cparams_tgt.n_ctx;
-                    }
-                }
-                cparams_dft.n_rs_seq = 0;
-
-                std::vector<ggml_backend_dev_t> devs;
-                uint32_t hp_ngl = 0;
-                uint32_t hp_nct = 0;
-                uint32_t hp_nex = 0;
+        // The on-device recurrent speculative checkpoint is allocated lazily, so reserve
+        // the additional recurrent-state group before the joint target / MTP fit.
+        if (params_base.fit_params && spec_mtp) {
+            const uint32_t n_rs_seq = params_base.speculative.need_n_rs_seq();
+            const int32_t draft_n_max = params_base.speculative.draft.n_max;
+            if (draft_n_max < 0) {
+                SRV_ERR("%s", "[spec] invalid negative MTP draft.n_max while fitting\n");
+                return false;
+            }
+            if (n_rs_seq < static_cast<uint32_t>(draft_n_max)) {
                 try {
-                    auto dmd = common_get_device_memory_data(
-                        params_dft.model.path.c_str(), &mparams_dft, &cparams_dft,
-                        devs, hp_ngl, hp_nct, hp_nex, GGML_LOG_LEVEL_ERROR);
+                    common_params params_rs = params_base;
+                    auto mparams_rs = common_model_params_to_llama(params_rs);
+                    auto cparams_rs = common_context_params_to_llama(params_rs);
 
-                    GGML_ASSERT(!params_base.fit_params_target.empty());
+                    std::vector<ggml_backend_dev_t> devs_rs;
+                    uint32_t hp_ngl_rs = 0;
+                    uint32_t hp_nct_rs = 0;
+                    uint32_t hp_nex_rs = 0;
+                    cparams_rs.n_rs_seq = n_rs_seq;
+                    const auto dmd_rs = common_get_device_memory_data(
+                        params_base.model.path.c_str(), &mparams_rs, &cparams_rs,
+                        devs_rs, hp_ngl_rs, hp_nct_rs, hp_nex_rs, GGML_LOG_LEVEL_ERROR);
+
+                    std::vector<ggml_backend_dev_t> devs_rs_next;
+                    uint32_t hp_ngl_rs_next = 0;
+                    uint32_t hp_nct_rs_next = 0;
+                    uint32_t hp_nex_rs_next = 0;
+                    cparams_rs.n_rs_seq = n_rs_seq + 1;
+                    const auto dmd_rs_next = common_get_device_memory_data(
+                        params_base.model.path.c_str(), &mparams_rs, &cparams_rs,
+                        devs_rs_next, hp_ngl_rs_next, hp_nct_rs_next, hp_nex_rs_next, GGML_LOG_LEVEL_ERROR);
+
+                    if (devs_rs.size() != devs_rs_next.size() || dmd_rs.size() < devs_rs.size() ||
+                            dmd_rs_next.size() < devs_rs_next.size()) {
+                        throw std::runtime_error("target context device count changed during recurrent-state measurement");
+                    }
+
+                    // common_fit_params() consumes fit_params_target in the measured model-device
+                    // order. The configured device list can contain a nullptr sentinel, CPU/ACCEL
+                    // devices, or be reduced by split-mode none, so it is not a safe index map.
+                    if (params_base.fit_params_target.size() < devs_rs.size()) {
+                        throw std::runtime_error("fit_params_target has no entry for every target device");
+                    }
+
                     size_t total = 0;
-
-                    std::vector<ggml_backend_dev_t> tgt_devices = params.devices;
-
-                    if (tgt_devices.empty()) {
-                        for(size_t i = 0; i < ggml_backend_dev_count(); ++i) {
-                           tgt_devices.push_back(ggml_backend_dev_get(i));
+                    for (size_t j = 0; j < devs_rs.size(); ++j) {
+                        const auto next_dev = std::find(devs_rs_next.begin(), devs_rs_next.end(), devs_rs[j]);
+                        if (next_dev == devs_rs_next.end()) {
+                            throw std::runtime_error("target context device mapping changed during recurrent-state measurement");
                         }
-                    }
-
-                    std::vector<size_t> measured_bytes(tgt_devices.size(), 0);
-                    for (size_t j = 0; j < devs.size(); ++j) {
-                        const size_t bytes = (measure_model_bytes ? dmd[j].model : 0) + dmd[j].context + dmd[j].compute;
-                        total += bytes;
-                        for (size_t i = 0; i < tgt_devices.size(); i++) {
-                            if (tgt_devices[i] == devs[j]) {
-                                SRV_DBG("[spec] adding %.2f MiB to fit_params_target for device %s\n",
-                                        bytes / (1024.0 * 1024.0), ggml_backend_dev_name(devs[j]));
-                                params_base.fit_params_target[i] += bytes;
-                                measured_bytes[i] += bytes;
-                                break;
-                            }
+                        const size_t next_index = next_dev - devs_rs_next.begin();
+                        if (next_index != j) {
+                            throw std::runtime_error("target context device order changed during recurrent-state measurement");
                         }
+                        if (dmd_rs_next[j].context < dmd_rs[j].context) {
+                            throw std::runtime_error("recurrent-state context measurement decreased");
+                        }
+                        const size_t delta = dmd_rs_next[j].context - dmd_rs[j].context;
+                        const size_t checkpoint = dmd_rs[j].checkpoint;
+                        if (checkpoint == 0 && delta != 0) {
+                            throw std::runtime_error("recurrent checkpoint sizing produced no device allocation");
+                        }
+                        params_base.fit_params_target[j] += checkpoint;
+                        total += checkpoint;
+                        SRV_INF("[spec] recurrent checkpoint fit reservation: device %s, %.2f MiB "
+                                "(exact backend allocation; recurrent-plane delta %.2f MiB, context %.2f -> %.2f MiB)\n",
+                                ggml_backend_dev_name(devs_rs[j]), checkpoint / (1024.0 * 1024.0),
+                                delta / (1024.0 * 1024.0),
+                                dmd_rs[j].context / (1024.0 * 1024.0),
+                                dmd_rs_next[j].context / (1024.0 * 1024.0));
                     }
-                    SRV_TRC("[spec] estimated memory usage of %s is %.2f MiB\n",
-                            has_draft ? "draft model" : "MTP context",
+                    if (total == 0) {
+                        throw std::runtime_error("recurrent-state measurement produced no device reservation");
+                    }
+                    SRV_INF("[spec] recurrent checkpoint fit reservation: %.2f MiB total\n",
                             total / (1024.0 * 1024.0));
-
-                    if (spec_mtp) {
-                        for (int pass = 0; pass < 2; ++pass) {
-                            auto mparams_tgt = common_model_params_to_llama(params_base);
-                            auto cparams_tgt = common_context_params_to_llama(params_base);
-                            common_fit_params(params_dft.model.path.c_str(), &mparams_tgt, &cparams_tgt,
-                                params_base.tensor_split,
-                                params_base.tensor_buft_overrides.data(),
-                                params_base.fit_params_target.data(),
-                                params_base.fit_params_min_ctx,
-                                GGML_LOG_LEVEL_ERROR);
-                            if (cparams_dft.n_ctx == cparams_tgt.n_ctx) {
-                                break;
-                            }
-
-                            cparams_dft.n_ctx = cparams_tgt.n_ctx;
-                            auto dmd_refined = common_get_device_memory_data(
-                                params_dft.model.path.c_str(), &mparams_dft, &cparams_dft,
-                                devs, hp_ngl, hp_nct, hp_nex, GGML_LOG_LEVEL_ERROR);
-
-                            std::vector<size_t> refined_bytes(tgt_devices.size(), 0);
-                            total = 0;
-                            for (size_t j = 0; j < devs.size(); ++j) {
-                                const size_t bytes = (measure_model_bytes ? dmd_refined[j].model : 0) + dmd_refined[j].context + dmd_refined[j].compute;
-                                total += bytes;
-                                for (size_t i = 0; i < tgt_devices.size(); ++i) {
-                                    if (tgt_devices[i] == devs[j]) {
-                                        refined_bytes[i] += bytes;
-                                        break;
-                                    }
-                                }
-                            }
-                            for (size_t i = 0; i < tgt_devices.size(); ++i) {
-                                params_base.fit_params_target[i] -= measured_bytes[i];
-                                params_base.fit_params_target[i] += refined_bytes[i];
-                            }
-                            measured_bytes = std::move(refined_bytes);
-                            SRV_TRC("[spec] refined MTP memory estimate at n_ctx=%" PRIu32 " is %.2f MiB\n",
-                                    cparams_dft.n_ctx, total / (1024.0 * 1024.0));
-                        }
-                    }
                 } catch (const std::exception & e) {
-                    SRV_WRN("[spec] failed to measure %s memory: %s\n",
-                            has_draft ? "draft model" : "MTP context", e.what());
+                    SRV_ERR("[spec] failed to reserve recurrent-state memory before fitting: %s\n", e.what());
+                    return false;
                 }
             }
         }
+
+        // note: the draft / MTP context is fitted together with the target model, see common_fit_extra_model
 
         // attach a progress callback
         {
@@ -1311,6 +1290,16 @@ private:
             spec_init.reset();
             ctx_dft   = nullptr;
             model_dft = nullptr;
+        }
+
+        spec_mtp_device_checkpoint = false;
+        if (spec && ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS) {
+            spec_mtp_device_checkpoint = llama_state_seq_reserve_device_buffers(ctx_tgt);
+            if (spec_mtp_device_checkpoint) {
+                SRV_INF("%s", "[spec] reserved device recurrent checkpoints before evaluation\n");
+            } else {
+                SRV_WRN("%s", "[spec] device recurrent checkpoint reservation failed; using host checkpoints\n");
+            }
         }
 
         for (int i = 0; i < params_base.n_parallel; i++) {
@@ -3062,9 +3051,23 @@ private:
                    (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS && draft.size() > llama_n_rs_seq(ctx_dft));
 
                 if (use_ckpt_tgt) {
+                    llama_state_seq_flags ckpt_flags = LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY;
+                    if (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS && spec_mtp_device_checkpoint) {
+                        // Phase 1 proof of concept: avoid copying the recurrent fallback checkpoint
+                        // through host memory on every speculative round. The device buffer is
+                        // allocated during load_model(), before evaluation can consume the
+                        // fitted headroom reserved for the recurrent-state checkpoint.
+                        ckpt_flags |= LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+                    }
+
                     //const int64_t t_start = ggml_time_us();
 
-                    ckpt.update_tgt(ctx_tgt, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                    ckpt.update_tgt(ctx_tgt, slot.id, ckpt_flags);
+
+                    if ((ckpt_flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) && !ckpt.data_tgt_on_device) {
+                        spec_mtp_device_checkpoint = false;
+                        SRV_WRN("%s", "[spec] device recurrent checkpoint save failed; using host checkpoints for the rest of this server run\n");
+                    }
 
                     //const int64_t t_total = ggml_time_us() - t_start;
                     //printf("checkpoint total: %f ms\n", t_total / 1000.0);
@@ -3908,6 +3911,10 @@ private:
                     ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL ||
                     (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS && n_rollback > llama_n_rs_seq(ctx_tgt));
 
+                const bool use_rs_replay =
+                    ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS &&
+                    n_rollback > llama_n_rs_seq(ctx_tgt);
+
                 // check for partial draft acceptance
                 if (n_rollback > 0) {
                     if (use_ckpt_tgt) {
@@ -3919,11 +3926,20 @@ private:
                         slot.spec_is_replay = true;
                         slot.spec_draft = std::move(accepted);
 
+                        if (use_rs_replay) {
+                            slot.stats.n_draft_replay_count  += 1;
+                            slot.stats.n_draft_replay_tokens += slot.spec_draft.size() + 1;
+                        }
+
                         const auto & ckpt = slot.spec_ckpt;
 
                         SLT_DBG(slot, "restoring speculative checkpoint (pos_min = %d, pos_max = %d, size = %zu)\n", ckpt.pos_min, ckpt.pos_max, ckpt.size());
 
-                        ckpt.load_tgt(slot.ctx_tgt, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                        llama_state_seq_flags ckpt_flags = LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY;
+                        if (use_rs_replay) {
+                            ckpt_flags |= LLAMA_STATE_SEQ_FLAGS_ON_DEVICE;
+                        }
+                        ckpt.load_tgt(slot.ctx_tgt, slot.id, ckpt_flags);
 
                         if (slot.ctx_dft) {
                             ckpt.load_dft(slot.ctx_dft, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);

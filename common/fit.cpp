@@ -34,7 +34,8 @@ static std::vector<llama_device_memory_data> common_get_device_memory_data_impl(
         uint32_t & hp_ngl,
         uint32_t & hp_n_ctx_train,
         uint32_t & hp_n_expert,
-        ggml_log_level log_level) {
+        ggml_log_level log_level,
+        std::vector<size_t> * checkpoint_sizes = nullptr) {
     struct user_data_t {
         struct {
             ggml_log_callback callback;
@@ -92,6 +93,28 @@ static std::vector<llama_device_memory_data> common_get_device_memory_data_impl(
                 ret[i].mb.context += mb.context;
                 ret[i].mb.compute += mb.compute;
                 break;
+            }
+        }
+    }
+
+    if (checkpoint_sizes) {
+        checkpoint_sizes->assign(nd + 1, 0);
+        const auto checkpoint_breakdown = llama_get_state_seq_device_buffer_sizes(ctx);
+        for (const auto & [buft, size] : checkpoint_breakdown) {
+            if (ggml_backend_buft_is_host(buft)) {
+                checkpoint_sizes->back() += size;
+                continue;
+            }
+
+            ggml_backend_dev_t dev = ggml_backend_buft_get_device(buft);
+            if (!dev) {
+                continue;
+            }
+            for (size_t i = 0; i < nd; ++i) {
+                if (dev == llama_model_get_device(model, i)) {
+                    (*checkpoint_sizes)[i] += size;
+                    break;
+                }
             }
         }
     }
@@ -161,8 +184,10 @@ common_device_memory_data_vec common_get_device_memory_data(
         uint32_t & hp_n_ctx_train,
         uint32_t & hp_n_expert,
         ggml_log_level log_level) {
+    std::vector<size_t> checkpoint_sizes;
     std::vector<llama_device_memory_data> impl = common_get_device_memory_data_impl(
-            path_model, mparams, cparams, devs, hp_ngl, hp_n_ctx_train, hp_n_expert, log_level);
+            path_model, mparams, cparams, devs, hp_ngl, hp_n_ctx_train, hp_n_expert, log_level,
+            &checkpoint_sizes);
 
     common_device_memory_data_vec ret(impl.size());
     for (size_t i = 0; i < impl.size(); i++) {
@@ -171,6 +196,7 @@ common_device_memory_data_vec common_get_device_memory_data(
         ret[i].model   = impl[i].mb.model;
         ret[i].context = impl[i].mb.context;
         ret[i].compute = impl[i].mb.compute;
+        ret[i].checkpoint = checkpoint_sizes[i];
     }
     return ret;
 }
@@ -339,7 +365,7 @@ static void common_params_fit_impl(
                         }
                     }
                     if (nd > 1 && fixed_gpu_layers) {
-                        uint32_t n_ctx_fit = hp_nct;
+                        uint32_t n_ctx_fit = n_ctx_max;
                         bool fits = true;
                         for (size_t id = 0; id < nd; id++) {
                             const int64_t used_full = dmds_full[id].mb.total();
@@ -348,16 +374,17 @@ static void common_params_fit_impl(
                             if (used_full <= target) {
                                 continue;
                             }
-                            uint32_t n_ctx_device = n_ctx_min;
+                            uint32_t n_ctx_device = n_ctx_min_total;
                             fits = fits && target >= used_min;
                             if (target > used_min && used_full > used_min) {
-                                n_ctx_device += (hp_nct - n_ctx_min) * (target - used_min) / (used_full - used_min);
+                                n_ctx_device += (n_ctx_max - n_ctx_min_total) * (target - used_min) / (used_full - used_min);
                             }
                             n_ctx_fit = std::min(n_ctx_fit, n_ctx_device);
                         }
-                        cparams->n_ctx = std::max(n_ctx_fit - n_ctx_fit % 256, n_ctx_min);
+                        const uint32_t align = 256 * n_streams;
+                        cparams->n_ctx = std::max(n_ctx_fit - n_ctx_fit % align, n_ctx_min_total);
                         LOG_TRC("%s: context size reduced from %" PRIu32 " to %" PRIu32 " using per-device limits\n",
-                            __func__, hp_nct, cparams->n_ctx);
+                            __func__, n_ctx_max, cparams->n_ctx);
                         if (fits) {
                             return;
                         }

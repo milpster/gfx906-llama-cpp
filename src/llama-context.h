@@ -188,6 +188,8 @@ struct llama_context {
     void perf_reset();
 
     llama_memory_breakdown memory_breakdown() const;
+    std::map<ggml_backend_buffer_type_t, size_t> state_seq_device_buffer_sizes() const;
+    bool state_seq_reserve_device_buffers();
 
     //
     // training

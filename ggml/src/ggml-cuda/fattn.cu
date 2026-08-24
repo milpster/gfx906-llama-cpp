@@ -510,7 +510,9 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
                 ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
             return BEST_FATTN_KERNEL_TILE;
         }
-        return BEST_FATTN_KERNEL_VEC;
+        if (ggml_flash_attn_ext_get_force_vec(dst)) {
+            return BEST_FATTN_KERNEL_VEC;
+        }
     }
 #endif
 
