@@ -52,7 +52,7 @@ serious ctx candidate if we ever want >210k.
 
 - push-retry.sh watcher: completed (PUSH OK 15:13), self-exited; safe to delete
 - git bisect: reset (no state left)
-- stashes: trials-wip + f2-instrumentation were for the deleted bisect branch;
-  dropped with it? NO - verify with `git stash list` before cleaning; the
-  instrumentation stash is obsolete (diagnosis complete)
+- stashes (KEEP): stash@{0} trials-wip = 118 lines of UNCOMMITTED pre-sync
+  session notes for .opencode/skills/.../trials.md (historical record);
+  stash@{1} f2-instrumentation = obsolete debug wrappers (diagnosis complete)
 - GPU state at journal time: idle (all test servers killed)
