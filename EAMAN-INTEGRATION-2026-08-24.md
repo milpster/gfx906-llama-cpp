@@ -279,9 +279,12 @@ Extra findings from the verbose load (post-merge, upstream behavior):
 - Context: no gain on the prod config. The fitter aborts when -ngl/-ts/-ot
   are pinned (nothing left to fit); with pins and -c dropped it picks 135168
   (BELOW our manual 210k calibration); fully unpinned it loads 262144 but
-  the auto layout is CPU-contaminated (PP 91-113 vs 321). Our manual
-  calibration (dual-gpu-context-balancing) beats both stock and eaman-auto
-  fitting on this hardware.
+  places 13 of 66 layers (5.1 GiB) on the host to pay for it (PP 91, TG 4.6
+  - verified in bench/logs/auto-verbose.log, "offloaded 53/66"). This is the
+  fitter's designed max-ctx-over-speed trade, NOT op misplacement: with
+  FA_ALL_QUANTS=ON no op lands on CPU unintentionally (pinned prod run is
+  66/66 GPU at PP 325.4). Our manual calibration (dual-gpu-context-balancing)
+  simply prefers the other end of the trade.
 - Net: adopt eaman-prod for upstream alignment + the explicit
   --pipeline-parallel / --hip-fa-force-vec knobs; expect zero perf/ctx delta
   on the current production config.
