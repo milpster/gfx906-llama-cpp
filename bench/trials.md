@@ -104,3 +104,4 @@ pipeline the compute buffers do not fit; 155k is the ceiling either way.
 | 2026-08-25 | solvetri-fork-load | ollo12-prog (6.1 build) | - | - | - | 50,50 AMD-only | - | same nextn-ssm generation mismatch, model load fails | - | - | - | - | - | - | - | logs/st1.log |
 | 2026-08-25 | iacopPBK | not built | - | - | - | - | - | base 7924 has no qwen35 arch at all: cannot load model | - | - | - | - | - | - | - | forks/llama.cpp-gfx906 |
 | 2026-08-25 | ML-gfx906 | n/a | - | - | - | - | - | distro (TheRock containers + offload calculator), no kernel tree | - | - | - | - | - | - | - | forks/ML-gfx906 |
+| 2026-08-25 | pre-eaman-restore-verify | Aug-18 build-vega20 (10078/a76bbfd04) via llama-start-q6v.sh | 210000 | 210176 | mtp+ngram10 | 40,20,40 | 0 | master @ ea91c3161 (docs-only on a76bbfd04), PP_ABORT=0 | 325.0 | - | 10.2 | 0.686 | - | 5361409ccee1 | matches eaman-binary sha | logs/pre-eaman-verify.log |
