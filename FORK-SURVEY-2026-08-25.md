@@ -76,3 +76,31 @@ code - out of scope per "skip if fix too complicated".
   future work; both binaries functional, just cannot load Qwen3.8)
 - bench/logs/turbo1.log, bench/logs/st1.log: load failure evidence
 - trials.md rows appended for all survey attempts
+
+## Re-evaluation 2026-08-26 (post adaptive-MTP + PP profiling)
+
+Context shift since original survey: adaptive MTP shipped (TG 10.2 -> 19.3+,
+PP parity 326); PP profiling during the PR27210 tax hunt showed MUL_MAT = 92%
+of PP GPU time (FA 2%, ROPE ~0.1%), VRAM 90/97% at 210k, KV @210k = 10.06
+GiB mixed. Ranked verdicts:
+
+1. turbo3 KV compression - ONLY ceiling breaker. Est. KV 10.06 -> ~3-4 GiB
+   (f16-equiv ~13.1 GiB * 3.5/16), frees ~6.5-7 GiB -> 262k full / -ub 768 /
+   more checkpoints; TG@depth also improves (attention reads shrink). Cost:
+   port surgery + ROCm 7.1 constructs replacement + MANDATORY quality gate
+   (greedy-sha divergence + MTP acceptance; 3.5-bit V touches verify logits).
+   Days of work. THE candidate if we ever want >210k.
+2. iacopPBK sgemm/mmf/mmq-prefetch - only family targeting our real PP
+   bottleneck (MUL_MAT 92%), but build-7924-era internals vs our rewritten
+   MMQ + own vega config = diff-study for ideas, single-digit % hope.
+   Successor fork: mxxm-t/mx-llama.cpp (unsurveyed).
+3. fattn-q8 - redundant (own tile kernels; FA 2% of PP; full-q8 measured
+   slower than mixed anyway). Skip.
+4. q8-cache 128MiB - VRAM-disqualified at 90/97% full; revisit only if
+   turbo3 frees headroom. TG already doubled by adaptive MTP.
+5. fusion/rope/gather - negligible vs profile. Skip.
+6. solve-tri - still zero value (custom rocBLAS 6.1, no solve_tri path).
+7. offload-calculator - our manual skill already beats auto approaches.
+
+Net: useful residue = turbo3 (strategic) + iacopPBK GEMM ideas (tactical).
+Current shipped stack remains best measured config for this machine.
