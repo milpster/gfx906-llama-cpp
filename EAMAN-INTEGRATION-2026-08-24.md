@@ -206,7 +206,26 @@ across binaries; small-completion sanity "Paris." correct on every config).
 The eaman ctx-fitting gains apply at the ctx ceiling (mixed-KV / q8 draft
 configs), which the fork-merge regression currently blocks.
 
-## Fork merge regressions (PRE-EXISTING, NOT eaman)
+## Fork merge regressions (PRE-EXISTING, NOT eaman) - CORRECTED 2026-08-25
+
+**RETRACTION: F1 and F2 below were NOT merge regressions. Both were caused by
+my rebuild recipe missing `-DGGML_CUDA_FA_ALL_QUANTS=ON`** (BUILD-VEGA20.md
+omitted the flag; the original production build-vega20/CMakeCache.txt had it
+ON). Without it, mixed f16-K/q8_0-V fattn instances are absent -> the HIP
+backend refuses FLASH_ATTN_EXT for our exact KV mix -> the scheduler drops
+the attention blocks to CPU. The Aug-20 merge tree builds and runs correctly
+with the right flags. The original (wrong) analysis is kept below for the
+record.
+
+Verified after the fix (eaman-prod binary, FA_ALL_QUANTS=ON, prod config):
+- PP first-batch 321.0 / deep-fill run 325.4 (baseline 325.4): parity.
+- TG 10.1 fresh, 10.1 @ 120k deep fill (old binary: 10.0/10.3).
+- Abort-mid-PP recovery: 0.7 s (previous "wedge" gone; the cancelled batch
+  drains in ~40 s which is normal ubatch-boundary cancellation).
+- Output identity: 120k deep-fill greedy sha d5267dcc9d17 identical on old
+  and new binary.
+
+### Original (misdiagnosed) findings, kept for record
 
 Both discovered while testing eaman builds; both reproduce on the fork's own
 merge commit `a3fbc9321` (Aug-20 upstream sync) with ZERO eaman content
@@ -253,18 +272,44 @@ Extra findings from the verbose load (post-merge, upstream behavior):
 - New GPU-side sampler infra warns: "device 'ROCm1' does not have support
   for op TOP_K needed for sampler 'top-k'".
 
-### Recommended next steps (not done in this session)
+## Eaman benefits verdict (prod config, measured 2026-08-25)
 
-1. Bisect the merge window for F2 (upstream commits touching
-   llama-graph.cpp / llama-context.cpp / kv-cache between the Aug-08 sync
-   base and d59d455fd), or file upstream.
-2. Fix F2, then re-run the production mixed-KV eaman comparison (the config
-   where eaman's ctx-fitting gains are supposed to pay: their table shows
-   64k -> 149k ctx on a comparable dual-AMD setup).
-3. Investigate the 1.65 GiB dense-model RS allocation (upstream regression
+- Speed/quality: PARITY everywhere measurable (PP/TG/120k-deep, identical
+  greedy outputs at fresh and deep KV).
+- Context: no gain on the prod config. The fitter aborts when -ngl/-ts/-ot
+  are pinned (nothing left to fit); with pins and -c dropped it picks 135168
+  (BELOW our manual 210k calibration); fully unpinned it loads 262144 but
+  the auto layout is CPU-contaminated (PP 91-113 vs 321). Our manual
+  calibration (dual-gpu-context-balancing) beats both stock and eaman-auto
+  fitting on this hardware.
+- Net: adopt eaman-prod for upstream alignment + the explicit
+  --pipeline-parallel / --hip-fa-force-vec knobs; expect zero perf/ctx delta
+  on the current production config.
+
+## Recommended next steps (not done in this session)
+
+1. Investigate the 1.65 GiB dense-model RS allocation (upstream regression
    or new expected behavior) - on 16 GB cards this is ~10% of VRAM.
-4. Production launcher stays on the Aug-18 binary + q8_0-V until F1/F2 are
-   fixed; do not deploy post-merge binaries.
+   (CORRECTION: model has qwen35.ssm.* tensors - it IS a hybrid SSM model;
+   the RS buffers are legitimate. Only the "994 MiB ROCm_Host weights" and
+   "cache_reuse silently disabled with mmproj" items remain interesting.)
+2. Consider turbo3 KV-compression backport (see FORK-SURVEY-2026-08-25.md)
+   for a real ctx lever; requires memory-interface surgery + quality
+   validation + ROCm 7.1-era constructs replacement.
+3. Watch mxxm-t/mx-llama.cpp (iacopPBK's declared successor) for qwen35-era
+   model support that could make their kernel set benchable on our model.
+
+## Final state (updated 2026-08-25)
+
+- Production launcher: still points at build-vega20 (Aug-18 binary, still
+  the known-good). The eaman-prod binary (build 10547 @ 40e61a4a7 +
+  FA_ALL_QUANTS rebuild) is validated as a drop-in replacement.
+- Build recipe now includes GGML_CUDA_FA_ALL_QUANTS=ON (BUILD-VEGA20.md and
+  gfx906-build-recipe-rocm61 memory both corrected).
+- Branches: eaman-prod (recommended), eaman-rs (reference), fix/mixed-kv-f2
+  (bisect/instrumentation scratch; F2 root cause turned out to be the build
+  flag, branch holds no fix anymore - the stash with instrumentation was
+  never re-applied).
 
 ## Final state (2026-08-24)
 
