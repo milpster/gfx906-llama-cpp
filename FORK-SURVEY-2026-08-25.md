@@ -104,3 +104,49 @@ GiB mixed. Ranked verdicts:
 
 Net: useful residue = turbo3 (strategic) + iacopPBK GEMM ideas (tactical).
 Current shipped stack remains best measured config for this machine.
+
+## Deep-dive 2026-08-26: iacopPBK kernel family (user-requested) + final sweep
+
+Read the actual kernels (not filenames). Two corrections to the original survey:
+
+- q8-cache is NOT a weight cache: it is a Q8_1 ACTIVATION cache with graph
+  analysis - quantize-once per multi-consumer tensor, feed all its MUL_MATs
+  via the prequantized MMQ path (skips re-quant per consumer). Mechanism
+  targets PP too (our 92% MUL_MAT profile includes per-consumer activation
+  quant). 128 MiB default, size-configurable. VRAM-tight at 210k but not
+  structurally disqualified.
+- sgemm.cuh ("2x vs rocBLAS, M<=64") targets the cuBLAS/rocBLAS path -
+  irrelevant to us: GGML_CUDA_FORCE_MMQ=ON routes all our Q6_K GEMMs to MMQ.
+
+Their measured gains (benchmarks.svg, Qwen3-VL-30B-A3B Q4_1 MoE, single
+MI50): pp512 1404->1683, pp2048 1801->2222, pp8192 1280->1573, tg128
+101->131, tg2048 101->124 = consistent +20-23% BUNDLE (sgemm+prefetch+
+cache+fattn-q8+rope+fusion combined; no per-piece attribution). Regime
+caveat: A3B Q4_1 single-GPU = small-GEMM/launch-latency bound; our 27B
+Q6_K_XL 3-GPU PP = big-tile MUL_MAT bound. Transfer fraction unknown,
+likely low single digits per piece.
+
+Transferable to us, ranked:
+1. mmq-prefetch.cuh (L2 y-tile warming via 16 spare lanes, global_load_dword
+   discard-load): TYPE-AGNOSTIC (y side is always Q8_1 in MMQ), zero VRAM,
+   self-contained ~50 lines, directly targets our 92% profile. Spike: 1-2h
+   incl. build+bench. Risk low (prefetch is functionally a no-op).
+2. q8 activation cache + prequantized MMQ (mmq-prequantized.cuh + q8-cache.cuh
+   710 lines): PP-oriented medium surgery (graph analysis, name-keyed cache,
+   slot routing). Consider only after (1) proves out. Shrink cache to 32-64MiB.
+3. Not transferable: fattn-q8 (Q4/Q8 KV focus; our FA=2% of PP), rope (0.1%),
+   mmvq-q4_0/q4_1 (type mismatch, we are Q6_K), sgemm (rocBLAS path unused).
+4. gfx906-common.cuh (sgpr_broadcast via readfirstlane, DPP reductions):
+   free riders to import alongside any port.
+
+Final sweep answers ("really nothing else?"):
+- turbo fork's "9 HIP bug fixes": no extractable list; their own dense-27B
+  result (18.5 tg on 4x MI50) does not beat our shipped 19.3-20.5 on 3 GPUs
+  -> nothing latent we are missing.
+- mixa3607 amd-memory-tweak: HBM2 timing tightening would help our
+  bandwidth-bound deep-fill TG (11.2 @120k) but requires root (unavailable)
+  + stability risk. Blocked, documented.
+- launch-flag mining: their -ub 2048 trick = known (OOMs at our 210k);
+  ngram windows similar to ours. Nothing new.
+
+Next action if wanted: prefetch spike (item 1).
