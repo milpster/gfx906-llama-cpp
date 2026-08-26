@@ -870,6 +870,37 @@ static constexpr __device__ ggml_cuda_mmq_write_back_t ggml_cuda_mmq_get_write_b
 
 // ---------------------------------------------------------------------------------------------
 
+// gfx906 L2 prefetch: discard-load the next iteration's Y tile rows while the
+// current one computes; ported from iacopPBK/llama.cpp-gfx906 (mmq-prefetch.cuh)
+#if defined(GGML_USE_HIP) && defined(__gfx906__)
+static __device__ __forceinline__ int gfx906_prefetch_y_tile_v4(
+        const int * __restrict__ y, const int ncols_y, const int kb0, const int kb0_stop,
+        const int qk, const int blocks_per_iter, const int ne_block, const int sz) {
+
+    const int kb0_next = kb0 + blocks_per_iter;
+
+    if (kb0_next >= kb0_stop) {
+        return 0;
+    }
+
+    if (threadIdx.y != 0 || threadIdx.x >= 16) {
+        return 0;
+    }
+
+    const int * by_next = y + ncols_y * ((kb0_next * qk / ne_block) * sz);
+
+    const int * prefetch_addr = by_next + threadIdx.x * 16;
+
+    int prefetch_data;
+    asm volatile("global_load_dword %0, %1, off\n" : "=v"(prefetch_data) : "v"(prefetch_addr) : "memory");
+    return prefetch_data;
+}
+
+static __device__ __forceinline__ void gfx906_prefetch_consume(int prefetch_data) {
+    asm volatile("v_mov_b32 %0, %0\n" : "+v"(prefetch_data));
+}
+#endif // defined(GGML_USE_HIP) && defined(__gfx906__)
+
 template <ggml_type type, int J, bool fallback, bool fixup>
 static __device__ __forceinline__ void mul_mat_q_process_tile(
         const char * __restrict__ x, const int offset_x, const int * __restrict__ y,
@@ -918,6 +949,11 @@ static __device__ __forceinline__ void mul_mat_q_process_tile(
 
         __syncthreads();
 
+#if defined(GGML_USE_HIP) && defined(__gfx906__)
+        const int prefetch_y = gfx906_prefetch_y_tile_v4(
+            y, ncols_y, kb0, kb0_stop, qk, blocks_per_iter, ne_block, sz);
+#endif
+
         vec_dot(tile_x, tile_y, sum, 0);
 
         __syncthreads();
@@ -935,6 +971,10 @@ static __device__ __forceinline__ void mul_mat_q_process_tile(
         __syncthreads();
 
         vec_dot(tile_x, tile_y, sum, MMQ_TILE_NE_K);
+
+#if defined(GGML_USE_HIP) && defined(__gfx906__)
+        gfx906_prefetch_consume(prefetch_y);
+#endif
 
         __syncthreads();
     }
