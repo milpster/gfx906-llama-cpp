@@ -5,20 +5,23 @@ time. Everything below is a durable pointer; nothing pre-eaman was modified.
 
 ## Pre-eaman restore point (our version before eaman's fixes)
 
+UPDATED 2026-08-26: `master` now points at the SHIPPED line (fast-forwarded
+to pr27210-adaptive-mtp = upstream sync + adaptive MTP). The pre-eaman
+source line is preserved on branch **`pre-eaman`** (@ 293a48049).
+
 | item | value | status |
 |---|---|---|
-| Fork line before eaman | branch `master` @ `a76bbfd04` ("Q6_K_XL KV-mode ladder, mixed-KV winner at 210k") | untouched, ahead 18 / behind 555 vs origin/master |
+| Fork line before eaman | branch `pre-eaman` @ `a76bbfd04`-lineage tip `293a48049` (+ docs commits) | preserved, pushed |
 | Aug-20 merge tree (no eaman) | branch `sync/upstream-2026-08` @ `a3fbc9321` | untouched |
 | Production binary (pre-eaman) | `build-vega20/bin/llama-server`, build 10078, commit `a76bbfd04`, Aug-18, FA_ALL_QUANTS=ON in its CMakeCache | intact, verified loads |
-| Launcher default | `llama-start-q6v.sh` BIN/LD_LIB default = `build-vega20/bin` | already runs the pre-eaman binary; no env override needed |
+| Current production | `build-sync25` (build 10646) + adaptive MTP config in llama-start-q6v.sh | live, PP ~326 / TG ~20 |
 
 To go back completely:
 ```
-git checkout master                       # pre-eaman source
-./llama-start-q6v.sh                      # already runs the pre-eaman binary
+git checkout pre-eaman                   # pre-eaman source
+BIN=$PWD/build-vega20/bin/llama-server LD_LIB=$PWD/build-vega20/bin ./llama-start-q6v.sh
 ```
-Optionally delete the eaman artifacts (only if never returning to them):
-`git branch -D eaman-prod eaman-rs; rm -rf build-vega20-eaman patches-eaman forks/`.
+To return to shipped: `git checkout master`.
 
 ## Eaman artifacts (keep, do not lose)
 
