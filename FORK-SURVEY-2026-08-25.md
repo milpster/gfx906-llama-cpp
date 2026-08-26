@@ -150,3 +150,17 @@ Final sweep answers ("really nothing else?"):
   ngram windows similar to ours. Nothing new.
 
 Next action if wanted: prefetch spike (item 1).
+
+## Prefetch spike result 2026-08-26: NEGATIVE, closed
+
+Ported iacopPBK Y-tile prefetch (v4) verbatim into our mul_mat_q_process_tile
+(branch perf/mmq-prefetch @ 80ba7ec6a, kept for reference). Interleaved A/B
+x2 each, 2.2k PP, plain mtp n10, prod triple: prefetch 241.3/240.5 vs
+baseline 259.5/261.2 t/s = consistent **-7.5% PP**. Their win regime (small
+MoE tiles, cold next-Y) does not transfer: our big-tile PP keeps Y L2-warm;
+the discard-loads only add instruction + VGPR pressure. X-tile prefetch and
+v2/v1 variants not tried - given the Y result and the same L2-warm argument
+for X, expected also negative; closing the family. iacopPBK transferables
+now fully triaged: prefetch dead here, q8-activation-cache untested but
+VRAM-costed, sgemm/fattn/rope N/A. Nothing further actionable from this fork
+on current hardware/config.

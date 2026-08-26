@@ -117,3 +117,4 @@ pipeline the compute buffers do not fit; 155k is the ceiling either way.
 | 2026-08-25 | pr27210-dnrev | PR + delta-net t_min hunk reverted | - | - | mtp n10 | 40,20,40 | 0 | 260.4 = PARITY. CULPRIT: delta-net conv-state hunk | - | - | - | - | - | - | - | logs/dnrev.log |
 | 2026-08-25 | pr27210-FINAL | 85523aae7 (PR + dn hunk revert) | 210000 | 210176 | adaptive n10 floor3 | 40,20,40 | 0 | PP_ABORT=0 TG_N=1024 | 326.4 | - | 19.3 | 0.627 | - | e1ae69bbdeaa | SHIP | logs/dn-full.log |
 | 2026-08-25 | pr27210-FINAL-deep120k | 85523aae7 | 210000 | 210176 | adaptive n10 floor3 | 40,20,40 | 0 | 120k fill | 323.4 | - | 11.2 | 0.719 | - | 3e12ad1761e5 | abort-safe 5.6s | logs/dn-full.log |
+| 2026-08-26 | mmq-prefetch-port | build-pf (10650, Y-tile L2 prefetch port) | 210000 | 210176 | mtp n10 | 40,20,40 | 0 | interleaved A/B vs build-sync25: 241.3/240.5 vs 259.5/261.2 | - | - | - | - | - | - | REGRESSION -7.5% PP, not merged | logs/pfab-*.log |
