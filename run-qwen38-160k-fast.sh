@@ -42,7 +42,7 @@ exec /home/srcds/dev/uf2_rocm6.1_llama.cpp/build-sync25/bin/llama-server \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
   --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
   --reasoning-preserve --reasoning on --reasoning-budget -1 \
-  --spec-type draft-mtp --spec-draft-n-max "${SPEC:-2}" \
+  --spec-type draft-mtp-adaptive --spec-draft-n-max "${SPEC:-10}" --spec-draft-n-min-adaptive 3 \
   -cram 20000 \
   --chat-template-file /home/srcds/dev/uf2_rocm6.1_llama.cpp/froggeric_chat_templ.jinja \
   --pipeline-parallel on \
