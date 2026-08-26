@@ -17,7 +17,7 @@ HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 HIP_FORCE_P2P=1 \
 GPU_SINGLE_ALLOC_PERCENT=100 HSA_ENABLE_SDMA=1 \
 HSA_DISABLE_FRAGMENT_ALLOCATOR=0 GPU_MAX_ALLOC_PERCENT=100 USE_MLOCK=true \
 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf2_rocm6.1_llama.cpp/build-vega20/bin:/opt/rocm-6.1.0/lib \
-exec /home/srcds/dev/uf2_rocm6.1_llama.cpp/build-vega20/bin/llama-server \
+exec /home/srcds/dev/uf2_rocm6.1_llama.cpp/build-sync25/bin/llama-server \
   -m /home/srcds/ai/ai/Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-MTP-Q8_0.gguf \
   --mmproj /home/srcds/ai/ai/mmproj-F16.gguf \
   --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \
