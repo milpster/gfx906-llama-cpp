@@ -19,7 +19,7 @@ DEVS="${DEVS:-rocm0,vulkan1,rocm1}"
 CTK="${CTK:-q8_0}"
 CTV="${CTV:-q8_0}"
 
-ROOT=/home/srcds/dev/rocm6.1_llama.cpp
+ROOT=/home/srcds/dev/uf2_rocm6.1_llama.cpp
 LOG="$ROOT/.opencode/skills/dual-gpu-context-balancing/scripts/logs/$NAME.log"
 
 DRAFT_ARGS=()

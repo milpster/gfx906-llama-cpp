@@ -7,7 +7,7 @@ set -eu
 NAME="${1:?usage: $0 <trial_name> [-ts ..] [-ot ..] [-sm ..]}"
 shift || true
 
-ROOT=/home/srcds/dev/rocm6.1_llama.cpp
+ROOT=/home/srcds/dev/uf2_rocm6.1_llama.cpp
 LOG="$ROOT/.opencode/skills/dual-gpu-context-balancing/scripts/logs/$NAME.log"
 
 ARGS=("$@")

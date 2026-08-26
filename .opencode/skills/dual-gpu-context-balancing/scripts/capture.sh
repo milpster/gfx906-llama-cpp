@@ -4,7 +4,7 @@
 set -eu
 NAME="${1:?usage: $0 <trial_name> [timeout_sec]}"
 TIMEOUT="${2:-900}"
-ROOT=/home/srcds/dev/rocm6.1_llama.cpp
+ROOT=/home/srcds/dev/uf2_rocm6.1_llama.cpp
 LOG="$ROOT/.opencode/skills/dual-gpu-context-balancing/scripts/logs/$NAME.log"
 
 # Done markers: server listening OR fatal alloc failure

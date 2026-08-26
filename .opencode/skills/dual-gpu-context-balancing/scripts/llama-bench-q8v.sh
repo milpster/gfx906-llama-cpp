@@ -4,7 +4,7 @@
 set -eu
 PORT="${1:-8009}"
 URL="http://127.0.0.1:$PORT"
-LOG="$(ls -t /home/srcds/dev/rocm6.1_llama.cpp/.opencode/skills/dual-gpu-context-balancing/scripts/logs/*.log 2>/dev/null | head -1)"
+LOG="$(ls -t /home/srcds/dev/uf2_rocm6.1_llama.cpp/.opencode/skills/dual-gpu-context-balancing/scripts/logs/*.log 2>/dev/null | head -1)"
 
 echo "== tg: 1024 tokens out =="
 curl -s "$URL/completion" -H "Content-Type: application/json" \
