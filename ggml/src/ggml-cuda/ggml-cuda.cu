@@ -4259,7 +4259,10 @@ static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, 
     ggml_cuda_graph_set_enabled(cuda_ctx, graph_key);
 
     ggml_cuda_graph * graph = cuda_ctx->cuda_graph(graph_key);
-    if (graph->is_enabled()) {
+    // pipeline-parallel graphs fork kernels onto concurrent side streams;
+    // capturing those launches fails with hipErrorNoBinaryForGPU -> run uncaptured
+    const bool has_concurrent_regions = !cuda_ctx->stream_context().concurrent_events.empty();
+    if (graph->is_enabled() && !has_concurrent_regions) {
         const bool graph_compatible = ggml_cuda_graph_check_compability(cgraph);
         if (graph_compatible) {
             const bool properties_changed = ggml_cuda_graph_update_required(cuda_ctx, cgraph);

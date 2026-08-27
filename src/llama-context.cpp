@@ -614,7 +614,8 @@ void llama_context::sched_reserve() {
     gf_res_prev.reset(new llm_graph_result(max_nodes));
     gf_res_reserve.reset(new llm_graph_result(max_nodes));
 
-    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, cparams.pipeline_parallel, cparams.op_offload));
+    // non-pipeline first; pipeline enters only via the scratch attempt below
+    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, false, cparams.op_offload));
 
     llama_memory_context_ptr mctx;
     if (memory) {
@@ -641,24 +642,58 @@ void llama_context::sched_reserve() {
 
     const uint32_t n_outputs_pp = std::min(n_tokens, cparams.n_outputs_max);
 
-    // reserve pp (prompt processing) graph first so that buffers are only allocated once
+    // the non-pipeline reserve must precede any pipeline attempt: a failed
+    // attempt cannot be allowed to leave the context without working buffers
     {
         auto * gf = graph_reserve(n_tokens, n_seqs, n_outputs_pp, mctx.get(),
                 model.hparams.no_alloc, model.hparams.no_alloc ? backend_buf_exp_size.data() : nullptr);
         if (!gf) {
-            if (cparams.pipeline_parallel) {
-                LLAMA_LOG_WARN("%s: compute buffer allocation failed, retrying without pipeline parallelism\n", __func__);
-                cparams.pipeline_parallel = false;
-                sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, false, cparams.op_offload));
-                gf = graph_reserve(n_tokens, n_seqs, n_outputs_pp, mctx.get());
-            }
-            if (!gf) {
-                throw std::runtime_error("failed to allocate compute pp buffers");
-            }
+            throw std::runtime_error("failed to allocate compute pp buffers");
         }
 
         n_splits_pp = ggml_backend_sched_get_n_splits(sched.get());
         n_nodes_pp  = ggml_graph_n_nodes(gf);
+    }
+
+    // pipeline needs ~8x the plain compute buffer (measured on 27B-class
+    // hybrid models); attempt only with clearly enough room, on a scratch
+    // scheduler adopted only on success
+    if (cparams.pipeline_parallel) {
+        bool fits = true;
+        for (size_t i = 0; i < backend_ptrs.size(); ++i) {
+            auto * dev = ggml_backend_get_device(backend_ptrs[i]);
+            if (ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_CPU) {
+                continue;
+            }
+            size_t free_dev = 0, total_dev = 0;
+            ggml_backend_dev_memory(dev, &free_dev, &total_dev);
+            const size_t compute_sz = ggml_backend_sched_get_buffer_size(sched.get(), backend_ptrs[i]);
+            if (free_dev < 8*compute_sz) {
+                LLAMA_LOG_WARN("%s: pipeline parallelism disabled: device %s has %zu MiB free, needs an estimated %zu MiB\n",
+                        __func__, ggml_backend_dev_name(dev), free_dev/(1024*1024), 8*compute_sz/(1024*1024));
+                fits = false;
+                break;
+            }
+        }
+
+        if (fits) {
+            ggml_backend_sched_ptr sched_live = std::move(sched);
+            sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, true, cparams.op_offload));
+            auto * gf = graph_reserve(n_tokens, n_seqs, n_outputs_pp, mctx.get(),
+                    model.hparams.no_alloc, model.hparams.no_alloc ? backend_buf_exp_size.data() : nullptr);
+            if (!gf) {
+                LLAMA_LOG_WARN("%s: pipeline compute buffer allocation failed, continuing without pipeline parallelism\n", __func__);
+                cparams.pipeline_parallel = false;
+                sched.reset();
+                sched = std::move(sched_live);
+            } else {
+                n_splits_pp = ggml_backend_sched_get_n_splits(sched.get());
+                n_nodes_pp  = ggml_graph_n_nodes(gf);
+                sched_live.reset();
+            }
+        } else {
+            cparams.pipeline_parallel = false;
+        }
     }
 
     // reserve with tg (token generation) graph to get the number of splits and nodes
