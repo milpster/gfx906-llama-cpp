@@ -21,6 +21,7 @@ LANE=${LANE:?set LANE}
 PORT=${PORT:-8014}
 BIN_DIR=${BIN_DIR:-$PWD/build-dflash}
 MODEL=${MODEL:-/home/srcds/ai/ai/Qwen3.8-27B.i1-Q6_K.gguf}
+MD=${MD:-/home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf}
 TS=${TS:-40,20,40}
 SM=${SM:-layer}
 C=${C:-195000}
@@ -63,7 +64,7 @@ env HIP_GRAPH=${HIP_GRAPH:-1} AMD_LOG_LEVEL=0 \
   setsid $BIN_DIR/bin/llama-server \
   -m "$MODEL" \
   --mmproj /home/srcds/ai/ai/mmproj-F16.gguf \
-  -md /home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf \
+  -md "$MD" \
   "${SPECARGS[@]}" \
   --spec-draft-override-tensor '.*=ROCm0' -ngld 99 \
   --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \

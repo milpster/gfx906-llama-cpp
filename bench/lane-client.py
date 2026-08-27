@@ -62,50 +62,54 @@ def repro():
 # --- repro BEFORE ---
 sha_before = repro()
 
-# --- PP 16384 first batch (same method as bench-client.py) ---
-toks = all_toks[:16392]
-pp_payload = {"prompt": toks + ["\n\nSummary:"], "n_predict": 4,
-              "temperature": 0, "cache_prompt": False, "id_slot": 0,
-              "stream": True, "return_progress": True}
-first_batch = None
-r = urllib.request.Request(BASE + "/completion", data=json.dumps(pp_payload).encode(),
-                           headers={"Content-Type": "application/json"})
-with urllib.request.urlopen(r, timeout=3600) as resp:
-    for raw in resp:
-        line = raw.decode().strip()
-        if not line.startswith("data: "):
-            continue
-        body = line[len("data: "):]
-        if body == "[DONE]":
-            break
-        ev = json.loads(body)
-        prog = ev.get("prompt_progress")
-        if prog and first_batch is None and prog.get("processed", 0) > 0:
-            first_batch = prog
-            break
-if not first_batch:
-    print(json.dumps({"error": "no progress in PP stream"}))
-    sys.exit(1)
-pp_tps = round(first_batch["processed"] / first_batch["time_ms"] * 1000.0, 1)
-pp_n = first_batch["processed"]
-
-# --- staged fills: extend slot to FILL1 then FILL2 ---
-def fill(n_tokens):
+# --- single-pass PP + deep fill: one FILL1-token streamed prompt; first
+# prompt_progress event = first-batch PP, last = fill metric ---
+def ppfill(n_tokens):
     t = all_toks[:n_tokens] + ["\n\nContinue:"]
-    last = req("/completion", {"prompt": t, "n_predict": 4,
-                               "temperature": 0, "cache_prompt": True,
-                               "id_slot": 0, "stream": False})
-    tm = last["timings"]
-    return {"processed": tm["prompt_n"], "cached": tm.get("cache_n", -1),
-            "tps": round(tm["prompt_per_second"], 1)}, t
+    payload = {"prompt": t, "n_predict": 4,
+               "temperature": 0, "cache_prompt": False, "id_slot": 0,
+               "stream": True, "return_progress": True}
+    r = urllib.request.Request(BASE + "/completion", data=json.dumps(payload).encode(),
+                               headers={"Content-Type": "application/json"})
+    first_batch = None
+    last_prog = None
+    with urllib.request.urlopen(r, timeout=3600) as resp:
+        for raw in resp:
+            line = raw.decode().strip()
+            if not line.startswith("data: "):
+                continue
+            body = line[len("data: "):]
+            if body == "[DONE]":
+                break
+            ev = json.loads(body)
+            prog = ev.get("prompt_progress")
+            if prog and prog.get("processed", 0) > 0:
+                if first_batch is None:
+                    first_batch = prog
+                last_prog = prog
+    if not first_batch or not last_prog:
+        print(json.dumps({"error": "no progress in PP stream"}))
+        sys.exit(1)
+    return {"pp_tps": round(first_batch["processed"] / first_batch["time_ms"] * 1000.0, 1),
+            "pp_n": first_batch["processed"],
+            "fill_tps": round(last_prog["processed"] / last_prog["time_ms"] * 1000.0, 1),
+            "fill_n": last_prog["processed"]}
 
-f1, fill1_prompt = fill(FILL1)
+f1 = ppfill(FILL1)
 
 # --- optional second fill (FILL2=0 disables: protocol is one 120k pass) ---
 if FILL2 > 0:
+    def fill(n_tokens):
+        t = all_toks[:n_tokens] + ["\n\nContinue:"]
+        last = req("/completion", {"prompt": t, "n_predict": 4,
+                                   "temperature": 0, "cache_prompt": True,
+                                   "id_slot": 0, "stream": False})
+        tm = last["timings"]
+        return {"processed": tm["prompt_n"], "cached": tm.get("cache_n", -1),
+                "tps": round(tm["prompt_per_second"], 1)}, t
     f2, fill2_prompt = fill(FILL2)
 else:
-    f2, fill2_prompt = None, fill1_prompt
+    f2, fill2_prompt = None, all_toks[:FILL1] + ["\n\nContinue:"]
 
 # --- TG 1024 at production sampling (temp 1.0, seeded for lane comparability) ---
 # extends the deepest fill so generation runs at deep KV fill
@@ -127,8 +131,8 @@ sha_after = repro()
 
 print(json.dumps({
     "load_s": load_s, "n_ctx": n_ctx,
-    "pp_n": pp_n, "pp_tps": pp_tps,
-    "fill1": f1, "fill2": f2,    "tg_n": tg["predicted_n"], "tg_tps": round(tg["predicted_per_second"], 1),
+    "pp_n": f1["pp_n"], "pp_tps": f1["pp_tps"],
+    "fill1": {"processed": f1["fill_n"], "cached": 0, "tps": f1["fill_tps"]}, "fill2": f2,    "tg_n": tg["predicted_n"], "tg_tps": round(tg["predicted_per_second"], 1),
     "tg_depth_cached": tg_depth,
     "acc": acc,
     "repro_ok": sha_before == sha_after,
