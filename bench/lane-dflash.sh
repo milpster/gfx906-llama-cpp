@@ -71,13 +71,13 @@ env HIP_GRAPH=${HIP_GRAPH:-1} AMD_LOG_LEVEL=0 \
   "${SPECARGS[@]}" \
   --spec-draft-override-tensor '.*=ROCm0' -ngld 99 \
   --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \
-  -b 16384 -ub 384 --ctx-checkpoints 30 \
+  -b 16384 -ub 384 --ctx-checkpoints ${CKPT:-30} \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
   --device rocm0,vulkan1,rocm1 --port "$PORT" -np 1 -mg 0 \
   --reasoning-preserve --reasoning on \
   $CTKV $CTVV \
-  -cram 28000 --reasoning-format deepseek \
+  -cram ${CRAM:-28000} --reasoning-format deepseek \
   --chat-template-file "$PWD/froggeric_chat_templ.jinja" \
   "${PPARG[@]}" \
   -lv 4 \
