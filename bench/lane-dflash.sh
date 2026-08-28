@@ -44,6 +44,9 @@ if [ "${NGRAM:-0}" = "1" ]; then
 fi
 SPECARGS=(--spec-type "$SPEC_TYPE" --spec-draft-n-max "$SPEC_N_MAX" "${NGRAMARGS[@]}")
 
+PPARG=()
+[ -n "${PP:-}" ] && PPARG=(--pipeline-parallel "$PP")
+
 LOG="bench/logs/lane-$LANE.log"
 RES="bench/logs/lane-results.jsonl"
 STATUS="/tmp/opencode/lane-$LANE.status"
@@ -76,7 +79,7 @@ env HIP_GRAPH=${HIP_GRAPH:-1} AMD_LOG_LEVEL=0 \
   $CTKV $CTVV \
   -cram 28000 --reasoning-format deepseek \
   --chat-template-file "$PWD/froggeric_chat_templ.jinja" \
-  --pipeline-parallel ${PP:-off} \
+  "${PPARG[@]}" \
   -lv 4 \
   -ts "$TS" -sm "$SM" -c "$C" \
   "${OTARG[@]}" \
