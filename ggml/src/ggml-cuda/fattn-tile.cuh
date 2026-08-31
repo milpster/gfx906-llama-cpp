@@ -1329,6 +1329,54 @@ static __global__ void flash_attn_tile(
 #endif // FLASH_ATTN_AVAILABLE
 }
 
+#if GGML_CUDA_VEGA_TUNE_FATTN
+// Native q8_0-tile launch for a fixed Q-tile width. Returns false when the AMD
+// config row is missing or the KV types do not match the native path, so the
+// caller can fall through to a wider geometry - the selection and shadow sizing
+// in fattn.cu see the same native decision either way.
+template <int DKQ, int DV, int ncols2, bool use_logit_softcap, int cols_per_block>
+static bool launch_fattn_tile_vega_native(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
+    constexpr uint32_t cfg_hip = ggml_cuda_fattn_tile_get_config_amd(DKQ, DV, cols_per_block);
+    if constexpr (cfg_hip == 0) {
+        return false;
+    } else {
+        const ggml_tensor * K = dst->src[1];
+        const ggml_tensor * V = dst->src[2];
+
+        const int id        = ggml_cuda_get_device();
+        const int cc        = ggml_cuda_info().devices[id].cc;
+        const int warp_size = 32;
+        constexpr size_t nbytes_shared = 0;
+
+        const int nwarps    = ggml_cuda_fattn_tile_get_nthreads (DKQ, DV, cols_per_block, cc) / warp_size;
+        const int nbatch_fa = ggml_cuda_fattn_tile_get_nbatch_fa(DKQ, DV, cols_per_block, cc);
+
+        constexpr int nbatch_K_q8 = (cfg_hip >> 23) & ((1 << 9) - 1);
+        constexpr bool q8_ok   = DKQ % 32 == 0 && DV % 32 == 0 && nbatch_K_q8 % 32 == 0 && DKQ % nbatch_K_q8 == 0;
+        constexpr bool v_q8_ok = DV % 32 == 0;
+        if constexpr (q8_ok) {
+            if (ggml_cuda_fattn_use_native_tile(id, dst) && dst->src[0]->ne[1] > 2 &&
+                    K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0) {
+                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+                launch_fattn<DV, cols_per_block/ncols2, ncols2>
+                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
+                return true;
+            }
+        }
+        if constexpr (v_q8_ok) {
+            if (ggml_cuda_fattn_use_native_tile(id, dst) && dst->src[0]->ne[1] > 2 &&
+                    K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0) {
+                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, false, true>;
+                launch_fattn<DV, cols_per_block/ncols2, ncols2>
+                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
+                return true;
+            }
+        }
+        return false;
+    }
+}
+#endif // GGML_CUDA_VEGA_TUNE_FATTN
+
 template <int DKQ, int DV, int ncols2, bool use_logit_softcap>
 static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
     const ggml_tensor * Q = dst->src[0];
@@ -1351,31 +1399,16 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
         // Keep this dispatch in sync with ggml_cuda_fattn_tile_q8_0_native() in fattn.cu, which skips
         // the shadow reservation for Q->ne[1] > 2: small-Q ops (prompt tails, MTP verify) must not
         // fall through to f16 call sites that write the shadow into unreserved memory.
-        constexpr uint32_t cfg_q8 = cfg_hip;
-        constexpr int nbatch_K_q8 = (cfg_q8 >> 23) & ((1 << 9) - 1);
-        constexpr bool q8_ok = DKQ % 32 == 0 && DV % 32 == 0 && nbatch_K_q8 % 32 == 0 && DKQ % nbatch_K_q8 == 0;
-        if constexpr (q8_ok) {
-            const ggml_tensor * K = dst->src[1];
-            const ggml_tensor * V = dst->src[2];
-            if (ggml_cuda_fattn_use_native_tile(id, dst) &&
-                    K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
-                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
-                launch_fattn<DV, cols_per_block/ncols2, ncols2>
-                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
-                return;
+        if (Q->ne[1] > 2) {
+            bool launched = false;
+            // narrow Q-tile for small-Q ops: a 32/64-row tile mostly pads a 5-row verify batch
+            if (ncols2 <= 4 && Q->ne[1] <= 16) {
+                launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
             }
-        }
-        // F16 K + q8_0 V: K loads stay on the native half2 path, only V dequantizes in-kernel.
-        // Same sync rule with ggml_cuda_fattn_tile_v_q8_0_native() in fattn.cu (Q->ne[1] > 2).
-        constexpr bool v_q8_ok = DV % 32 == 0;
-        if constexpr (v_q8_ok) {
-            const ggml_tensor * K = dst->src[1];
-            const ggml_tensor * V = dst->src[2];
-            if (ggml_cuda_fattn_use_native_tile(id, dst) &&
-                    K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
-                fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, false, true>;
-                launch_fattn<DV, cols_per_block/ncols2, ncols2>
-                    (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
+            if (!launched) {
+                launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, cols_per_block>(ctx, dst);
+            }
+            if (launched) {
                 return;
             }
         }
