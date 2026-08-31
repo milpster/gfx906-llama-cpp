@@ -208,6 +208,11 @@ option(GGML_CUDA_FA                         "ggml: compile ggml FlashAttention C
 option(GGML_CUDA_FA_ALL_QUANTS              "ggml: compile all quants for FlashAttention"     OFF)
 option(GGML_CUDA_GRAPHS                     "ggml: use CUDA graphs (llama.cpp only)"          ${GGML_CUDA_GRAPHS_DEFAULT})
 option(GGML_CUDA_NCCL                       "ggml: use NVIDIA Collective Comm. Library"       ON)
+option(GGML_CUDA_VEGA_TUNE                 "ggml: Vega 20 (gfx906) kernel tuning"            ON)
+option(GGML_CUDA_VEGA_TUNE_FATTN           "ggml: Vega 20 flash-attention tile tuning"       ON)
+option(GGML_CUDA_VEGA_TUNE_MMQ             "ggml: Vega 20 matmul (mmq) tile tuning"          ON)
+option(GGML_CUDA_VEGA_TUNE_TOPK            "ggml: Vega 20 top-k sampling tuning"             ON)
+option(GGML_CUDA_VEGA_TUNE_GRAPHS          "ggml: Vega 20 graph capture tuning"              ON)
 set   (GGML_CUDA_COMPRESSION_MODE "size" CACHE STRING
                                             "ggml: cuda link binary compression mode; requires cuda 12.8+")
 set_property(CACHE GGML_CUDA_COMPRESSION_MODE PROPERTY STRINGS "none;speed;balance;size")

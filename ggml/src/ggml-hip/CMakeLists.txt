@@ -110,6 +110,22 @@ if (GGML_HIP_GRAPHS)
     add_compile_definitions(GGML_HIP_GRAPHS)
 endif()
 
+# always define with an explicit value, the gates use #if value semantics
+# each sub-gate = master AND sub-option, so master=OFF alone disables all
+if (GGML_CUDA_VEGA_TUNE)
+    add_compile_definitions(GGML_CUDA_VEGA_TUNE=1)
+else()
+    add_compile_definitions(GGML_CUDA_VEGA_TUNE=0)
+endif()
+foreach(_vega_sub fattn mmq topk graphs)
+    string(TOUPPER "${_vega_sub}" _vega_sub_u)
+    if (GGML_CUDA_VEGA_TUNE AND GGML_CUDA_VEGA_TUNE_${_vega_sub_u})
+        add_compile_definitions(GGML_CUDA_VEGA_TUNE_${_vega_sub_u}=1)
+    else()
+        add_compile_definitions(GGML_CUDA_VEGA_TUNE_${_vega_sub_u}=0)
+    endif()
+endforeach()
+
 if (GGML_HIP_NO_VMM)
     add_compile_definitions(GGML_HIP_NO_VMM)
 endif()

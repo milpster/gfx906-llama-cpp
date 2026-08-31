@@ -335,6 +335,7 @@ enum best_fattn_kernel {
     BEST_FATTN_KERNEL_MMA_F16 = 400,
 };
 
+#if GGML_CUDA_VEGA_TUNE_FATTN
 // On GCN (Vega 10/20, incl. MI50/MI60), q8_0 K/V can use the tile kernel with in-kernel dequant.
 // It loads K/V tiles once per CUDA block instead of once per query row (VEC), which matters at
 // large KV depth where attention reads dominate. No F16 shadow buffer is needed for this path.
@@ -367,6 +368,7 @@ static bool ggml_cuda_fattn_tile_v_q8_0_native(const int device, const ggml_tens
     const uint32_t cfg = ggml_cuda_fattn_tile_get_config_amd(K->ne[0], V->ne[0], K->ne[0] <= 128 ? 64 : 32);
     return cfg != 0;
 }
+#endif
 
 static bool ggml_cuda_fattn_kv_type_supported(ggml_type type) {
     switch (type) {
@@ -490,6 +492,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
     // 192 satisfies % 64 == 0 but has no vec instance (DKQ != DV); force it onto the MMA path.
     const bool can_use_vector_kernel = Q->ne[0] <= 256 && Q->ne[0] % 64 == 0 && Q->ne[0] != 192 && K->ne[1] % FATTN_KQ_STRIDE == 0;
 
+#if GGML_CUDA_VEGA_TUNE_FATTN
 #ifdef GGML_USE_HIP
     // HIP quantized-KV TILE/MMA paths materialize large F16 temporary buffers;
     // VEC dequantizes in-register and is also the safe path on RDNA2.
@@ -501,6 +504,7 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
         }
         return BEST_FATTN_KERNEL_VEC;
     }
+#endif
 #endif
 
     // If Turing tensor cores are available, use them:
@@ -595,10 +599,12 @@ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * d
 
     switch (kernel) {
         case BEST_FATTN_KERNEL_TILE:
+#if GGML_CUDA_VEGA_TUNE_FATTN
             if (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
                     ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
                 break; // q8_0 is dequantized in-kernel, no F16 shadow needed
             }
+#endif
             need_f16_K = true;
             need_f16_V = true;
             break;

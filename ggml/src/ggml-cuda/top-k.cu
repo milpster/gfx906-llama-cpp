@@ -49,6 +49,7 @@ static int next_power_of_2(int x) {
 #endif                            // CUB_TOP_K_AVAILABLE
 
 
+#if GGML_CUDA_VEGA_TUNE_TOPK
 // Two-stage top-k for wide rows: a global top-k element has at most k-1 larger
 // elements, so at most k-1 inside its own tile and tiling cannot drop a winner.
 #define TOPK_CAND  1024   // argsort_f32_i32_cuda_bitonic's row limit
@@ -142,6 +143,7 @@ static bool ggml_cuda_top_k_tiled(ggml_cuda_pool & pool, const float * src, int 
     topk_unmap<<<nrows, TOPK_BLOCK, 0, stream>>>(cand_idx.get(), order.get(), dst, ncand, k);
     return true;
 }
+#endif
 
 void ggml_cuda_op_top_k(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
     const ggml_tensor * src0   = dst->src[0];
@@ -159,9 +161,11 @@ void ggml_cuda_op_top_k(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {
     const int64_t    k     = dst->ne[0];
     ggml_cuda_pool & pool  = ctx.pool();
 
+#if GGML_CUDA_VEGA_TUNE_TOPK
     if (ggml_cuda_top_k_tiled(pool, src0_d, dst_d, ncols, nrows, k, stream)) {
         return;
     }
+#endif
 
 #ifdef CUB_TOP_K_AVAILABLE
     // TODO: Switch to `DeviceSegmentedTopK` for multi-row TopK once implemented
