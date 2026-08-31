@@ -917,6 +917,9 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
 
     std::vector<common_sampler_ptr> smpls;
 
+    // last draft() token count per seq (-1 until first draft), for the per-round SPC_DBG accept line
+    std::vector<int32_t> n_last_draft;
+
     // backend sampler chain per seq, attached to ctx_dft
     std::vector<llama_sampler *> backend_chains;
 
@@ -1023,6 +1026,7 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
         }
 
         smpls.resize(n_seq);
+        n_last_draft.assign(n_seq, -1);
         for (auto & s : smpls) {
             common_params_sampling sparams;
             sparams.no_perf  = false;
@@ -1398,6 +1402,7 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
                 if (result.size() < (size_t) params.n_min) {
                     result.clear();
                 }
+                n_last_draft[seq_id] = (int32_t) result.size();
                 continue;
             }
 
@@ -1457,11 +1462,18 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
             if (result.size() < (size_t) params.n_min) {
                 result.clear();
             }
+            n_last_draft[seq_id] = (int32_t) result.size();
         }
     }
 
-    void accept(llama_seq_id /*seq_id*/, uint16_t /*n_accepted*/, bool /*is_other*/) override {
-        // noop
+    void accept(llama_seq_id seq_id, uint16_t n_accepted, bool /*is_other*/) override {
+        const int32_t n_draft =
+            seq_id >= 0 && seq_id < (llama_seq_id) n_last_draft.size()
+                ? n_last_draft[seq_id]
+                : -1;
+
+        SPC_DBG("dflash round seq %d: n_draft=%d, n_accepted=%d\n",
+                (int) seq_id, (int) n_draft, (int) n_accepted);
     }
 };
 
