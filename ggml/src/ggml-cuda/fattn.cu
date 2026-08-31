@@ -497,12 +497,17 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
     // HIP quantized-KV TILE/MMA paths materialize large F16 temporary buffers;
     // VEC dequantizes in-register and is also the safe path on RDNA2.
     if ((ggml_is_quantized(K->type) || ggml_is_quantized(V->type)) && can_use_vector_kernel) {
-        // Exception: on GCN, batched prompts with q8_0 K/V use the tile kernel with in-kernel dequant.
-        if (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
-                ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
+        // GCN: q8_0 K/V take the native tile kernel when the path decision selects it.
+        if (ggml_cuda_fattn_use_native_tile(device, dst) &&
+                (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
+                 ggml_cuda_fattn_tile_v_q8_0_native(device, dst))) {
             return BEST_FATTN_KERNEL_TILE;
         }
-        return BEST_FATTN_KERNEL_VEC;
+        if (!(GGML_CUDA_CC_IS_GCN(cc) && Q->ne[1] > 2)) {
+            return BEST_FATTN_KERNEL_VEC;
+        }
+        // GCN multi-row: the f16 convert tile beats VEC at deep KV (gfx906, E61),
+        // fall through to the generic flow below.
     }
 #endif
 #endif
@@ -600,8 +605,9 @@ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * d
     switch (kernel) {
         case BEST_FATTN_KERNEL_TILE:
 #if GGML_CUDA_VEGA_TUNE_FATTN
-            if (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
-                    ggml_cuda_fattn_tile_v_q8_0_native(device, dst)) {
+            if (ggml_cuda_fattn_use_native_tile(device, dst) &&
+                    (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
+                     ggml_cuda_fattn_tile_v_q8_0_native(device, dst))) {
                 break; // q8_0 is dequantized in-kernel, no F16 shadow needed
             }
 #endif

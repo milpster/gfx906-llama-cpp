@@ -1357,7 +1357,8 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
         if constexpr (q8_ok) {
             const ggml_tensor * K = dst->src[1];
             const ggml_tensor * V = dst->src[2];
-            if (K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
+            if (ggml_cuda_fattn_use_native_tile(id, dst) &&
+                    K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
                 launch_fattn<DV, cols_per_block/ncols2, ncols2>
                     (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);
@@ -1370,7 +1371,8 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
         if constexpr (v_q8_ok) {
             const ggml_tensor * K = dst->src[1];
             const ggml_tensor * V = dst->src[2];
-            if (K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
+            if (ggml_cuda_fattn_use_native_tile(id, dst) &&
+                    K->type == GGML_TYPE_F16 && V->type == GGML_TYPE_Q8_0 && Q->ne[1] > 2) {
                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, false, true>;
                 launch_fattn<DV, cols_per_block/ncols2, ncols2>
                     (ctx, dst, fattn_kernel, nwarps, nbytes_shared, nbatch_fa, false, false, false, warp_size);

@@ -4,7 +4,100 @@
 #include "convert.cuh"
 #include "vecdotq.cuh"
 
+#include <cstring>
 #include <cstdint>
+
+#if GGML_CUDA_VEGA_TUNE_FATTN
+// One FATTN path decision per device, resolved on first use and stored.
+// Consumers: the native tile predicates in fattn.cu (buffer sizing +
+// kernel selection) and the native launch branches in fattn-tile.cuh,
+// so sizing and dispatch cannot disagree. GGML_CUDA_FATTN_PATH = auto |
+// force_convert | force_native overrides the decision for benching.
+// AUTO keeps the f16 convert path while its full-KV shadow fits the device
+// free memory (20% headroom), else falls back to the compact native q8_0 tile.
+enum ggml_cuda_fattn_path {
+    GGML_CUDA_FATTN_PATH_AUTO,
+    GGML_CUDA_FATTN_PATH_FORCE_CONVERT,
+    GGML_CUDA_FATTN_PATH_FORCE_NATIVE,
+};
+
+inline int ggml_cuda_fattn_path() {
+    static const int path = []() {
+        const char * var = getenv("GGML_CUDA_FATTN_PATH");
+        if (var == nullptr || var[0] == '\0') {
+            return GGML_CUDA_FATTN_PATH_AUTO;
+        }
+        if (strcmp(var, "auto") == 0) {
+            return GGML_CUDA_FATTN_PATH_AUTO;
+        }
+        if (strcmp(var, "force_convert") == 0) {
+            return GGML_CUDA_FATTN_PATH_FORCE_CONVERT;
+        }
+        if (strcmp(var, "force_native") == 0) {
+            return GGML_CUDA_FATTN_PATH_FORCE_NATIVE;
+        }
+        GGML_LOG_WARN("ggml_cuda_fattn_path: unknown GGML_CUDA_FATTN_PATH '%s', using auto\n", var);
+        return GGML_CUDA_FATTN_PATH_AUTO;
+    }();
+    return path;
+}
+
+struct ggml_cuda_fattn_decisions {
+    std::mutex mu;
+    bool done[GGML_CUDA_MAX_DEVICES] = {};
+    bool native[GGML_CUDA_MAX_DEVICES] = {};
+    size_t kv_len[GGML_CUDA_MAX_DEVICES] = {};
+};
+
+// The f16 shadow is one layer of K/V at the reserve-time KV length (reused
+// across layers), i.e. the full-context shadow. Re-check only when a longer
+// KV was resolved to convert before (native is always the compact choice).
+inline bool ggml_cuda_fattn_auto_native(const int device, const ggml_tensor * dst) {
+    const ggml_tensor * K = dst->src[1];
+    const ggml_tensor * V = dst->src[2];
+
+    size_t shadow = 0;
+    if (K->type != GGML_TYPE_F16 && K->type != GGML_TYPE_F32) {
+        shadow += 2 * (size_t) K->ne[1] * K->ne[2] * K->ne[0];
+    }
+    if (V->type != GGML_TYPE_F16 && V->type != GGML_TYPE_F32) {
+        shadow += 2 * (size_t) V->ne[1] * V->ne[2] * V->ne[0];
+    }
+
+    ggml_cuda_set_device(device);
+    size_t free_mem = 0;
+    size_t total_mem = 0;
+    CUDA_CHECK(cudaMemGetInfo(&free_mem, &total_mem));
+
+    const bool native = shadow > free_mem - free_mem / 5;
+    GGML_LOG_INFO("ggml_cuda_fattn: device %d AUTO: f16 shadow %.2f GiB, free %.2f GiB -> %s\n",
+            device, shadow / (1024.0 * 1024.0 * 1024.0), free_mem / (1024.0 * 1024.0 * 1024.0),
+            native ? "native q8_0 tile" : "f16 convert");
+    return native;
+}
+
+inline bool ggml_cuda_fattn_use_native_tile(const int device, const ggml_tensor * dst) {
+    switch (ggml_cuda_fattn_path()) {
+        case GGML_CUDA_FATTN_PATH_FORCE_CONVERT:
+            return false;
+        case GGML_CUDA_FATTN_PATH_FORCE_NATIVE:
+            return true;
+        default:
+            break;
+    }
+
+    static ggml_cuda_fattn_decisions decisions;
+    std::lock_guard<std::mutex> lock(decisions.mu);
+
+    const size_t kv_now = (size_t) dst->src[1]->ne[1];
+    if (!decisions.done[device] || (kv_now > decisions.kv_len[device] && !decisions.native[device])) {
+        decisions.native[device] = ggml_cuda_fattn_auto_native(device, dst);
+        decisions.kv_len[device] = kv_now;
+        decisions.done[device] = true;
+    }
+    return decisions.native[device];
+}
+#endif // GGML_CUDA_VEGA_TUNE_FATTN
 
 #define FATTN_KQ_STRIDE       256
 #define HALF_MAX_HALF         __float2half(65504.0f/2) // Use neg. of this instead of -INFINITY to initialize KQ max vals to avoid NaN upon subtraction.
