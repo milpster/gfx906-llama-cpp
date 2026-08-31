@@ -95,9 +95,9 @@ if [ "${PROBE:-0}" = "1" ]; then
     if grep -qE "GGML_ASSERT|failed to allocate" "$LOG" 2>/dev/null; then break; fi
     sleep 2
   done
-  grep -E "model buffer size = |KV buffer size|RS buffer size|memory breakdown|ROCm0 \(|Vulkan1 \(|ROCm1 \(|n_ctx_slot|failed to allocate|GGML_ASSERT|ROCm error" "$LOG" | head -30
+  grep -E "model buffer size = |KV buffer size|RS buffer size|memory breakdown|ROCm0 \(|Vulkan1 \(|ROCm1 \(|n_ctx_slot|failed to allocate|GGML_ASSERT|ROCm error|ggml_cuda_fattn: device" "$LOG" | head -30
   pkill -9 -f "llama-server.*--port $PORT" 2>/dev/null || true
-  echo "${ok:+DONE}${ok:-FAILED}" > "$STATUS"
+  if [ -n "$ok" ]; then echo DONE > "$STATUS"; else echo FAILED > "$STATUS"; fi
   exit 0
 fi
 
