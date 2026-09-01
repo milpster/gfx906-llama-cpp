@@ -1,3 +1,33 @@
+> ## gfx906 fork (this repository)
+>
+> llama.cpp tuned for production inference on a dual Radeon VII (gfx906, 16 GB) +
+> RTX 3080 Laptop (8 GB) rig: Qwen3.8-27B i1-Q6_K + DFlash2 drafter, up to
+> 250k context on 40 GB of VRAM.
+>
+> **Versus upstream master** (A/B 2026-09-01, identical full production
+> config, -c 200000, only the binary differs):
+>
+> | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
+> |---|---|---|---|---|
+> | fork (tuned) | **379.2** | **252.6** | 13.6 | 0.691 |
+> | upstream master | 332.3 | 231.1 | 13.5 | 0.691 |
+>
+> - **+14% first-batch prefill, +9% deep fill** from gfx906-tuned MMQ GEMM +
+>   tiled top-k kernels (`GGML_CUDA_VEGA_TUNE_*`, on by default in
+>   `build-dflash-novega.sh`)
+> - **Numerics-transparent**: temp-0 output is sha-identical to an upstream
+>   master build across prefill, 120k fill, and 512-token generation - the
+>   tuning moves speed, not math; the repro gate passes on both sides
+> - **Long-context fit**: 250k tokens across `rocm0,vulkan1,rocm1` with a
+>   35/20/45 tensor split, f16-K/q8_0-V KV, DFlash2 drafter pinned to ROCm0
+> - **Fork-side features** on top of repeated upstream merges (latest sync
+>   2026-09-01): context-based FATTN path selector, small-Q native tile
+>   geometry, M-RoPE DFlash2 vision fix (now upstream), per-round draft
+>   acceptance logging, `draft-mtp-adaptive` draft depth
+>
+> Evidence and history: `journal/` (E-numbered entries), `bench/` (lane +
+> A/B tooling). Build: `build-dflash-novega.sh`.
+
 # llama.cpp
 
 ![llama](https://raw.githubusercontent.com/ggml-org/llama.brand/refs/heads/master/cover/llama-cpp/cover-llama-cpp-dark.svg)
