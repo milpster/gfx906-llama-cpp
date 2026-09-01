@@ -37,7 +37,7 @@ exec "$BIN" \
   -m /home/srcds/ai/ai/Qwen3.8-27B.i1-Q6_K.gguf \
   --mmproj /home/srcds/ai/ai/mmproj-F16.gguf \
   -md /home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf \
-  --spec-type draft-dflash --spec-draft-n-max 6 \
+  --spec-type draft-dflash --spec-draft-n-max 4 \
   --spec-draft-override-tensor '.*=ROCm0' -ngld 99 \
   --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \
   -b 16384 -ub 384 --ctx-checkpoints 30 \
