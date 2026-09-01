@@ -4,7 +4,7 @@
 > RTX 3080 Laptop (8 GB) rig: Qwen3.8-27B i1-Q6_K + DFlash2 drafter, up to
 > 250k context on 40 GB of VRAM.
 >
-> **Versus upstream master** (A/B 2026-09-01, identical full production
+> **Versus upstream master** (A/B 2026-08-31, identical full production
 > config, -c 200000, only the binary differs):
 >
 > | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
