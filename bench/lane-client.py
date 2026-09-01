@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lane client: full protocol per JOURNAL-2026-08-26.md C1.
+"""Lane client: full protocol per journal/JOURNAL-2026-08-26.md C1.
 
 health -> temp0-repro-BEFORE -> PP16384 (first-batch SSE) -> fill to 120k ->
 fill to 180k (cached extend) -> TG1024 @ temp 1.0 (seeded) -> temp0-repro-AFTER.

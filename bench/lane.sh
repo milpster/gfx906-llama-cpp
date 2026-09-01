@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lane runner: full-protocol config lane per JOURNAL-2026-08-26.md.
+# Lane runner: full-protocol config lane per journal/JOURNAL-2026-08-26.md.
 # Usage: LANE=L0a SPEC_ARGS="--spec-type draft-mtp-adaptive --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3" EXTRA_ARGS="" ./lane.sh
 # Server log: bench/logs/lane-<LANE>.log ; result line appended to bench/logs/lane-results.jsonl
 set -eu
