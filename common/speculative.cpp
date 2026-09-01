@@ -927,6 +927,8 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
     int32_t n_embd_enc = 0;  // target_layer_ids_n * target_hidden_size
     int32_t n_embd_tgt = 0;  // target model hidden size
 
+    std::vector<float> features_buf; // scratch zero-features for the gap-fill encoder
+
     int32_t     block_size    = 0;
     llama_token mask_token_id = 0;
 
