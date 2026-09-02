@@ -49,4 +49,4 @@ BIN=$BIN_B MODEL=$MODEL PORT=$PORT ./ab-bench.sh q8ldr-B "${EXTRAS[@]}"
 
 echo
 echo "== trial rows:"
-grep "dualacc-" trials.md | tail -2
+grep "q8ldr-" trials.md | tail -2

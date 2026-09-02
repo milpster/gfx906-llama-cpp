@@ -565,3 +565,12 @@ default drafter, BIN default build-vega20) produced pp_first 309-324 in
 live.log and read as a "regression" - apples-to-oranges, see E88 note.
 ab-bench.sh BIN default now updated to build-dflash-novega to kill this
 trap at the source.
+
+CORRECTION (2026-09-02, E95 side-finding): the "pp way down" report was
+NOT the raw-harness live.log runs - those are dated 2026-08-15. Actual
+cause: ab-q8ldr.sh was generated from ab-dualacc.sh with sed that
+replaced the trial names but missed the summary grep pattern, so the
+script's "== trial rows:" footer printed the previous experiment's rows
+(dualacc-B 304.3, the E93 regression). The real q8ldr rows were correct
+in trials.md all along (347.2/350.6). Grep fixed. The ab-bench BIN
+default change stands on its own merits (stale build-vega20 pointer).
