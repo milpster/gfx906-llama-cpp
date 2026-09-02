@@ -212,6 +212,7 @@ option(GGML_CUDA_VEGA_TUNE                 "ggml: Vega 20 (gfx906) kernel tuning
 option(GGML_CUDA_VEGA_TUNE_FATTN           "ggml: Vega 20 flash-attention tile tuning"       ON)
 option(GGML_CUDA_VEGA_TUNE_FATTN_QPIPE     "ggml: Vega 20 fattn tile KQ pipelined k-steps"   OFF)
 option(GGML_CUDA_VEGA_TUNE_FATTN_COLS16    "ggml: Vega 20 fattn tile force ncols16 geometry" OFF)
+option(GGML_CUDA_VEGA_TUNE_FATTN_OCC3      "ggml: Vega 20 fattn tile 3-block occupancy probe" OFF)
 option(GGML_CUDA_VEGA_TUNE_MMQ             "ggml: Vega 20 matmul (mmq) tile tuning"          ON)
 option(GGML_CUDA_VEGA_TUNE_MMQ_DUALACC     "ggml: Vega 20 mmq dual accumulator chains"       OFF)
 option(GGML_CUDA_VEGA_TUNE_MMQ_Q8LDR       "ggml: Vega 20 q8_0 load_tiles remap (#21698)"     OFF)

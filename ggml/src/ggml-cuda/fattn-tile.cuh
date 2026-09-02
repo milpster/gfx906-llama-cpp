@@ -293,6 +293,11 @@ static constexpr __host__ __device__ uint32_t ggml_cuda_fattn_tile_get_config_am
     GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256,  2,  64, 8,  32,  64)
     GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256,  4, 128, 6,  32, 256)
     GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256,  8, 128, 6,  32, 256)
+#if GGML_CUDA_VEGA_TUNE_FATTN_OCC3
+    // Occupancy probe: LDS ~17.9 KB/wg (Q 8K + KV 8.7K + KQ 1K) fits 3 blocks/CU
+    // vs 2 for both stock rows; extra resident waves hide the 31% LDS-wait.
+    GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256, 16, 256, 6,  32, 128)
+#endif
     GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256, 16, 256, 5,  32, 256)
     GGML_CUDA_FATTN_TILE_CONFIG_CASE(256, 256, 32, 256, 3,  64, 128)
 
@@ -1496,7 +1501,7 @@ static void launch_fattn_tile_switch_ncols1(ggml_backend_cuda_context & ctx, ggm
     if constexpr (DKQ <= 256)
 #endif // GGML_USE_HIP
     {
-        if (Q->ne[1] > 16/ncols2 && !GGML_CUDA_VEGA_TUNE_FATTN_COLS16) {
+        if (Q->ne[1] > 16/ncols2 && !GGML_CUDA_VEGA_TUNE_FATTN_COLS16 && !GGML_CUDA_VEGA_TUNE_FATTN_OCC3) {
             constexpr int cols_per_block = 32;
             const int nwarps    = ggml_cuda_fattn_tile_get_nthreads (DKQ, DV, cols_per_block, cc) / warp_size;
             const int nbatch_fa = ggml_cuda_fattn_tile_get_nbatch_fa(DKQ, DV, cols_per_block, cc);
