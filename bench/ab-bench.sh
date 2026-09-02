@@ -8,7 +8,7 @@ shift
 
 cd "$(dirname "$0")"
 ROOT=$(cd .. && pwd)
-BIN=${BIN:-$ROOT/build-vega20/bin/llama-server}
+BIN=${BIN:-$ROOT/build-dflash-novega/bin/llama-server}
 PORT=${PORT:-8013}
 CTX=${CTX:-155000}
 SPEC=${SPEC:-2}

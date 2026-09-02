@@ -62,7 +62,7 @@ BIN=/path/to/other/build/bin/llama-server ./ab-bench.sh old-binary
 
 | Var | Default | Meaning |
 |---|---|---|
-| `BIN` | `../build-vega20/bin/llama-server` | Server binary under test |
+| `BIN` | `../build-dflash-novega/bin/llama-server` | Server binary under test |
 | `PORT` | `8013` | Listen port (must be free) |
 | `CTX` | `155000` | `-c` value |
 | `SPEC` | `2` | `--spec-draft-n-max` |

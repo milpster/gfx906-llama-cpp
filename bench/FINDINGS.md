@@ -541,3 +541,27 @@ Route is CLOSED. Remaining PP levers: #21698 q8_0 loader instruction-mix
 (~7-8% cap on UD, E91-pro-rated), Q5_K->Q6_K requant in a UD rev
 (~2-3%), fattn_tile class (14.3%). Production unchanged (DUALACC never
 default-on; build-dualacc retained as the experiment dir).
+
+## MMQ experiment 5: #21698 q8_0 loader GCN5 remap (2026-09-02) - NO GAIN on fork config
+
+Port of upstream PR #21698 (open, iacopPBK; MI50 +28-36% pp on pure
+Q8_0 models): threads_per_row 32 -> 16 + unrolled k-loop in the q8_0
+dp4a loader. Bit-identical writes (verified by hand + sha), q6_k
+instance byte-identical, VGPR +9 (hot J64 119 -> 128). Gated
+GGML_CUDA_VEGA_TUNE_MMQ_Q8LDR, default OFF, build-q8ldr.
+
+Result (UD @256k ab-bench): A 347.2 / B 350.6 pp1 (+1.0%, inside the
+day-over-day noise band: yesterday's A was 350.3), tg 16.2/16.1, acc
+.664 both, sha 6b38a21df2bf both. The E91 pro-rated +7-8% did NOT
+materialize.
+
+Explanation: the PR's MI50 numbers were measured under UPSTREAM's
+gfx906 config = the RDNA2 fallback table, not our vega I=128/J=64/256thr
+table. The 16-thread remap's benefit is config-dependent; on our tile
+geometry it is neutral. Not worth keeping on. Q8LDR stays default OFF.
+
+Side finding: raw `./ab-bench.sh` runs (defaults: CTX=155000, MTP
+default drafter, BIN default build-vega20) produced pp_first 309-324 in
+live.log and read as a "regression" - apples-to-oranges, see E88 note.
+ab-bench.sh BIN default now updated to build-dflash-novega to kill this
+trap at the source.
