@@ -602,3 +602,28 @@ Disposition: v2 is PP-neutral, TG mildly positive, quality strictly
 >= L (38 tensors up-quantized, imatrix). Adopt for quality at +300
 MiB if wanted; discard otherwise. Production L unchanged. This closes
 the mix-surgery PP lever on this rig.
+
+## FATTN experiment 1: pipelined KQ k-steps (2026-09-02) - REJECTED
+
+Lever: iter_KQ f16 path, double-buffered register fragments prefetching
+step s+1's LDS operands during step s's MADs, attacking the measured
+31.1% SQ_WAIT_INST_LDS (E99). Gated GGML_CUDA_VEGA_TUNE_FATTN_QPIPE,
+default OFF, build-qpipe. ISA gates passed: hot <256,256,16,2> VGPR
+94 -> 111, no new spill, private_segment <= baseline.
+
+Result (bench-fattn-tile kv120k): 130.459 ms vs 123.257 baseline
+(-5.8%), max-abs 0.00000 (bit-identical as designed). Correct tooling,
+wrong direction.
+
+Verdict: 6th consecutive source-level scheduling restructure to regress
+(k01 unroll, prefetch, phase-split, scale-free, dual-acc, qpipe - across
+two different kernel families now). On gfx906 + ROCm 6.1 clang, tight
+per-step loop scoping beats every manual latency-hiding structure; the
+compiler's own schedule is a local optimum. Loop-restructure route is
+closed for FATTN as well. QPIPE stays default OFF.
+
+Remaining untried fattn lever (fork's PROVEN modality - config tables,
+not loops): geometry swap via the launch switch threshold, forcing the
+ncols=16 table row (256,256,16,256,5,32,256) = occupancy-5 config with
+nbatch_fa 32 / nbatch_K 256 instead of the current (256,256,32,256,3,
+64,128). One threshold flip + microbench run decides.
