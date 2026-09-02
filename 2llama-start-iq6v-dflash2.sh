@@ -15,8 +15,12 @@
 # force_convert: keeps the FATTN path convert-native as sessions age
 # (selector re-check quirk, E75); costs <=3% on first PP batches.
 # Vision + DFlash2 requires the #27408 M-RoPE port (upstream since #27816).
-# -ts 35,20,45 -c 250000: attn 6/3/7 with 4 extra GDN layers on ROCm1;
-# the shape trades TG (-0.6 t/s vs 40,19,41) for the 250k fit.
+# -ts 35,20,45 -c 250000: attn 6/3/7 with 4 extra GDN layers on ROCm1.
+# The old "-0.6 t/s vs 40,19,41" trade claim does not reproduce on this
+# build (E105: 40,19,41 now fits 250k with mmproj on CPU but loses TG
+# and fill; drafter on ROCm0 makes it the decode critical path). No -ts
+# redistribution wins speed; 256k ctx variant pending user validation
+# (2llama-start-iq6v-dflash2-256k.sh, E105).
 # Opt-in +10k ctx (W6, costs ~10% PP / ~8% fill, TG unchanged): add
 #   -ot '^blk\.(37|38)\.ffn_(gate|up|down)\.weight$=ROCm0'
 #   and raise -c to 260000.
