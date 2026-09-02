@@ -627,3 +627,30 @@ not loops): geometry swap via the launch switch threshold, forcing the
 ncols=16 table row (256,256,16,256,5,32,256) = occupancy-5 config with
 nbatch_fa 32 / nbatch_K 256 instead of the current (256,256,32,256,3,
 64,128). One threshold flip + microbench run decides.
+
+## FATTN experiments 2+3: ncols16 geometry + 3-block occupancy (2026-09-02) - CLOSED, +0.5% (noise class)
+
+Lever 2 (COLS16): launch-threshold flip routing tok=384 to the
+(256,256,16,256,5,32,256) row (nbatch_fa 32, nbatch_K 256; 77 VGPR,
+LDS ~26K, 2 blocks/CU). Result: 122.606 ms vs 123.257 stock (+0.5%).
+Lever 3 (OCC3): new row (256,256,16,256,6,32,128) - LDS ~17.9K fits
+3 blocks/CU, hardware occupancy to hide the 31% LDS-wait. Result:
+122.586 ms - identical to lever 2. Extra resident waves did not change
+the class rate: the LDS-wait is intra-wave dependency latency (operand
+loads feeding MADs of the same wave), not LDS-port contention - more
+co-resident blocks do not fill it.
+
+FATTN verdict: class frontier ~122.6 ms / 9.24 TFLOP/s = +0.5% over
+stock (worth ~0.07% of total PP). Both stock geometries and both
+occupancy levels measured; scheduling restructures rejected (exp 1).
+fattn_tile joins mul_mat_q at its measured ceiling on this
+compiler/silicon. All flags (QPIPE, COLS16, OCC3) remain default OFF;
+experiment builds (build-qpipe, build-cols16, build-occ3) retained.
+
+== PP campaign final state (E88-E103) ==
+- MMQ: 5 restructures rejected; ~41% issue ceiling structural
+- fattn: 1 restructure rejected, 2 geometry/occupancy probes = noise
+- mix surgery (v2): PP-neutral, quality win available
+- config space: exhausted pre-campaign (ub/ts/sm/pipeline/ctx plateau)
+- production frontier: i1 lane 371-393 client pp (speed mix),
+  UD lane ~350 client pp @256k (quality mix)
