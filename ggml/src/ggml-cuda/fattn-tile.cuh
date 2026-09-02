@@ -608,6 +608,62 @@ static __device__ __forceinline__ void flash_attn_tile_iter_KQ(
 #endif
     __syncthreads();
 
+#if GGML_CUDA_VEGA_TUNE_FATTN_QPIPE && defined(FAST_FP16_AVAILABLE)
+    // Software-pipelined k-steps: prefetch step s+1's operand fragments into
+    // the alternate register buffer while step s's MADs run, hiding the LDS
+    // return latency (31% of VALU-active, rocprof 2026-09-02). Same loads,
+    // same addresses, same arithmetic order -> bit-identical results.
+    static_assert((nbatch_K/2) % cpy_ne == 0, "bad nbatch_K");
+    constexpr int k_steps = nbatch_K/2 / cpy_ne;
+    __align__(16) half2 K_k[2][nbatch_fa/(np*warp_size)][cpy_ne];
+    __align__(16) half2 Q_k[2][cpw][cpy_ne];
+
+#pragma unroll
+    for (int i_KQ_0 = 0; i_KQ_0 < nbatch_fa; i_KQ_0 += np*warp_size) {
+        const int i_KQ = i_KQ_0 + (threadIdx.y % np)*warp_size + threadIdx.x;
+
+        ggml_cuda_memcpy_1<cpy_nb>(&K_k[0][i_KQ_0/(np*warp_size)], &KV_tmp[i_KQ*(nbatch_K/2 + cpy_ne)]);
+    }
+#pragma unroll
+    for (int jc0 = 0; jc0 < cpw; ++jc0) {
+        const int jc = jc0 + (threadIdx.y / np)*cpw;
+
+        ggml_cuda_memcpy_1<cpy_nb>(&Q_k[0][jc0], &Q_tmp[jc*(DKQ/2) + k_KQ_0/2]);
+    }
+
+#pragma unroll
+    for (int s = 0; s < k_steps; ++s) {
+        const int cur = s & 1;
+        const int nxt = cur ^ 1;
+
+        if (s + 1 < k_steps) {
+            const int k_KQ_1 = (s + 1)*cpy_ne;
+#pragma unroll
+            for (int i_KQ_0 = 0; i_KQ_0 < nbatch_fa; i_KQ_0 += np*warp_size) {
+                const int i_KQ = i_KQ_0 + (threadIdx.y % np)*warp_size + threadIdx.x;
+
+                ggml_cuda_memcpy_1<cpy_nb>(&K_k[nxt][i_KQ_0/(np*warp_size)], &KV_tmp[i_KQ*(nbatch_K/2 + cpy_ne) + k_KQ_1]);
+            }
+#pragma unroll
+            for (int jc0 = 0; jc0 < cpw; ++jc0) {
+                const int jc = jc0 + (threadIdx.y / np)*cpw;
+
+                ggml_cuda_memcpy_1<cpy_nb>(&Q_k[nxt][jc0], &Q_tmp[jc*(DKQ/2) + k_KQ_0/2 + k_KQ_1]);
+            }
+        }
+
+#pragma unroll
+        for (int i_KQ_0 = 0; i_KQ_0 < nbatch_fa; i_KQ_0 += np*warp_size) {
+#pragma unroll
+            for (int jc0 = 0; jc0 < cpw; ++jc0) {
+#pragma unroll
+                for (int k = 0; k < cpy_ne; ++k) {
+                    ggml_cuda_mad(KQ_acc[i_KQ_0/(np*warp_size)*cpw + jc0], K_k[cur][i_KQ_0/(np*warp_size)][k], Q_k[cur][jc0][k]);
+                }
+            }
+        }
+    }
+#else
 #ifdef FAST_FP16_AVAILABLE
     static_assert((nbatch_K/2) % cpy_ne == 0, "bad nbatch_K");
 #pragma unroll
@@ -654,6 +710,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter_KQ(
             }
         }
     }
+#endif // GGML_CUDA_VEGA_TUNE_FATTN_QPIPE
 
     if (k_KQ_0 + nbatch_K < DKQ) {
         __syncthreads(); // Sync not needed on last iteration.

@@ -23,6 +23,8 @@ JOBS=${JOBS:-$(nproc)}
 TARGETS=${TARGETS:-}
 
 on_off() { [ "$1" = "1" ] && echo ON || echo OFF; }
+VEGA_FATTN=$(on_off  "${VEGA_TUNE_FATTN:-1}")
+VEGA_FATTN_QPIPE=$(on_off "${VEGA_TUNE_FATTN_QPIPE:-0}")
 VEGA_MMQ=$(on_off    "${VEGA_TUNE_MMQ:-1}")
 VEGA_MMQ_DUALACC=$(on_off "${VEGA_TUNE_MMQ_DUALACC:-0}")
 VEGA_MMQ_Q8LDR=$(on_off   "${VEGA_TUNE_MMQ_Q8LDR:-0}")
@@ -55,7 +57,8 @@ cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" \
     -DAMDGPU_TARGETS=gfx906 \
     -DGGML_VULKAN=ON \
     -DGGML_CUDA_VEGA_TUNE=ON \
-    -DGGML_CUDA_VEGA_TUNE_FATTN=ON \
+    -DGGML_CUDA_VEGA_TUNE_FATTN="$VEGA_FATTN" \
+    -DGGML_CUDA_VEGA_TUNE_FATTN_QPIPE="$VEGA_FATTN_QPIPE" \
     -DGGML_CUDA_VEGA_TUNE_MMQ="$VEGA_MMQ" \
     -DGGML_CUDA_VEGA_TUNE_MMQ_DUALACC="$VEGA_MMQ_DUALACC" \
     -DGGML_CUDA_VEGA_TUNE_MMQ_Q8LDR="$VEGA_MMQ_Q8LDR" \
@@ -75,5 +78,5 @@ readelf -h "$BUILD_DIR/bin/llama-server" > /dev/null \
     && echo "llama-server: valid ELF"
 echo
 echo "== config actually in the cache"
-grep -E "^GGML_CUDA_VEGA_TUNE(_FATTN|_MMQ|_MMQ_DUALACC|_MMQ_Q8LDR|_TOPK|_GRAPHS)?:BOOL|^CMAKE_HIP_FLAGS:STRING" \
+grep -E "^GGML_CUDA_VEGA_TUNE(_FATTN|_FATTN_QPIPE|_MMQ|_MMQ_DUALACC|_MMQ_Q8LDR|_TOPK|_GRAPHS)?:BOOL|^CMAKE_HIP_FLAGS:STRING" \
     "$BUILD_DIR/CMakeCache.txt" | grep -v ADVANCED
