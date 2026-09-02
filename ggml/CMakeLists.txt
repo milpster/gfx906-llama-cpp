@@ -211,6 +211,7 @@ option(GGML_CUDA_NCCL                       "ggml: use NVIDIA Collective Comm. L
 option(GGML_CUDA_VEGA_TUNE                 "ggml: Vega 20 (gfx906) kernel tuning"            ON)
 option(GGML_CUDA_VEGA_TUNE_FATTN           "ggml: Vega 20 flash-attention tile tuning"       ON)
 option(GGML_CUDA_VEGA_TUNE_MMQ             "ggml: Vega 20 matmul (mmq) tile tuning"          ON)
+option(GGML_CUDA_VEGA_TUNE_MMQ_DUALACC     "ggml: Vega 20 mmq dual accumulator chains"       OFF)
 option(GGML_CUDA_VEGA_TUNE_TOPK            "ggml: Vega 20 top-k sampling tuning"             ON)
 option(GGML_CUDA_VEGA_TUNE_GRAPHS          "ggml: Vega 20 graph capture tuning"              ON)
 set   (GGML_CUDA_COMPRESSION_MODE "size" CACHE STRING

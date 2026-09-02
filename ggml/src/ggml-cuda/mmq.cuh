@@ -910,6 +910,13 @@ static __device__ __forceinline__ void mul_mat_q_process_tile(
     constexpr int ITER_K          = ggml_cuda_mmq_get_K_vram(type, J, fallback);
     constexpr int blocks_per_iter = ITER_K / qk;
 
+#if GGML_CUDA_VEGA_TUNE_MMQ_DUALACC
+    // The two vec_dot calls per kb0 step feed independent accumulators.
+    // This halves the serial dot4 -> I2F -> FMUL -> FADD chain per element,
+    // which is the dominant stall at 1 wave per SIMD (rocprof 2026-08-18).
+    // Reassociates the sum: gated by perplexity, not sha-identical output.
+    float sum_b[J*I / (nwarps*warp_size)] = {0.0f};
+#endif
     float sum[J*I / (nwarps*warp_size)] = {0.0f};
 
     constexpr int sz = sizeof(block_q8_1_mmq) / sizeof(int);
@@ -944,10 +951,21 @@ static __device__ __forceinline__ void mul_mat_q_process_tile(
 
         __syncthreads();
 
+#if GGML_CUDA_VEGA_TUNE_MMQ_DUALACC
+        vec_dot(tile_x, tile_y, sum_b, MMQ_TILE_NE_K);
+#else
         vec_dot(tile_x, tile_y, sum, MMQ_TILE_NE_K);
+#endif
 
         __syncthreads();
     }
+
+#if GGML_CUDA_VEGA_TUNE_MMQ_DUALACC
+#pragma unroll
+    for (int l = 0; l < J*I / (nwarps*warp_size); ++l) {
+        sum[l] += sum_b[l];
+    }
+#endif
 
     if (fixup) {
         write_back(sum, ids_dst, tmp_fixup + blockIdx.x*(J*I), y_scale, I, I, J);

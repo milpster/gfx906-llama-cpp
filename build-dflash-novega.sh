@@ -24,6 +24,7 @@ TARGETS=${TARGETS:-}
 
 on_off() { [ "$1" = "1" ] && echo ON || echo OFF; }
 VEGA_MMQ=$(on_off    "${VEGA_TUNE_MMQ:-1}")
+VEGA_MMQ_DUALACC=$(on_off "${VEGA_TUNE_MMQ_DUALACC:-0}")
 VEGA_TOPK=$(on_off   "${VEGA_TUNE_TOPK:-1}")
 VEGA_GRAPHS=$(on_off "${VEGA_TUNE_GRAPHS:-1}")
 HIP_FLAGS=""
@@ -55,6 +56,7 @@ cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" \
     -DGGML_CUDA_VEGA_TUNE=ON \
     -DGGML_CUDA_VEGA_TUNE_FATTN=ON \
     -DGGML_CUDA_VEGA_TUNE_MMQ="$VEGA_MMQ" \
+    -DGGML_CUDA_VEGA_TUNE_MMQ_DUALACC="$VEGA_MMQ_DUALACC" \
     -DGGML_CUDA_VEGA_TUNE_TOPK="$VEGA_TOPK" \
     -DGGML_CUDA_VEGA_TUNE_GRAPHS="$VEGA_GRAPHS" \
     -DGGML_HIP_NO_VMM=ON \
@@ -71,5 +73,5 @@ readelf -h "$BUILD_DIR/bin/llama-server" > /dev/null \
     && echo "llama-server: valid ELF"
 echo
 echo "== config actually in the cache"
-grep -E "^GGML_CUDA_VEGA_TUNE(_FATTN|_MMQ|_TOPK|_GRAPHS)?:BOOL|^CMAKE_HIP_FLAGS:STRING" \
+grep -E "^GGML_CUDA_VEGA_TUNE(_FATTN|_MMQ|_MMQ_DUALACC|_TOPK|_GRAPHS)?:BOOL|^CMAKE_HIP_FLAGS:STRING" \
     "$BUILD_DIR/CMakeCache.txt" | grep -v ADVANCED
