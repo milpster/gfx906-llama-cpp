@@ -510,3 +510,34 @@ ILP unroll: spill-killed; scale-free: requant-cost-killed). The ~41%
 issue-rate ceiling of mul_mat_q on gfx906 stands as a structural limit of
 the I=128 tile config on this silicon. Production remains: legacy MMQ,
 330-333 pp1, sha 847d5d35a659.
+
+## MMQ experiment 4: dual accumulator chains (2026-09-02) - REJECTED
+
+Lever (the one variant not in the 2026-08-18 triple): caller-level chain
+split in mul_mat_q_process_tile - the two per-kb0 vec_dot calls feed
+separate sum/sum_b accumulators (merged pre-write_back), halving the
+serial dot4->I2F->FMUL->FADD chain per element. vec_dot bodies untouched
+(phase-split lesson respected). Gated GGML_CUDA_VEGA_TUNE_MMQ_DUALACC,
+default OFF, build-dualacc only.
+
+ISA pre-check: hot J=64 kernels +32 VGPR exactly (Q6_K 152->184, Q8_0
+119->151), all instances <= 249, zero new spill. E91 attribution:
+96.9% of mul_mat_q cycles run J=64 fb=0 - the clean shapes, not the
+ballooned J=48/24 ones.
+
+Result (UD-Q6_K_L @256k ab-bench, E92 scripts): A 350.3 pp1 / B 304.3
+(-13.1%), tg 16.4 -> 16.6, acc 0.664 both, sha 6b38a21df2bf BOTH
+(reassociation never flipped a greedy argmax in 1024 tokens - numerics
+impact negligible, verdict purely perf). #23685 ruled out as confound
+(same-day rows 374.0/375.2, PP-flat).
+
+Mechanism: at 1 wave/SIMD, doubling live accumulators (32 -> 64) costs
+more in operand-collector/register-file pressure (and a worse LLVM
+global schedule) than the chain-shortening recovers. Fourth family of
+inner-loop restructures to regress (unroll, prefetch, phase-split,
+scale-free, dual-acc): the ~41% issue-rate ceiling of mul_mat_q on
+gfx906 is a structural limit for C++-level work under this compiler.
+Route is CLOSED. Remaining PP levers: #21698 q8_0 loader instruction-mix
+(~7-8% cap on UD, E91-pro-rated), Q5_K->Q6_K requant in a UD rev
+(~2-3%), fattn_tile class (14.3%). Production unchanged (DUALACC never
+default-on; build-dualacc retained as the experiment dir).
