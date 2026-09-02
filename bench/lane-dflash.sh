@@ -101,7 +101,7 @@ if [ "${PROBE:-0}" = "1" ]; then
   exit 0
 fi
 
-if ! FILL2="$FILL2" FILL1="${FILL1:-120000}" TG_N="${TG_N:-1024}" \
+if ! FILL2="${FILL2:-0}" FILL1="${FILL1:-120000}" TG_N="${TG_N:-1024}" \
      python3 bench/lane-client.py "$PORT" | tee /tmp/opencode/lane-$LANE.json; then
   echo "LANE $LANE FAILED - server log tail:" >&2
   tail -30 "$LOG" >&2
