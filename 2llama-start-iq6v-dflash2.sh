@@ -48,5 +48,6 @@ exec "$BIN" \
   -ctk f16 -ctv q8_0 \
   -cram 28000 --reasoning-format deepseek \
   --chat-template-file "$SCRIPT_DIR/froggeric_chat_templ.jinja" \
-  --pipeline-parallel off \
-  -ts 35,20,45 -sm layer -c 250000
+  --pipeline-parallel on \
+  -ts 35,20,45 -sm layer -c 250000 \
+  --no-mmproj-offload
