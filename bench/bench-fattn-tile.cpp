@@ -52,7 +52,7 @@ struct Built {
 
 static Built build(const Shapes & s) {
     Built b;
-    struct ggml_init_params ip = {(size_t) 512 << 20, NULL, false};
+    struct ggml_init_params ip = {(size_t) 512 << 20, NULL, true};
     b.ctx = ggml_init(ip);
     b.q = ggml_new_tensor_4d(b.ctx, GGML_TYPE_F32, s.dkq, s.tok, s.nh_q, 1);
     b.k = ggml_new_tensor_4d(b.ctx, GGML_TYPE_F16, s.dkq, s.kv, s.nh_kv, 1);
