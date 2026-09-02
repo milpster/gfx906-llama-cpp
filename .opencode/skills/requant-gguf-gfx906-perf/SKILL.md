@@ -37,6 +37,12 @@ Rules that follow:
   were measured on one model family - re-derive from a rocprof pass
   (see bench/FINDINGS.md "PMU profiling verdict") when the model
   family changes.
+- TREAT THE MODEL AS AN UPPER BOUND. Attribution shares count cycles,
+  not critical-path contribution: a type concentrated on one device
+  may be removable with zero end-to-end effect if that pipeline stage
+  is not binding (measured 2026-09-02: removing the whole Q5_K class,
+  predicted +3.8%, delivered 0.0% - FINDINGS experiment 6). Only an
+  A/B lane decides; discount projections for stage criticality.
 
 ## Survey stock variants without downloading
 

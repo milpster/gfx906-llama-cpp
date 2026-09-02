@@ -574,3 +574,31 @@ script's "== trial rows:" footer printed the previous experiment's rows
 (dualacc-B 304.3, the E93 regression). The real q8ldr rows were correct
 in trials.md all along (347.2/350.6). Grep fixed. The ab-bench BIN
 default change stands on its own merits (stale build-vega20 pointer).
+
+## MMQ experiment 6: UD v2 Q5_K->Q6_K splice (2026-09-02) - PP-NEUTRAL, model corrected
+
+Lever: E91 attribution showed Q5_K at 1.30 cyc/byte vs Q6_K 0.74
+(8.6% of MMQ cycles for 6.6% of bytes). v2 = L with all 38 Q5_K
+tensors promoted to imatrix Q6_K (828/866 tensors byte-identical,
+journal E96). Units model predicted +3.8% pp.
+
+Result (ab-udv2.sh, same binary, only model differs): A 346.0 / B
+345.8 pp1 (-0.06%, noise), tg 16.5 -> 16.8 (+1.8%, weak positive),
+acc .664/.648 (band), sha moved as designed (weights changed).
+
+Post-mortem of the model error:
+- Drafter contamination ruled out: grid-size split of the attribution
+  CSV shows 25.03/25.03 Gcyc of Q5_K ran in target PP shapes.
+- Remaining explanation: pipeline stage criticality. The Q5_K class
+  sat entirely on GPU0 (16% of GPU0 busy) - attribution shares count
+  cycles, not critical-path contribution. Removing non-binding-stage
+  work does not move a layer-split pipeline's end-to-end rate.
+- LESSON: per-type attribution shares are UPPER BOUNDS on recoverable
+  PP. Any mix-surgery projection must be discounted by stage
+  criticality, which only an A/B measures. Update the cost model in
+  .opencode/skills/requant-gguf-gfx906-perf accordingly.
+
+Disposition: v2 is PP-neutral, TG mildly positive, quality strictly
+>= L (38 tensors up-quantized, imatrix). Adopt for quality at +300
+MiB if wanted; discard otherwise. Production L unchanged. This closes
+the mix-surgery PP lever on this rig.
