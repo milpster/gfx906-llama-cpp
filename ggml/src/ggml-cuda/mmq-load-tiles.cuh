@@ -485,7 +485,15 @@ template <ggml_type type, int J, bool fallback> static __device__ __forceinline_
 #endif // defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
 
     // MMQ_ITER_K / (4 * QR8_0) == 64 required. but NV has only 32 threads per warp
+#if GGML_CUDA_VEGA_TUNE_MMQ_Q8LDR
+    // GCN5 remap (upstream #21698): 16 threads per row and an unrolled k loop
+    // cover all 2*MMQ_TILE_NE_K ints per row - 4 independent loads per thread
+    // for the compiler to pipeline (vram -> regs -> lds). Same stored values
+    // as the 32-thread form: dest j comes from block j/8, int j%8 either way.
+    constexpr int threads_per_row = 16;
+#else
     constexpr int threads_per_row = 32;
+#endif
     constexpr int nrows = warp_size / threads_per_row;
     const int txi = warp_size > threads_per_row ? threadIdx.x % threads_per_row : threadIdx.x;
     const int kbx  = txi / QI8_0;
@@ -504,10 +512,15 @@ template <ggml_type type, int J, bool fallback> static __device__ __forceinline_
 #if defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
         x_qs[i*sram_stride + 0             + txi] = get_int_b2(bxi[0].qs,                   kqsx);
         x_qs[i*sram_stride + MMQ_TILE_NE_K + txi] = get_int_b2(bxi[MMQ_TILE_NE_K/QI8_0].qs, kqsx);
+#elif GGML_CUDA_VEGA_TUNE_MMQ_Q8LDR
+#pragma unroll
+        for (int k = 0; k < 2*MMQ_TILE_NE_K; k += threads_per_row) {
+            x_qs[i*(2*MMQ_TILE_NE_K + 1) + k + txi] = get_int_b2(bxi[k/QI8_0].qs, kqsx);
+        }
 #else
         x_qs[i*(2*MMQ_TILE_NE_K + 1) + 0             + txi] = get_int_b2(bxi[0].qs,                   kqsx);
         x_qs[i*(2*MMQ_TILE_NE_K + 1) + MMQ_TILE_NE_K + txi] = get_int_b2(bxi[MMQ_TILE_NE_K/QI8_0].qs, kqsx);
-#endif // defined(AMD_MFMA_AVAILABLE) || defined(TURING_MMA_AVAILABLE) || defined(AMD_WMMA_AVAILABLE)
+#endif
     }
 
     constexpr int blocks_per_tile_x_row = 2*MMQ_TILE_NE_K / QI8_0;
