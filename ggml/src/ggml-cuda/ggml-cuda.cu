@@ -2675,7 +2675,13 @@ static bool ggml_cuda_graph_check_compability(ggml_cgraph * cgraph) {
 }
 
 static const void * ggml_cuda_graph_get_key(ggml_cgraph * cgraph) {
-    return cgraph->nodes[0];
+    // Mix the shape into the key: alternating draft/verify shapes in spec
+    // decode share nodes[0] via arena reuse and would thrash one cache entry
+    // through warmup-reset/re-capture/re-instantiate cycles.
+    uintptr_t h = (uintptr_t) cgraph->nodes[0];
+    h ^= (uintptr_t) cgraph->n_nodes * (uintptr_t) 0x9E3779B97F4A7C15ull;
+    h ^= (uintptr_t) cgraph->nodes[0]->ne[1] * (uintptr_t) 0xBF58476D1CE4E5B9ull;
+    return (const void *) h;
 }
 
 static bool ggml_cuda_graph_update_required(ggml_backend_cuda_context * cuda_ctx, ggml_cgraph * cgraph) {
@@ -2720,9 +2726,60 @@ static bool ggml_cuda_graph_update_required(ggml_backend_cuda_context * cuda_ctx
     return res;
 }
 
-static void ggml_cuda_graph_update_executable(ggml_backend_cuda_context * cuda_ctx, const void * graph_key) {
-    ggml_cuda_graph * graph = cuda_ctx->cuda_graph(graph_key);
+static void ggml_cuda_graph_update_executable(ggml_backend_cuda_context & cuda_ctx, const void * graph_key) {
+    ggml_cuda_graph * graph = cuda_ctx.cuda_graph(graph_key);
 
+#if defined(GGML_USE_HIP)
+    // hipGraphExecUpdate applies a kernel-function change without validating
+    // launch geometry. When the kernel choice shifts between captures (e.g.
+    // MUL_MAT_ID crossing the MMVQ batch threshold swaps quantize_mmq_q8_1
+    // (128 threads) and quantize_q8_1<32>), the exec ends with block dims
+    // over the new kernel's launch bounds - undefined behavior at replay.
+    // Pointer-only updates with an unchanged function set are safe and much
+    // cheaper than re-instantiating, so compare the captured kernel functions
+    // against the previous capture and only re-instantiate on a change.
+    bool funcs_changed = false;
+    {
+        size_t n_nodes = 0;
+        CUDA_CHECK(hipGraphGetNodes(graph->graph, nullptr, &n_nodes));
+        std::vector<hipGraphNode_t> nodes(n_nodes);
+        if (n_nodes > 0) {
+            CUDA_CHECK(hipGraphGetNodes(graph->graph, nodes.data(), &n_nodes));
+        }
+        std::vector<const void *> funcs;
+        funcs.reserve(n_nodes);
+        for (size_t i = 0; i < n_nodes; ++i) {
+            hipGraphNodeType type;
+            CUDA_CHECK(hipGraphNodeGetType(nodes[i], &type));
+            if (type != hipGraphNodeTypeKernel) {
+                continue;
+            }
+            hipKernelNodeParams p;
+            CUDA_CHECK(hipGraphKernelNodeGetParams(nodes[i], &p));
+            funcs.push_back(p.func);
+        }
+        funcs_changed = funcs != graph->kernel_funcs;
+        graph->kernel_funcs = std::move(funcs);
+    }
+    if (funcs_changed) {
+        GGML_LOG_DEBUG("%s: HIP: kernel set changed, re-instantiating graph exec\n", __func__);
+        CUDA_CHECK(cudaGraphExecDestroy(graph->instance));
+        graph->instance = nullptr;
+        CUDA_CHECK(cudaGraphInstantiate(&graph->instance, graph->graph, NULL, NULL, 0));
+        return;
+    }
+    {
+        hipGraphNode_t errorNode;
+        hipGraphExecUpdateResult result_info;
+        hipError_t stat = hipGraphExecUpdate(graph->instance, graph->graph, &errorNode, &result_info);
+        if (stat != hipSuccess) {
+            (void)hipGetLastError();
+            CUDA_CHECK(cudaGraphExecDestroy(graph->instance));
+            graph->instance = nullptr;
+            CUDA_CHECK(cudaGraphInstantiate(&graph->instance, graph->graph, NULL, NULL, 0));
+        }
+    }
+#else
 #if CUDART_VERSION >= 12000
     cudaGraphExecUpdateResultInfo result_info;
     cudaError_t stat = cudaGraphExecUpdate(graph->instance, graph->graph, &result_info);
@@ -2746,6 +2803,7 @@ static void ggml_cuda_graph_update_executable(ggml_backend_cuda_context * cuda_c
     } else {
         GGML_ASSERT(stat == cudaSuccess);
     }
+#endif // defined(GGML_USE_HIP)
 }
 #endif // USE_CUDA_GRAPH
 
@@ -4317,9 +4375,8 @@ static void ggml_cuda_graph_evaluate_and_capture(ggml_backend_cuda_context * cud
         ggml_cuda_graph * graph = cuda_ctx->cuda_graph(graph_key);
         if (graph->instance == nullptr) { // Create executable graph from captured graph.
             CUDA_CHECK(cudaGraphInstantiate(&graph->instance, graph->graph, NULL, NULL, 0));
-        }
-        if (cuda_graph_update_required) { // Update graph executable
-            ggml_cuda_graph_update_executable(cuda_ctx, graph_key);
+        } else if (cuda_graph_update_required) { // Update graph executable
+            ggml_cuda_graph_update_executable(*cuda_ctx, graph_key);
         }
         // Launch graph
         CUDA_CHECK(cudaGraphLaunch(graph->instance, cuda_ctx->stream()));
@@ -4376,6 +4433,16 @@ static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend, 
         const bool graph_compatible = ggml_cuda_graph_check_compability(cgraph);
         if (graph_compatible) {
             const bool properties_changed = ggml_cuda_graph_update_required(cuda_ctx, cgraph);
+
+            graph->n_prop_checks++;
+            if (properties_changed) {
+                graph->n_prop_resets++;
+                if (graph->n_prop_resets >= 4 && graph->n_prop_resets * 10 > graph->n_prop_checks) {
+                    graph->unstable_disabled = true;
+                    GGML_LOG_DEBUG("%s: disabling CUDA graph for unstable entry (%d resets / %d checks)\n",
+                        __func__, graph->n_prop_resets, graph->n_prop_checks);
+                }
+            }
 
             if (!graph->warmup_complete) {
                 // Warmup: need at least 2 calls with no property change on the 2nd call

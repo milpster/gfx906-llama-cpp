@@ -1261,6 +1261,14 @@ struct ggml_cuda_graph {
     bool warmup_complete = false;
     uint64_t uid = 0;
     int64_t last_used_time = 0;
+    // kernel functions of the last capture, to detect function changes that
+    // hipGraphExecUpdate would apply without validating launch geometry
+    std::vector<const void *> kernel_funcs;
+    // graphs never amortize for entries whose properties keep changing
+    // (spec decode churns shapes and KV pointers) - they self-disable
+    int n_prop_checks = 0;
+    int n_prop_resets = 0;
+    bool unstable_disabled = false;
     struct node_properties {
         ggml_tensor node;
         void *   node_src_data_ptrs[GGML_MAX_SRC];
@@ -1271,7 +1279,7 @@ struct ggml_cuda_graph {
 
     bool is_enabled() const {
         static const bool disable_cuda_graphs_due_to_env = (getenv("GGML_CUDA_DISABLE_GRAPHS") != nullptr);
-        return !(disable_due_to_gpu_arch || disable_cuda_graphs_due_to_env);
+        return !(disable_due_to_gpu_arch || unstable_disabled || disable_cuda_graphs_due_to_env);
     }
 #endif
 };

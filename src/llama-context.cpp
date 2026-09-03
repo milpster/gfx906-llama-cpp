@@ -1392,6 +1392,8 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
     // in order to correctly reuse a graph, it's full topology has to be uniquely determined by these parameters
     const auto gparams = graph_params(res, ubatch, mctx, gtype);
 
+    bool graph_sequence_layout_changed = false;
+
     if (!graph_reuse_disable && res->can_reuse(gparams)) {
         //LLAMA_LOG_DEBUG("%s: reusing previous graph\n", __func__);
 
@@ -1404,6 +1406,19 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
 
         n_reused++;
     } else {
+        graph_sequence_layout_changed = graph_seq_ids.size() != ubatch.n_seqs_unq;
+        for (size_t i = 0; !graph_sequence_layout_changed && i < graph_seq_ids.size(); ++i) {
+            graph_sequence_layout_changed = graph_seq_ids[i] != ubatch.seq_id_unq[i];
+        }
+
+        // A sequence-layout transition rebuilds persistent per-sequence graph state.
+        // Pipeline compute is asynchronous, so a previous graph may still be using it
+        // when a server slot joins, leaves, or is replaced. Ordinary single-sequence
+        // shape changes retain their cross-ubatch overlap.
+        if (cparams.pipeline_parallel && !graph_seq_ids.empty() && graph_sequence_layout_changed) {
+            ggml_backend_sched_synchronize(sched.get());
+        }
+
         res->reset();
 
         ggml_backend_sched_reset(sched.get());
@@ -1443,6 +1458,10 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
         LLAMA_LOG_ERROR("%s: failed to compute graph, compute status: %d\n", __func__, status);
         ret = status;
         return nullptr;
+    }
+
+    if (graph_sequence_layout_changed) {
+        graph_seq_ids.assign(ubatch.seq_id_unq, ubatch.seq_id_unq + ubatch.n_seqs_unq);
     }
 
     ret = GGML_STATUS_SUCCESS;
