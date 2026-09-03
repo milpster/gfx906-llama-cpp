@@ -30,7 +30,7 @@ DRAFTER=${DRAFTER:-/home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf}
 TEMPLATE=${TEMPLATE:-"$PWD/froggeric_chat_templ.jinja"}
 FORK_BIN=${FORK_BIN:-$PWD/build-dflash-novega}
 MAIN_BIN=${MAIN_BIN:-/home/srcds/dev/llama.cpp/build-stock}
-# fork-only flag (removed upstream); fork default is off, explicit for fidelity
+# fork-only flag; fork default is off, explicit for fidelity
 EXTRA_FORK=${EXTRA_FORK:---pipeline-parallel off}
 mkdir -p bench/logs /tmp/opencode
 

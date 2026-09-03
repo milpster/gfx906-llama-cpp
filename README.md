@@ -1,10 +1,11 @@
 > ## gfx906 fork (this repository)
 >
-> **Why this fork exists:** upstream llama.cpp carries no tuning for AMD
-> Vega 20 (gfx906: Radeon VII / MI50 / MI60) - GCN5 wave64 hardware
-> silently falls back to wave32 RDNA2 kernel tables - and it removed the
-> heterogeneous multi-GPU pipeline this class of rig depend on. This fork
-> keeps those GPUs production-viable: it runs Qwen3.8-27B (i1-Q6_K) with
+ > **Why this fork exists:** upstream llama.cpp carries no tuning for AMD
+ > Vega 20 (gfx906: Radeon VII / MI50 / MI60) - GCN5 wave64 hardware
+ > silently falls back to wave32 RDNA2 kernel tables - and its multi-GPU
+ > pipeline-parallel path offers no user control and no safe fallback on
+ > tight mixed ROCm+Vulkan fits (audit E117). This fork
+ > keeps those GPUs production-viable: it runs Qwen3.8-27B (i1-Q6_K) with
 > DFlash2 speculative decoding at **250k context on 40 GB of VRAM**
 > across 2x Radeon VII + a GTX 3080 (Vulkan), at **+14% prefill over
 > upstream master** (+4.5% more from the 2026-09-03 Q6_K tile retune)
@@ -15,7 +16,7 @@
 > | You run... | You get... |
 > |---|---|
 > | gfx906 / MI50 / Radeon VII | wave64-correct MMQ, top-k and flash-attn tables: +14% PP and +9% deep fill vs upstream master (same binary-config A/B); sha-gated so speed is the only thing that moves |
-> | mixed ROCm + Vulkan GPUs | `-sm layer` **pipeline parallelism** (removed upstream), `--pipeline-parallel on`, drafter pinning to one device, 35/20/45-style tensor splits |
+ > | mixed ROCm + Vulkan GPUs | `-sm layer` **pipeline parallelism** with explicit `--pipeline-parallel on|off` control and a safe reserve fallback, drafter pinning to one device, 35/20/45-style tensor splits |
 > | big models, long context, tight VRAM | 250k ctx on 40 GB: f16-K/q8_0-V KV cache, split fitting, HIP-graph + allocation robustness fixes for deliberately tight fits |
 > | Qwen3.8 / qwen4exp (MoE + GDN hybrid) | DFlash2 drafter integration, adaptive MTP draft depth, per-round acceptance logging, GDN chunked prefill kernel, upstream qwen4exp fixes merged same-week |
 > | anyone valuing reproducibility | every tuning change and every upstream merge is gated on unchanged temp-0 sha - if the hash moves, the change does not ship |
@@ -53,9 +54,10 @@
 >   (`GGML_CUDA_Q8_1_CACHE`), robustness fixes (fattn-vec mask stride,
 >   pipeline drain before seq-layout reset, HIP graph exec
 >   reinstantiation).
-> - **Upstream sync cadence**: repeated full merges, latest 2026-09-03
->   (65 commits). Every merge is lane-gated: same-day A/B vs the prior
->   binary; pass = unchanged canonical sha + perf inside the day's noise.
+ > - **Upstream sync cadence**: repeated full merges, latest 2026-09-03
+ >   evening (65 commits, upstream 95ef7fc16). Every merge is lane-gated:
+ >   same-day A/B vs the prior binary; pass = unchanged canonical sha +
+ >   perf inside the day's noise.
 >
 > ### Provenance: what we surveyed, adopted, and rejected
 >
@@ -70,7 +72,8 @@
 > | upstream #27816 | DFlash2 drafter rewrite | merged 2026-08-28, taken wholesale |
 > | upstream #27812 | vulkan view-alias fix (spec verify corruption) | ported verbatim (E18), later converged via merge |
 > | upstream #27841 (open) | GCN MMQ tile table (Radeon VII-tuned) | Q6_K I=64/occ2 row adopted: **+4.5% PP, +2.7% fill**, sha-identical; Q8_0 rows cross-checked equal to ours |
-> | mx-llama.cpp fork | GDN chunked prefill, q8_1 activation cache | bit-exact, perf-neutral on this model; kept default-on, env-gated |
+ > | eaman patch store (https://store.piffa.net/lm/bug/) | refined MTP joint fit (target+draft fitted together), `--pipeline-parallel` and `--hip-fa-force-vec` controls, per-device fixed-layout fit | adopted 2026-08-24 (branch eaman-prod): +0.8% PP = noise, bit-identical outputs; origin of the production `--pipeline-parallel` control |
+ > | mx-llama.cpp fork | GDN chunked prefill, q8_1 activation cache | bit-exact, perf-neutral on this model; kept default-on, env-gated |
 > | mx-llama.cpp fork | robustness family (fattn-vec stride, pipeline drain, HIP graph exec reinstantiate) | adopted; targets our tight-VRAM + HIP-graph regime |
 > | upstream 2026-09-03 merge | qwen4exp fixes, MoE expert-reduction fusion (#25952), vulkan FA dequant (#28190), RAM-peak (#27483), quantize row-slab (#27830) | all ride along at zero measured cost (lane-gated) |
 >
@@ -82,7 +85,8 @@
 > | upstream #23685 | 4x packed q8_1 MMVQ | flat on our Q6_K mix (E93-adjacent lanes) |
 > | mx fork | gallocr layout cache (+377% fill claim) | pathology absent on `-sm layer`: 6 reserves per fill, not per-ubatch (E109 probe) |
 > | mx fork | DFlash replay coupling (+74% PP claim) | our 8.6% spec prefill tax is SM contention on ROCm0, not replay stalls (E110) |
-> | mx fork | TP/`-sm tensor` + custom AllReduce stack | homogeneous-AMD-only; this rig is heterogeneous ROCm+Vulkan `-sm layer` |
+ > | eaman patch store | experimental rs line (recurrent-state speculative checkpoints) | wedges the server permanently on a client abort mid-PP (Vulkan fence never signals; gdb evidence bench/logs/gdb-wedge.log); author marks it experimental - reverted, branch `eaman-rs` kept for reference |
+ > | mx fork | TP/`-sm tensor` + custom AllReduce stack | homogeneous-AMD-only; this rig is heterogeneous ROCm+Vulkan `-sm layer` |
 > | fork probes | fattn cols16/occ3/qpipe, MMQ dual-acc | measured, rejected (E93: -13.1% pp; E101: -5.8%), kept env-off for reruns |
 >
 > **Checked, not applicable** (code-path or measurement proof)
