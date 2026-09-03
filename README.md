@@ -57,6 +57,57 @@
 >   (65 commits). Every merge is lane-gated: same-day A/B vs the prior
 >   binary; pass = unchanged canonical sha + perf inside the day's noise.
 >
+> ### Provenance: what we surveyed, adopted, and rejected
+>
+> Nothing here is taken on faith - every external idea ran through a lane
+> A/B or a code-path check. Full logs in `journal/`.
+>
+> **Adopted**
+>
+> | Source | What | Result |
+> |---|---|---|
+> | upstream #27210 (open) | adaptive MTP draft depth (`draft-mtp-adaptive`) | carried in fork; TG win at depth |
+> | upstream #27816 | DFlash2 drafter rewrite | merged 2026-08-28, taken wholesale |
+> | upstream #27812 | vulkan view-alias fix (spec verify corruption) | ported verbatim (E18), later converged via merge |
+> | upstream #27841 (open) | GCN MMQ tile table (Radeon VII-tuned) | Q6_K I=64/occ2 row adopted: **+4.5% PP, +2.7% fill**, sha-identical; Q8_0 rows cross-checked equal to ours |
+> | mx-llama.cpp fork | GDN chunked prefill, q8_1 activation cache | bit-exact, perf-neutral on this model; kept default-on, env-gated |
+> | mx-llama.cpp fork | robustness family (fattn-vec stride, pipeline drain, HIP graph exec reinstantiate) | adopted; targets our tight-VRAM + HIP-graph regime |
+> | upstream 2026-09-03 merge | qwen4exp fixes, MoE expert-reduction fusion (#25952), vulkan FA dequant (#28190), RAM-peak (#27483), quantize row-slab (#27830) | all ride along at zero measured cost (lane-gated) |
+>
+> **Measured and rejected** (kept default-off in tree where cheap)
+>
+> | Source | Idea | Why rejected |
+> |---|---|---|
+> | upstream #21698 | q8_0 loader remap (MMQ) | +28-36% claimed on MI50; +1.0% here - benefit is tile-config-dependent, our vega table already there (E95) |
+> | upstream #23685 | 4x packed q8_1 MMVQ | flat on our Q6_K mix (E93-adjacent lanes) |
+> | mx fork | gallocr layout cache (+377% fill claim) | pathology absent on `-sm layer`: 6 reserves per fill, not per-ubatch (E109 probe) |
+> | mx fork | DFlash replay coupling (+74% PP claim) | our 8.6% spec prefill tax is SM contention on ROCm0, not replay stalls (E110) |
+> | mx fork | TP/`-sm tensor` + custom AllReduce stack | homogeneous-AMD-only; this rig is heterogeneous ROCm+Vulkan `-sm layer` |
+> | fork probes | fattn cols16/occ3/qpipe, MMQ dual-acc | measured, rejected (E93: -13.1% pp; E101: -5.8%), kept env-off for reruns |
+>
+> **Checked, not applicable** (code-path or measurement proof)
+>
+> | Source | Idea | Why not applicable |
+> |---|---|---|
+> | upstream #28102 | FA tuning, +143% PP on the same model | fix lives in the WMMA/mma path; gfx906 has no WMMA (RDNA3/4-only), we run the tile kernel |
+> | upstream #25635 | XOR swizzle fattn K/V smem | touches `fattn-mma-f16.cuh` only - our tile kernel unaffected |
+> | upstream #28136 | qwen4exp PLE direct reads (>2x prefill) | pathology is mmap lazy paging; we run `--no-mmap` in prod and bench |
+> | upstream #28178 | copy kernel for small D2D copies | measured via `bench/rd2d-count` shim: 2.3 D2D calls/token, <0.2% of TG budget; GDN state stays in-graph |
+> | upstream #24546 | MoE MMQ N-tiles from expert width | 96.9% of our MMQ cycles run J=64 with zero fallback - no tile-tail waste to recover |
+> | upstream #28313 | ROCm top-k rewrite | our tiled top-k already validated; entire class bounded at <=0.4 t/s (E53) |
+> | upstream #27825 | HIP AllReduce | `-sm tensor`-only feature |
+> | upstream #26705, #27962 | Q4_K/Q5_K MMVQ branchless, IQ2/IQ3 SWAR | wrong quant mix (i1-Q6_K) |
+> | upstream #21170 | ROCm multi-GPU IMA fix | crash never recurred; branch `crash-test-setdevice` parked with runbook |
+>
+> Also on watch (upstream, unmerged): #27173 spec draft chain (+10% TG
+> claim), #27692 speculative prefill (lossy), #21849 per-arch MMQ tiles
+> (stale; superseded by #27841 for us).
+>
+> Tooling provenance: PMU profiling via an archived 6.1-matched rocprof
+> stack (`bench/rocprof-stack/`, rebuildable), D2D-copy histogramming via
+> the `bench/rd2d-count` LD_PRELOAD shim (version-script interposition for
+> `hipMemcpyAsync@hip_4.2`).
+>
 > ### Evidence and build
 >
 > - `journal/` (E-numbered experiment log - every claim above has a lane
