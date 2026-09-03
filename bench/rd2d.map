@@ -1,0 +1,7 @@
+hip_4.2 {
+  global:
+    hipMemcpyAsync;
+    hipMemcpy;
+  local:
+    *;
+};

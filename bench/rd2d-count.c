@@ -13,18 +13,18 @@
 #include <string.h>
 #include <unistd.h>
 
-// hipMemcpyKind: 0=H2D 1=D2H 2=D2D 3=Default (resolved at runtime)
-static _Atomic unsigned long long cnt[4][16];   // [kind][log2(size) bucket]
-static _Atomic unsigned long long bytes[4];
+// hipMemcpyKind: 0=H2H 1=H2D 2=D2H 3=D2D 4=Default
+static _Atomic unsigned long long cnt[5][16];   // [kind][log2(size) bucket, capped at 15]
+static _Atomic unsigned long long bytes[5];
 static _Atomic unsigned long long total_calls;
 
 static void dump(void) {
     const char *out = getenv("RD2D_OUT");
     FILE *f = out ? fopen(out, "w") : stderr;
     if (!f) f = stderr;
-    fprintf(f, "# kind size2^ n_calls n_bytes (kinds: 0=H2D 1=D2H 2=D2D 3=default)\n");
-    static const char *kn[4] = {"H2D", "D2H", "D2D", "DEF"};
-    for (int k = 0; k < 4; k++) {
+    fprintf(f, "# kind size2^ n_calls n_bytes (kinds: 0=H2H 1=H2D 2=D2H 3=D2D 4=default; bucket 32768 means >=32KB)\n");
+    static const char *kn[5] = {"H2H", "H2D", "D2H", "D2D", "DEF"};
+    for (int k = 0; k < 5; k++) {
         for (int b = 0; b < 16; b++) {
             unsigned long long c = atomic_load(&cnt[k][b]);
             if (c) fprintf(f, "%s %d %llu %llu\n", kn[k], 1 << b, c, c << b);
@@ -51,7 +51,7 @@ int hipMemcpy(void *dst, const void *src, size_t size, int kind) {
     static cpy_fn real;
     if (!real) real = (cpy_fn)dlsym(RTLD_NEXT, "hipMemcpy");
     atomic_fetch_add(&total_calls, 1);
-    if (kind >= 0 && kind <= 3) {
+    if (kind >= 0 && kind <= 4) {
         atomic_fetch_add(&cnt[kind][bucket(size)], 1);
         atomic_fetch_add(&bytes[kind], size);
     }
@@ -62,7 +62,7 @@ int hipMemcpyAsync(void *dst, const void *src, size_t size, int kind, void *stre
     static cpy_async_fn real;
     if (!real) real = (cpy_async_fn)dlsym(RTLD_NEXT, "hipMemcpyAsync");
     atomic_fetch_add(&total_calls, 1);
-    if (kind >= 0 && kind <= 3) {
+    if (kind >= 0 && kind <= 4) {
         atomic_fetch_add(&cnt[kind][bucket(size)], 1);
         atomic_fetch_add(&bytes[kind], size);
     }
