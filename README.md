@@ -7,15 +7,15 @@
  > tight mixed ROCm+Vulkan fits (audit E117). This fork
  > keeps those GPUs production-viable: it runs Qwen3.8-27B (i1-Q6_K) with
 > DFlash2 speculative decoding at **250k context on 40 GB of VRAM**
-> across 2x Radeon VII + a GTX 3080 (Vulkan), at **+14% prefill over
-> upstream master** (+4.5% more from the 2026-09-03 Q6_K tile retune)
-> with **bit-identical outputs**.
+ > across 2x Radeon VII + a GTX 3080 (Vulkan), at **+20% prefill over
+ > upstream master** (includes the 2026-09-03 Q6_K tile retune)
+ > with **bit-identical outputs**.
 >
 > ### Who it benefits, and how
 >
 > | You run... | You get... |
 > |---|---|
-> | gfx906 / MI50 / Radeon VII | wave64-correct MMQ, top-k and flash-attn tables: +14% PP and +9% deep fill vs upstream master (same binary-config A/B); sha-gated so speed is the only thing that moves |
+ > | gfx906 / MI50 / Radeon VII | wave64-correct MMQ, top-k and flash-attn tables: +20% PP and +12% deep fill vs upstream master (same binary-config A/B 2026-09-03); sha-gated so speed is the only thing that moves |
  > | mixed ROCm + Vulkan GPUs | `-sm layer` **pipeline parallelism** with explicit `--pipeline-parallel on|off` control and a safe reserve fallback, drafter pinning to one device, 35/20/45-style tensor splits |
 > | big models, long context, tight VRAM | 250k ctx on 40 GB: f16-K/q8_0-V KV cache, split fitting, HIP-graph + allocation robustness fixes for deliberately tight fits |
 > | Qwen3.8 / qwen4exp (MoE + GDN hybrid) | DFlash2 drafter integration, adaptive MTP draft depth, per-round acceptance logging, GDN chunked prefill kernel, upstream qwen4exp fixes merged same-week |
@@ -28,13 +28,15 @@
 > deep fill **257 t/s**, TG1024 12.0-12.3 t/s, draft acc 0.65-0.66,
 > repro gate true.
 >
-> Versus upstream master (A/B 2026-08-31, identical config, -c 200000,
-> only the binary differs; the Q6_K retune lands on top):
->
-> | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
-> |---|---|---|---|---|
-> | fork (tuned) | **379.2** | **252.6** | 13.6 | 0.691 |
-> | upstream master | 332.3 | 231.1 | 13.5 | 0.691 |
+ > Versus upstream master (A/B 2026-09-03, identical config, -c 200000,
+ > only the binary differs; upstream at c5a5535e6 = this fork's sync
+ > point 95ef7fc16 +2 commits, Q6_K retune included on the fork side;
+ > temp-0 sha identical across builds, e54019ff6b42):
+ >
+ > | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
+ > |---|---|---|---|---|
+ > | fork (tuned) | **398.5** | **259.7** | 13.6 | 0.691 |
+ > | upstream master | 332.5 | 231.4 | 13.6 | 0.691 |
 >
 > ### What is changed
 >
