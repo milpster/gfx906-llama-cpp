@@ -1,32 +1,72 @@
 > ## gfx906 fork (this repository)
 >
-> llama.cpp tuned for production inference on a dual Radeon VII (gfx906, 16 GB) +
-> RTX 3080 Laptop (8 GB) rig: Qwen3.8-27B i1-Q6_K + DFlash2 drafter, up to
-> 250k context on 40 GB of VRAM.
+> **Why this fork exists:** upstream llama.cpp carries no tuning for AMD
+> Vega 20 (gfx906: Radeon VII / MI50 / MI60) - GCN5 wave64 hardware
+> silently falls back to wave32 RDNA2 kernel tables - and it removed the
+> heterogeneous multi-GPU pipeline this class of rig depend on. This fork
+> keeps those GPUs production-viable: it runs Qwen3.8-27B (i1-Q6_K) with
+> DFlash2 speculative decoding at **250k context on 40 GB of VRAM**
+> across 2x Radeon VII + a GTX 3080 (Vulkan), at **+14% prefill over
+> upstream master** (+4.5% more from the 2026-09-03 Q6_K tile retune)
+> with **bit-identical outputs**.
 >
-> **Versus upstream master** (A/B 2026-08-31, identical full production
-> config, -c 200000, only the binary differs):
+> ### Who it benefits, and how
+>
+> | You run... | You get... |
+> |---|---|
+> | gfx906 / MI50 / Radeon VII | wave64-correct MMQ, top-k and flash-attn tables: +14% PP and +9% deep fill vs upstream master (same binary-config A/B); sha-gated so speed is the only thing that moves |
+> | mixed ROCm + Vulkan GPUs | `-sm layer` **pipeline parallelism** (removed upstream), `--pipeline-parallel on`, drafter pinning to one device, 35/20/45-style tensor splits |
+> | big models, long context, tight VRAM | 250k ctx on 40 GB: f16-K/q8_0-V KV cache, split fitting, HIP-graph + allocation robustness fixes for deliberately tight fits |
+> | Qwen3.8 / qwen4exp (MoE + GDN hybrid) | DFlash2 drafter integration, adaptive MTP draft depth, per-round acceptance logging, GDN chunked prefill kernel, upstream qwen4exp fixes merged same-week |
+> | anyone valuing reproducibility | every tuning change and every upstream merge is gated on unchanged temp-0 sha - if the hash moves, the change does not ship |
+>
+> ### Numbers
+>
+> Current production (2026-09-03, full prod shape: 250k ctx, 35/20/45
+> `-sm layer`, f16-K/q8_0-V, DFlash2 depth-4): PP16384 **393 t/s**, 120k
+> deep fill **257 t/s**, TG1024 12.0-12.3 t/s, draft acc 0.65-0.66,
+> repro gate true.
+>
+> Versus upstream master (A/B 2026-08-31, identical config, -c 200000,
+> only the binary differs; the Q6_K retune lands on top):
 >
 > | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
 > |---|---|---|---|---|
 > | fork (tuned) | **379.2** | **252.6** | 13.6 | 0.691 |
 > | upstream master | 332.3 | 231.1 | 13.5 | 0.691 |
 >
-> - **+14% first-batch prefill, +9% deep fill** from gfx906-tuned MMQ GEMM +
->   tiled top-k kernels (`GGML_CUDA_VEGA_TUNE_*`, on by default in
->   `build-dflash-novega.sh`)
-> - **Numerics-transparent**: temp-0 output is sha-identical to an upstream
->   master build across prefill, 120k fill, and 512-token generation - the
->   tuning moves speed, not math; the repro gate passes on both sides
-> - **Long-context fit**: 250k tokens across `rocm0,vulkan1,rocm1` with a
->   35/20/45 tensor split, f16-K/q8_0-V KV, DFlash2 drafter pinned to ROCm0
-> - **Fork-side features** on top of repeated upstream merges (latest sync
->   2026-09-01): context-based FATTN path selector, small-Q native tile
->   geometry, M-RoPE DFlash2 vision fix (now upstream), per-round draft
->   acceptance logging, `draft-mtp-adaptive` draft depth
+> ### What is changed
 >
-> Evidence and history: `journal/` (E-numbered entries), `bench/` (lane +
-> A/B tooling). Build: `build-dflash-novega.sh`.
+> - **Kernel tuning** (`GGML_CUDA_VEGA_TUNE_*`, default-on): per-arch MMQ
+>   GEMM table `mmq-config-vega.cuh` (Q6_K at I=64/occ2: +4.5% PP, +2.7%
+>   fill, sha-identical), tiled top-k, HIP graph tuning. Rejected probes
+>   (fattn cols16/occ3/qpipe, MMQ dual-acc, q8_0 loader remap) stay in
+>   tree, default-off, for reruns.
+> - **Flash attention dispatch**: context-based path selector, native
+>   q8_0-V tile geometry, small-Q narrow tiles for MTP-verify batches.
+> - **Speculative decoding**: DFlash2 integration + per-round acceptance
+>   logging, `draft-mtp-adaptive` depth (upstream PR #27210 carried here).
+> - **Multi-GPU**: `--pipeline-parallel` for `-sm layer` (fork-only),
+>   drafter pinning via `--spec-draft-override-tensor`.
+> - **Ported extras, env-gated, bit-exact** (mx-llama.cpp survey): GDN
+>   chunked prefill (`GGML_CUDA_GDN_CHUNK`), q8_1 activation cache
+>   (`GGML_CUDA_Q8_1_CACHE`), robustness fixes (fattn-vec mask stride,
+>   pipeline drain before seq-layout reset, HIP graph exec
+>   reinstantiation).
+> - **Upstream sync cadence**: repeated full merges, latest 2026-09-03
+>   (65 commits). Every merge is lane-gated: same-day A/B vs the prior
+>   binary; pass = unchanged canonical sha + perf inside the day's noise.
+>
+> ### Evidence and build
+>
+> - `journal/` (E-numbered experiment log - every claim above has a lane
+>   row behind it), `bench/` (lane/A/B harness, `FINDINGS.md` decision
+>   record, `trials.md` results), `.opencode/skills/` rig runbooks
+>   (`dual-gpu-context-balancing`, `requant-gguf-gfx906-perf`)
+> - Build: `./build-dflash-novega.sh` (ROCm 6.1 + Vulkan, gfx906 target,
+>   tunes on). Runtime env lives in the launchers
+>   (`2llama-start-iq6v-dflash2.sh`): HIP graphs, pinned ROCm 6.1 libs,
+>   HSA_XNACK=0, P2P.
 
 # llama.cpp
 
