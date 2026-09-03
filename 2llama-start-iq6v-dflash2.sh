@@ -48,7 +48,7 @@ exec "$BIN" \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
   --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
-  --reasoning-preserve --reasoning on \
+  --reasoning-preserve --reasoning on --reasoning-budget 25000 \
   -ctk f16 -ctv q8_0 \
   -cram 28000 --reasoning-format deepseek \
   --chat-template-file "$SCRIPT_DIR/froggeric_chat_templ.jinja" \
