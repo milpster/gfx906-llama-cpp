@@ -1,0 +1,226 @@
+From 6d2012d8af62be55a2bca1233b39c07f95d3068c Mon Sep 17 00:00:00 2001
+From: Marko Tombak <marxxx.wkm@gmail.com>
+Date: Fri, 7 Aug 2026 23:44:38 +0300
+Subject: [PATCH] alloc/sched: layout-cache restores for multi-buffer
+ schedulers
+
+Cache allocation layouts per graph topology with a buffer-id assignment
+key, restore on match, and rebind without draining when only the ids
+changed. Removes the drain-and-reserve on every backend-assignment
+change that serialized the -sm layer pipeline: 100k prefill
+88.6 -> 425.7 t/s (+377%), outputs byte-identical, layout-cache PPL
+pair identical (3.8635). GGML_GALLOC_LAYOUT_CACHE=0 disables,
+GGML_ALLOC_REALLOC_TRACE=1 names the first fit failure.
+---
+ ggml/src/ggml-alloc.c     | 79 +++++++++++++++++++++++++++++++--------
+ ggml/src/ggml-backend.cpp | 13 ++++++-
+ ggml/src/ggml-impl.h      |  8 ++++
+ 3 files changed, 84 insertions(+), 16 deletions(-)
+
+diff --git a/ggml/src/ggml-alloc.c b/ggml/src/ggml-alloc.c
+index 2848bd6bf23..8b9f720ee2a 100644
+--- a/ggml/src/ggml-alloc.c
++++ b/ggml/src/ggml-alloc.c
+@@ -491,6 +491,11 @@ struct node_alloc {
+ 
+ struct gallocr_layout {
+     uint64_t key;        // topology checksum, 0 = unused entry
++    uint64_t key_ids;    // checksum of the buffer-id assignment this layout was
++                         // reserved with (0 = unknown). Restoring into a multi-
++                         // buffer scheduler is only safe when the current
++                         // assignment matches, otherwise a slot binds a tensor
++                         // into another device's buffer.
+     int64_t  last_used;  // for LRU eviction
+     struct node_alloc * node_allocs; // [n_nodes]
+     int n_nodes;
+@@ -515,6 +520,7 @@ struct ggml_gallocr {
+ 
+     struct gallocr_layout layouts[GGML_GALLOC_MAX_LAYOUTS];
+     int64_t layout_uses;
++    uint64_t active_key_ids; // buffer-id checksum of the active layout (0 = unknown)
+ };
+ 
+ static bool ggml_gallocr_layout_cache_enabled(void) {
+@@ -548,8 +554,23 @@ static uint64_t ggml_gallocr_graph_key(const struct ggml_cgraph * graph) {
+     return h == 0 ? 1 : h;
+ }
+ 
+-static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key);
+-static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgraph * graph);
++// checksum of a buffer-id assignment, mixed per node/leaf in graph order
++static uint64_t ggml_gallocr_ids_key(const struct ggml_cgraph * graph,
++        const int * node_buffer_ids, const int * leaf_buffer_ids) {
++    uint64_t h = 1469598103934665603ULL;
++#define GGML_GALLOC_KEY_MIX(v) h = (h ^ (uint64_t)(v)) * 1099511628211ULL
++    for (int i = 0; i < graph->n_nodes; i++) {
++        GGML_GALLOC_KEY_MIX(node_buffer_ids ? node_buffer_ids[i] : 0);
++    }
++    for (int i = 0; i < graph->n_leafs; i++) {
++        GGML_GALLOC_KEY_MIX(leaf_buffer_ids ? leaf_buffer_ids[i] : 0);
++    }
++#undef GGML_GALLOC_KEY_MIX
++    return h == 0 ? 1 : h;
++}
++
++static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key, uint64_t key_ids);
++static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgraph * graph, uint64_t key_ids);
+ 
+ ggml_gallocr_t ggml_gallocr_new_n(ggml_backend_buffer_type_t * bufts, int n_bufs) {
+     ggml_gallocr_t galloc = (ggml_gallocr_t)calloc(1, sizeof(struct ggml_gallocr));
+@@ -1012,7 +1033,8 @@ static bool ggml_gallocr_reserve_n_impl(
+     // cache the freshly reserved layout under the graph's topology key so
+     // later same-topology graphs can re-bind without a reserve
+     if (!no_alloc) {
+-        ggml_gallocr_layout_store(galloc, ggml_gallocr_graph_key(graph));
++        ggml_gallocr_layout_store(galloc, ggml_gallocr_graph_key(graph),
++                ggml_gallocr_ids_key(graph, node_buffer_ids, leaf_buffer_ids));
+     }
+ 
+     return true;
+@@ -1145,15 +1167,18 @@ static bool ggml_gallocr_needs_realloc(ggml_gallocr_t galloc, struct ggml_cgraph
+             ggml_gallocr_realloc_trace());
+ }
+ 
+-// store the active layout into the cache under the graph's topology key
+-static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key) {
++// store the active layout into the cache under the graph's topology key plus
++// the buffer-id assignment it was reserved with - same-topology graphs with
++// different assignments (multi-buffer schedulers) get separate slots
++static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key, uint64_t key_ids) {
+     if (!ggml_gallocr_layout_cache_enabled() || key == 0) {
+         return;
+     }
++    galloc->active_key_ids = key_ids;
+ 
+     struct gallocr_layout * dst = NULL;
+     for (int i = 0; i < GGML_GALLOC_MAX_LAYOUTS; i++) {
+-        if (galloc->layouts[i].key == key) {
++        if (galloc->layouts[i].key == key && galloc->layouts[i].key_ids == key_ids) {
+             dst = &galloc->layouts[i];
+             break;
+         }
+@@ -1223,6 +1248,7 @@ static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key) {
+     dst->n_nodes   = galloc->n_nodes;
+     dst->n_leafs   = galloc->n_leafs;
+     dst->key       = key;
++    dst->key_ids   = key_ids;
+     dst->last_used = ++galloc->layout_uses;
+ 
+     if (ggml_gallocr_realloc_trace()) {
+@@ -1234,18 +1260,19 @@ static void ggml_gallocr_layout_store(ggml_gallocr_t galloc, uint64_t key) {
+ // try to satisfy the graph from a cached layout - on hit the cached layout
+ // becomes the active allocation and no reserve (hence no scheduler drain)
+ // is needed
+-static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgraph * graph) {
++static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgraph * graph, uint64_t key_ids) {
+     if (!ggml_gallocr_layout_cache_enabled()) {
+         return false;
+     }
+ 
+-    // restore is validated for schedulers with at most two buffers (CPU plus
+-    // one device or meta backend). With many per-device buffers (-sm layer)
+-    // a cached slot's buffer assignment can disagree with the current split
+-    // assignment, which binds tensors into the wrong device's buffer -
+-    // observed as illegal memory access. Layer support needs a per-slot
+-    // buffer-id cross-check against the active layout first.
+-    if (galloc->n_buffers > 2) {
++    // With many per-device buffers (-sm layer) a cached slot's buffer
++    // assignment can disagree with the current split assignment, which binds
++    // tensors into the wrong device's buffer - observed as illegal memory
++    // access. Restoring there requires the caller to supply the current
++    // assignment's checksum (key_ids != 0) so only an exactly-matching layout
++    // is adopted. The two-buffer case (CPU plus one device or meta backend)
++    // cannot disagree and stays valid without it.
++    if (galloc->n_buffers > 2 && key_ids == 0) {
+         return false;
+     }
+ 
+@@ -1256,6 +1283,9 @@ static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgrap
+         if (lay->key != key) {
+             continue;
+         }
++        if (key_ids != 0 && lay->key_ids != key_ids) {
++            continue;
++        }
+         if (!ggml_gallocr_graph_fits(galloc, graph, lay->node_allocs, lay->n_nodes, lay->n_leafs, trace)) {
+             if (trace) {
+                 GGML_LOG_INFO("[realloc] layout key=%016llx matched but graph does not fit\n",
+@@ -1278,6 +1308,7 @@ static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgrap
+         memcpy(galloc->leaf_allocs, lay->leaf_allocs, lay->n_leafs*sizeof(struct leaf_alloc));
+         galloc->n_nodes = lay->n_nodes;
+         galloc->n_leafs = lay->n_leafs;
++        galloc->active_key_ids = lay->key_ids;
+         lay->last_used  = ++galloc->layout_uses;
+ 
+         if (trace) {
+@@ -1292,8 +1323,26 @@ static bool ggml_gallocr_layout_restore(ggml_gallocr_t galloc, struct ggml_cgrap
+     return false;
+ }
+ 
++// internal (declared in ggml-impl.h): allocate with the scheduler's current
++// buffer-id assignment. Restores from the layout cache are then valid for
++// any buffer count, and an ids-changed graph can re-bind without the reserve
++// drain when an exactly-matching layout is cached. Returns false when no
++// matching layout exists - the caller then reserves as before.
++bool ggml_gallocr_alloc_graph_ids(ggml_gallocr_t galloc, struct ggml_cgraph * graph,
++        const int * node_buffer_ids, const int * leaf_buffer_ids) {
++    const uint64_t key_ids = ggml_gallocr_ids_key(graph, node_buffer_ids, leaf_buffer_ids);
++    if (galloc->active_key_ids != key_ids || ggml_gallocr_needs_realloc(galloc, graph)) {
++        // the active layout is for a different assignment or does not fit -
++        // only an ids-matching cached layout may be adopted
++        if (!ggml_gallocr_layout_restore(galloc, graph, key_ids)) {
++            return false;
++        }
++    }
++    return ggml_gallocr_alloc_graph(galloc, graph);
++}
++
+ bool ggml_gallocr_alloc_graph(ggml_gallocr_t galloc, struct ggml_cgraph * graph) {
+-    if (ggml_gallocr_needs_realloc(galloc, graph) && !ggml_gallocr_layout_restore(galloc, graph)) {
++    if (ggml_gallocr_needs_realloc(galloc, graph) && !ggml_gallocr_layout_restore(galloc, graph, 0)) {
+         if (galloc->n_buffers == 1) {
+ #ifndef NDEBUG
+             GGML_LOG_DEBUG("%s: reallocating buffers automatically\n", __func__);
+diff --git a/ggml/src/ggml-backend.cpp b/ggml/src/ggml-backend.cpp
+index b65a7343181..20497eceb19 100644
+--- a/ggml/src/ggml-backend.cpp
++++ b/ggml/src/ggml-backend.cpp
+@@ -1842,7 +1842,18 @@ static bool ggml_backend_sched_alloc_splits(ggml_backend_sched_t sched) {
+     }
+ 
+     // allocate graph
+-    if (backend_ids_changed || !ggml_gallocr_alloc_graph(sched->galloc, &sched->graph)) {
++    bool allocated = !backend_ids_changed && ggml_gallocr_alloc_graph(sched->galloc, &sched->graph);
++    if (!allocated) {
++        // The assignment changed or the active layout does not fit. Before
++        // paying the reserve (which drains every backend and serializes any
++        // cross-chunk pipeline overlap), try the allocation-layout cache with
++        // the current buffer-id assignment - a hit re-binds without a drain
++        // and is valid for any buffer count because only an exactly-matching
++        // assignment is adopted.
++        allocated = ggml_gallocr_alloc_graph_ids(sched->galloc, &sched->graph,
++                sched->node_backend_ids, sched->leaf_backend_ids);
++    }
++    if (!allocated) {
+ #ifndef NDEBUG
+         GGML_LOG_DEBUG("%s: failed to allocate graph, reserving (backend_ids_changed = %d)\n", __func__, backend_ids_changed);
+ #endif
+diff --git a/ggml/src/ggml-impl.h b/ggml/src/ggml-impl.h
+index 62b76abbcec..a23ce328934 100644
+--- a/ggml/src/ggml-impl.h
++++ b/ggml/src/ggml-impl.h
+@@ -32,6 +32,14 @@ void ggml_print_backtrace(void);
+ 
+ uint64_t ggml_graph_next_uid(void);
+ 
++// internal: allocate a graph with the scheduler's current buffer-id
++// assignment so multi-buffer layout-cache restores can be validated, and an
++// ids-changed graph can re-bind from the cache without the reserve drain.
++// Returns false when no matching cached layout exists (caller reserves).
++struct ggml_gallocr;
++bool ggml_gallocr_alloc_graph_ids(struct ggml_gallocr * galloc, struct ggml_cgraph * graph,
++        const int * node_buffer_ids, const int * leaf_buffer_ids);
++
+ #ifndef MIN
+ #    define MIN(a, b) ((a) < (b) ? (a) : (b))
+ #endif

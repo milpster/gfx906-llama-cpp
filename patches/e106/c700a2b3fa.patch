@@ -1,0 +1,155 @@
+From c700a2b3fa60d5f39172f588d82b8b7381811936 Mon Sep 17 00:00:00 2001
+From: mxxm-t <84014+mxxm-t@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 14:48:06 +0300
+Subject: [PATCH] sched: scope non-graph input synchronization per context
+
+A tiny-ubatch context previously changed a process-wide environment setting and altered every later scheduler. Store the non-graph input drain policy on each scheduler instance instead.
+
+Mixed ubatch contexts retained independent enabled and disabled states. The 8x MI50 TPS4 guardrail remained exact with PP 362.44 -> 364.48 and TG 30.10 -> 30.45 in the combined stack.
+---
+ ggml/src/ggml-backend-sched-impl.h | 17 +++++++++++++++
+ ggml/src/ggml-backend.cpp          | 19 ++++++++++-------
+ src/llama-context.cpp              | 34 ++++++++++++++++++------------
+ 3 files changed, 48 insertions(+), 22 deletions(-)
+ create mode 100644 ggml/src/ggml-backend-sched-impl.h
+
+diff --git a/ggml/src/ggml-backend-sched-impl.h b/ggml/src/ggml-backend-sched-impl.h
+new file mode 100644
+index 00000000000..94897b92851
+--- /dev/null
++++ b/ggml/src/ggml-backend-sched-impl.h
+@@ -0,0 +1,17 @@
++#pragma once
++
++// Private scheduler controls shared by ggml and in-tree consumers.
++
++#include "ggml-backend.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++// Force a host drain before overwriting non-graph inputs. Used by contexts
++// whose tiny ubatches can outrun cross-device event ordering.
++GGML_API void ggml_backend_sched_set_sync_non_graph_inputs(ggml_backend_sched_t sched, bool enabled);
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/ggml/src/ggml-backend.cpp b/ggml/src/ggml-backend.cpp
+index da308b01fa5..b7fc25248d4 100644
+--- a/ggml/src/ggml-backend.cpp
++++ b/ggml/src/ggml-backend.cpp
+@@ -10,6 +10,7 @@
+ 
+ #include "ggml-backend.h"
+ #include "ggml-backend-impl.h"
++#include "ggml-backend-sched-impl.h"
+ #include "ggml-alloc.h"
+ #include "ggml-impl.h"
+ 
+@@ -882,6 +883,7 @@ struct ggml_backend_sched {
+     size_t context_buffer_size;
+ 
+     bool op_offload;
++    bool sync_non_graph_inputs;
+ 
+     int debug;
+     struct ggml_backend_sched_timing timing;
+@@ -2070,14 +2072,10 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
+                 // reliably hits the window (DSV4 -ub 4/32: gfxhub TCP faults). Every
+                 // host-side bound closes it, so drain the destination in that regime
+                 // only. Single-row (decode) and >= 64-row (production prefill) shapes
+-                // keep the async pipeline. GGML_SCHED_SYNC_NONGRAPH=0/1 forces off/on.
+-                {
+-                    // Not static: llama sets this per-context (tiny n_ubatch) and
+-                    // contexts with different n_ubatch share one process.
+-                    const char * sync_env = getenv("GGML_SCHED_SYNC_NONGRAPH");
+-                    if (sync_env != NULL && atoi(sync_env) != 0) {
+-                        ggml_backend_synchronize(split_backend);
+-                    }
++                // keep the async pipeline. This is configured per scheduler because
++                // contexts with different ubatch sizes can share one process.
++                if (sched->sync_non_graph_inputs) {
++                    ggml_backend_synchronize(split_backend);
+                 }
+                 if (sched->events[split_backend_id][sched->cur_copy] != NULL) {
+                     ggml_backend_event_wait(split_backend, sched->events[split_backend_id][sched->cur_copy]);
+@@ -2524,6 +2522,11 @@ void ggml_backend_sched_set_eval_callback(ggml_backend_sched_t sched, ggml_backe
+     sched->callback_eval_user_data = user_data;
+ }
+ 
++void ggml_backend_sched_set_sync_non_graph_inputs(ggml_backend_sched_t sched, bool enabled) {
++    GGML_ASSERT(sched);
++    sched->sync_non_graph_inputs = enabled;
++}
++
+ int ggml_backend_sched_get_n_splits(ggml_backend_sched_t sched) {
+     GGML_ASSERT(sched);
+     return sched->n_splits;
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+index 2281a13aa1b..60b225edb7f 100644
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -13,6 +13,8 @@
+ #include "llama-sampler.h"
+ #include "llama.h"
+ 
++#include "../ggml/src/ggml-backend-sched-impl.h"
++
+ #include <cinttypes>
+ #include <cmath>
+ #include <cstring>
+@@ -312,18 +314,6 @@ llama_context::llama_context(
+     LLAMA_LOG_INFO("%s: n_batch               = %u\n",   __func__, cparams.n_batch);
+     LLAMA_LOG_INFO("%s: n_ubatch              = %u\n",   __func__, cparams.n_ubatch);
+ 
+-    // Tiny-ubatch multi-GPU pipelining lets the host free-run ahead of lagging
+-    // devices and race the sched's split-input copies (observed on ROCm, where
+-    // enqueued cross-device event waits do not order reliably). Turn on the
+-    // sched's host-drain for such configs before any sched is created. Setting
+-    // the variable manually overrides this either way.
+-    if (cparams.n_ubatch < 64) {
+-#ifdef _WIN32
+-        _putenv_s("GGML_SCHED_SYNC_NONGRAPH", "1");
+-#else
+-        setenv("GGML_SCHED_SYNC_NONGRAPH", "1", 0);
+-#endif
+-    }
+     LLAMA_LOG_INFO("%s: causal_attn           = %d\n",   __func__, cparams.causal_attn);
+     LLAMA_LOG_INFO("%s: flash_attn            = %s\n",   __func__, llama_flash_attn_type_name(params.flash_attn_type));
+     LLAMA_LOG_INFO("%s: kv_unified            = %s\n",   __func__, cparams.kv_unified ? "true" : "false");
+@@ -656,7 +646,23 @@ void llama_context::sched_reserve() {
+     gf_res_prev.reset(new llm_graph_result(max_nodes));
+     gf_res_reserve.reset(new llm_graph_result(max_nodes));
+ 
+-    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, cparams.pipeline_parallel, cparams.op_offload));
++    auto new_sched = [&](bool parallel) {
++        ggml_backend_sched_t result = ggml_backend_sched_new(
++            backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(),
++            max_nodes, parallel, cparams.op_offload);
++
++        // Tiny-ubatch multi-GPU pipelining can race split-input reuse on ROCm.
++        // Keep the policy local to this context. An explicit environment value
++        // remains a diagnostic override sampled when the scheduler is created.
++        bool sync_non_graph_inputs = cparams.n_ubatch < 64;
++        if (const char * value = getenv("GGML_SCHED_SYNC_NONGRAPH")) {
++            sync_non_graph_inputs = atoi(value) != 0;
++        }
++        ggml_backend_sched_set_sync_non_graph_inputs(result, sync_non_graph_inputs);
++        return result;
++    };
++
++    sched.reset(new_sched(cparams.pipeline_parallel));
+ 
+     llama_memory_context_ptr mctx;
+     if (memory) {
+@@ -739,7 +745,7 @@ void llama_context::sched_reserve() {
+             if (cparams.pipeline_parallel) {
+                 LLAMA_LOG_WARN("%s: compute buffer allocation failed, retrying without pipeline parallelism\n", __func__);
+                 cparams.pipeline_parallel = false;
+-                sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, false, cparams.op_offload));
++                sched.reset(new_sched(false));
+                 gf = graph_reserve(n_tokens, n_seqs, n_outputs_pp, mctx.get());
+             }
+             if (!gf) {

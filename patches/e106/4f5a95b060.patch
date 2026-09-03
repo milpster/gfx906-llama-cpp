@@ -1,0 +1,42 @@
+From 4f5a95b0609494d64b202becf86924210a10133c Mon Sep 17 00:00:00 2001
+From: Marko Tombak <84014+mxxm-t@users.noreply.github.com>
+Date: Sat, 8 Aug 2026 15:52:20 +0300
+Subject: [PATCH] spec: no pipeline ring for a sidecar draft context (+8% draft
+ generation)
+
+A sidecar drafter (DSpark, DFlash, EAGLE3) drafts one token at a time, so
+the scheduler's input ring has nothing to overlap while its idle
+compute-buffer copies cost time on a layer-split draft. The ring is per
+context: the target keeps its own.
+
+DSpark on DeepSeek-V4-Flash MXFP4 over 8 MI50: -sm layer generation
+25.85 -> 27.95 t/s (+8.1%), -sm tensor unchanged. Verify decides every
+emitted token, so output is unaffected. LLAMA_DRAFT_PIPELINE restores
+the ring.
+---
+ src/llama-context.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+index 2733c75a4cd..8933b76c659 100644
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -444,6 +444,18 @@ llama_context::llama_context(
+             pipeline_parallel = false;
+         }
+ 
++        // A sidecar drafter - identified by borrowing the target's context - drafts
++        // one token at a time, so the ring buys it nothing while its idle
++        // compute-buffer copies cost real time on a layer-split draft. Its prompt
++        // encode does not lose anything either, since that replays deferred against
++        // the target's chunks. Measured with the DSpark sidecar on
++        // DeepSeek-V4-Flash over 8 MI50 at 16k: -sm layer generation 23.0 -> 25.5
++        // t/s with prefill flat, -sm tensor unchanged. Opt back in with
++        // LLAMA_DRAFT_PIPELINE for debugging.
++        if (cparams.ctx_other != nullptr && !getenv("LLAMA_DRAFT_PIPELINE")) {
++            pipeline_parallel = false;
++        }
++
+         // pipeline parallelism requires support for async compute and events in all devices
+         if (pipeline_parallel) {
+             for (auto & backend : backends) {

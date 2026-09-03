@@ -1,0 +1,325 @@
+From 775a8051f6861f1f96da3f4c879fbc9f2917a9fe Mon Sep 17 00:00:00 2001
+From: Marko Tombak <marxxx.wkm@gmail.com>
+Date: Tue, 4 Aug 2026 08:52:08 +0300
+Subject: [PATCH] CUDA: reuse the quantized activation across matmuls in one
+ graph
+
+Several matmuls read the same activation - q/k/v off one attn_norm, router and
+gate/up off one ffn_norm - and each quantized that vector to q8_1 again. Keep the
+quantized copy per activation and layout and hand it to the later matmuls. Reuse
+is safe because ggml-alloc keeps a tensor buffer live until its last consumer has
+run. Bit-exact, wiki PPL unchanged at 5.4631 and 7.7515 and greedy output
+byte-identical over a 100k-token prompt:
+  Qwen3.6-35B-A3B-Q8_0 MoE 4-GPU -sm tensor  pp512  1452 -> 1489  (+2.60%)
+  Qwen3.6-35B-A3B-Q8_0 MoE 4-GPU -sm layer   tg128  76.1 -> 77.9  (+2.44%)
+  Qwen3-14B-Q8_0           4-GPU -sm layer   tg128  38.5 -> 39.4  (+2.23%)
+  Qwen3-14B-Q8_0           4-GPU -sm layer   pp512   540 ->  542  (+0.39%)
+
+On by default, GGML_CUDA_Q8_1_CACHE=0 restores the previous behaviour. Applies to
+any weight type taking a q8_1 activation; the native fp4 path on Blackwell is
+excluded because it emits a separate scale buffer.
+---
+ FEATURES.md                     |   8 +++
+ ggml/src/ggml-cuda/common.cuh   |  31 ++++++++++
+ ggml/src/ggml-cuda/ggml-cuda.cu | 101 ++++++++++++++++++++++++++++++++
+ ggml/src/ggml-cuda/mmq.cu       |  28 +++++++--
+ ggml/src/ggml-cuda/mmvq.cu      |  25 ++++++--
+ 5 files changed, 183 insertions(+), 10 deletions(-)
+
+diff --git a/FEATURES.md b/FEATURES.md
+index 37eff22569d..4568a37a987 100644
+--- a/FEATURES.md
++++ b/FEATURES.md
+@@ -49,6 +49,14 @@ F32 activations down to bf16, so F32 is both faster and more faithful. Automatic
+ no flag. Worth +18-19% prefill on UD / `*_XL` quants that keep BF16 tensors.
+ `GGML_CUDA_CUBLAS_COMPUTE_TYPE=bf16` selects the old compute type.
+ 
++## Quantized activation reuse
++
++Several matmuls usually read one activation (q/k/v off a single attn_norm, the
++router and gate/up off a single ffn_norm), and each quantized it to q8_1 again.
++The quantized copy is now kept and handed to the later matmuls, which is
++bit-exact. Worth +2.2-2.6% on prefill and decode. On by default;
++`GGML_CUDA_Q8_1_CACHE=0` restores the old behavior. Backend-generic.
++
+ ## Building from source
+ 
+ Requires a ROCm toolchain with gfx906 support (rocBLAS gfx906 kernels, plus RCCL
+diff --git a/ggml/src/ggml-cuda/common.cuh b/ggml/src/ggml-cuda/common.cuh
+index 37ccd4a5670..2a08865bbce 100644
+--- a/ggml/src/ggml-cuda/common.cuh
++++ b/ggml/src/ggml-cuda/common.cuh
+@@ -1511,6 +1511,29 @@ struct ggml_backend_cuda_context {
+ 
+     ggml_cuda_stream_context concurrent_stream_context;
+ 
++    // Quantized copies of activations already produced during this graph
++    // evaluation, so repeated matmuls off one activation quantize it once.
++    struct q8_1_cache_entry {
++        const ggml_tensor * src1 = nullptr;
++        const void *        data = nullptr;
++        int64_t             ne[4]      = { 0, 0, 0, 0 };
++        int64_t             stride[3]  = { 0, 0, 0 };
++        int64_t             ne_padded  = 0;
++        size_t              nbytes     = 0;
++        int                 variant    = -1;
++        char *              buf        = nullptr;
++        // ggml_cuda_pool_alloc deletes both copy and move, so it cannot be held by
++        // value in a vector - the indirection is required, not stylistic.
++        std::unique_ptr<ggml_cuda_pool_alloc<char>> alloc;
++    };
++    std::vector<q8_1_cache_entry> q8_1_cache;
++    size_t q8_1_cache_hits   = 0;
++    size_t q8_1_cache_misses = 0;
++    size_t q8_1_cache_peak   = 0; // most entries alive at once, over the run
++    void q8_1_cache_reset() {
++        q8_1_cache.clear();
++    }
++
+     ~ggml_backend_cuda_context();
+ 
+     cudaStream_t stream(int device, int stream) {
+@@ -1703,3 +1726,11 @@ static __inline__ void ggml_cuda_kernel_launch(Kernel kernel, const ggml_cuda_ke
+     CUDA_CHECK(cudaGetLastError());
+ }
+ 
++// Defined in ggml-cuda.cu. Hands back the quantized copy of src1 made earlier in
++// this graph evaluation, or returns nullptr so the caller allocates and quantizes
++// itself. `variant` separates layouts that are not interchangeable, since only an
++// identical layout may be shared.
++char * ggml_cuda_q8_1_cache_acquire(
++        ggml_backend_cuda_context & ctx, const ggml_tensor * src1, int variant,
++        int64_t ne_padded, int64_t s11, int64_t s12, int64_t s13,
++        size_t nbytes, bool & hit);
+diff --git a/ggml/src/ggml-cuda/ggml-cuda.cu b/ggml/src/ggml-cuda/ggml-cuda.cu
+index c023d0c142c..eedcfa26069 100644
+--- a/ggml/src/ggml-cuda/ggml-cuda.cu
++++ b/ggml/src/ggml-cuda/ggml-cuda.cu
+@@ -701,6 +701,17 @@ static std::condition_variable ggml_cuda_lock_cv;
+ static std::atomic<int> ggml_cuda_lock_counter;
+ 
+ ggml_backend_cuda_context::~ggml_backend_cuda_context() {
++    if (q8_1_cache_hits + q8_1_cache_misses > 0) {
++        GGML_LOG_DEBUG(GGML_CUDA_NAME " q8_1 cache[%d]: %zu hits, %zu misses, "
++                       "%zu entries at peak\n", device, q8_1_cache_hits,
++                       q8_1_cache_misses, q8_1_cache_peak);
++    }
++
++    // Release the held pool allocations while the pools are still alive. Members
++    // are destroyed in reverse declaration order, so leaving this to the implicit
++    // destructor tears the pool down first and trips its pool_size == 0 assert.
++    q8_1_cache_reset();
++
+     std::unique_lock<std::mutex> lock(ggml_cuda_lock);
+     ggml_cuda_lock_cv.wait(lock, []{ return ggml_cuda_lock_counter.load(std::memory_order_relaxed) == 0; });
+ 
+@@ -2246,6 +2257,93 @@ static bool ggml_cuda_should_fuse_mul_mat_vec_q(const ggml_tensor * tensor) {
+     return use_mul_mat_vec_q;
+ }
+ 
++// One entry would do. Measured on Qwen3.6-35B-A3B and Qwen3-14B, the hit count is
++// identical at a bound of 1, 2, 4, 8, 16 and 32: an activation is consumed by the
++// matmuls immediately following it - q/k/v read one attn_norm back to back - so the
++// reuse distance is one and further slots never serve a request. Decode throughput is
++// flat across those bounds too, checked in both ascending and descending order because
++// a single-direction sweep showed an ordering that turned out to be position in the run
++// rather than the bound.
++//
++// So the bound is chosen on memory, the only thing that varies with it. It caps the
++// entry COUNT while entry size scales with ubatch: eight entries reach 153 MiB per
++// device at -ub 8192 against 9.7 MiB at -ub 512. Two keeps that at about 39 MiB while
++// leaving a spare slot for a graph that interleaves two activations.
++#define GGML_CUDA_Q8_1_CACHE_MAX_ENTRIES 2
++
++// On by default. GGML_CUDA_Q8_1_CACHE=0 disables it, which restores the previous
++// behaviour exactly: every matmul quantizes its own copy of src1.
++static bool ggml_cuda_q8_1_cache_enabled() {
++    static const bool enabled = [] {
++        const char * e = getenv("GGML_CUDA_Q8_1_CACHE");
++        return e == nullptr || atoi(e) != 0;
++    }();
++    return enabled;
++}
++
++// Hand back the quantized copy of src1 made earlier in this graph evaluation, or
++// allocate a fresh buffer and report a miss so the caller quantizes into it. The
++// variant separates layouts that are not interchangeable (mmvq row-wise vs each
++// mmq ds layout), since only identical layouts may be shared.
++//
++// Reuse is sound because ggml-alloc keeps a tensor's buffer live until its last
++// consumer has run, so while a pending matmul still names src1 nothing else can
++// have written over it. Evicted buffers are likewise safe: the kernel consuming
++// one is enqueued before the buffer returns to the pool, and the pool hands it
++// out again only on the same stream, so any reuse is sequenced after that read.
++char * ggml_cuda_q8_1_cache_acquire(
++        ggml_backend_cuda_context & ctx, const ggml_tensor * src1, const int variant,
++        const int64_t ne_padded, const int64_t s11, const int64_t s12, const int64_t s13,
++        const size_t nbytes, bool & hit) {
++    hit = false;
++
++    if (!ggml_cuda_q8_1_cache_enabled() || !src1) {
++        return nullptr;
++    }
++
++    for (const ggml_backend_cuda_context::q8_1_cache_entry & e : ctx.q8_1_cache) {
++        if (e.src1 == src1 && e.data == src1->data && e.variant == variant &&
++            e.ne_padded == ne_padded && e.nbytes == nbytes &&
++            e.stride[0] == s11 && e.stride[1] == s12 && e.stride[2] == s13 &&
++            e.ne[0] == src1->ne[0] && e.ne[1] == src1->ne[1] &&
++            e.ne[2] == src1->ne[2] && e.ne[3] == src1->ne[3]) {
++            hit = true;
++            ctx.q8_1_cache_hits++;
++            return e.buf;
++        }
++    }
++
++    ctx.q8_1_cache_misses++;
++
++    // Drop the oldest entries first, which are the ones furthest from any node
++    // still to be executed and so the least likely to be asked for again.
++    while (ctx.q8_1_cache.size() >= GGML_CUDA_Q8_1_CACHE_MAX_ENTRIES) {
++        ctx.q8_1_cache.erase(ctx.q8_1_cache.begin());
++    }
++
++    ggml_backend_cuda_context::q8_1_cache_entry e;
++    e.alloc     = std::make_unique<ggml_cuda_pool_alloc<char>>(ctx.pool(), nbytes);
++    e.buf       = e.alloc->get();
++    e.src1      = src1;
++    e.data      = src1->data;
++    e.ne[0]     = src1->ne[0];
++    e.ne[1]     = src1->ne[1];
++    e.ne[2]     = src1->ne[2];
++    e.ne[3]     = src1->ne[3];
++    e.stride[0] = s11;
++    e.stride[1] = s12;
++    e.stride[2] = s13;
++    e.ne_padded = ne_padded;
++    e.nbytes    = nbytes;
++    e.variant   = variant;
++
++    char * buf = e.buf;
++    ctx.q8_1_cache.push_back(std::move(e));
++    ctx.q8_1_cache_peak = std::max(ctx.q8_1_cache_peak, ctx.q8_1_cache.size());
++
++    return buf;
++}
++
+ static void ggml_cuda_mul_mat(ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+     GGML_TENSOR_BINARY_OP_LOCALS
+ 
+@@ -4724,6 +4822,9 @@ static enum ggml_status ggml_backend_cuda_graph_compute(ggml_backend_t backend,
+ 
+     ggml_cuda_set_device(cuda_ctx->device);
+ 
++    // entries are only valid within one graph evaluation
++    cuda_ctx->q8_1_cache_reset();
++
+     bool use_cuda_graph             = false;
+     bool cuda_graph_update_required = false;
+     const void * graph_key = nullptr;
+diff --git a/ggml/src/ggml-cuda/mmq.cu b/ggml/src/ggml-cuda/mmq.cu
+index 707437ea3e5..5c3ccfc8159 100644
+--- a/ggml/src/ggml-cuda/mmq.cu
++++ b/ggml/src/ggml-cuda/mmq.cu
+@@ -135,13 +135,33 @@ void ggml_cuda_mul_mat_q(
+     if (!ids) {
+         const size_t nbytes_src1_q8_1 = ne13*ne12 * ne11*ne10_padded * y_block_size/y_values_per_block +
+             ggml_cuda_mmq_get_J_max(src0->type, fallback, cc, ne11) * sizeof(block_q8_1_mmq);
+-        ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool(), nbytes_src1_q8_1);
++        ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool());
+         ggml_cuda_pool_alloc<float> src1_scale(ctx.pool());
+         if (src0->type == GGML_TYPE_NVFP4 && use_native_fp4) {
+             src1_scale.alloc(ne13*ne12*ne11);
+         }
+ 
++        // The fp4 path also produces a separate scale buffer, so only the plain
++        // q8_1 layouts are shared.
++        char * src1_q8_1_ptr = nullptr;
++        bool   src1_q8_1_hit = false;
+         {
++            const int64_t qs11 = src1->nb[1] / ts_src1;
++            const int64_t qs12 = src1->nb[2] / ts_src1;
++            const int64_t qs13 = src1->nb[3] / ts_src1;
++            if (!use_native_fp4) {
++                const int variant = 1 + (int) mmq_get_q8_1_ds_layout(src0->type);
++                src1_q8_1_ptr = ggml_cuda_q8_1_cache_acquire(ctx, src1, variant, ne10_padded,
++                                                             qs11, qs12, qs13, nbytes_src1_q8_1,
++                                                             src1_q8_1_hit);
++            }
++            if (!src1_q8_1_ptr) {
++                src1_q8_1.alloc(nbytes_src1_q8_1);
++                src1_q8_1_ptr = src1_q8_1.get();
++            }
++        }
++
++        if (!src1_q8_1_hit) {
+             const int64_t s11 = src1->nb[1] / ts_src1;
+             const int64_t s12 = src1->nb[2] / ts_src1;
+             const int64_t s13 = src1->nb[3] / ts_src1;
+@@ -149,11 +169,11 @@ void ggml_cuda_mul_mat_q(
+                 static constexpr size_t align_float8 = 32;
+                 const bool use_aligned_float8 = ggml_cuda_is_aligned(src1, align_float8);
+                 static_assert(sizeof(block_fp4_mmq) == 4 * sizeof(block_q8_1));
+-                quantize_mmq_fp4_cuda(src1_d, nullptr, src1_q8_1.get(), src1_scale.ptr, src0->type, use_aligned_float8, ne10, s11, s12, s13, ne10_padded,
++                quantize_mmq_fp4_cuda(src1_d, nullptr, src1_q8_1_ptr, src1_scale.ptr, src0->type, use_aligned_float8, ne10, s11, s12, s13, ne10_padded,
+                                         ne11, ne12, ne13, stream);
+ 
+             } else {
+-                quantize_mmq_q8_1_cuda(src1_d, nullptr, src1_q8_1.get(), src0->type, ne10, s11, s12, s13, ne10_padded,
++                quantize_mmq_q8_1_cuda(src1_d, nullptr, src1_q8_1_ptr, src0->type, ne10, s11, s12, s13, ne10_padded,
+                                        ne11, ne12, ne13, stream);
+             }
+             CUDA_CHECK(cudaGetLastError());
+@@ -166,7 +186,7 @@ void ggml_cuda_mul_mat_q(
+         const int64_t s13 = ne12*s12;
+ 
+         const mmq_args args = {
+-            src0_d, src0->type, (const int *) src1_q8_1.ptr, nullptr, nullptr, dst_d,
++            src0_d, src0->type, (const int *) src1_q8_1_ptr, nullptr, nullptr, dst_d,
+             src0->type == GGML_TYPE_NVFP4 && use_native_fp4 ? src1_scale.ptr : nullptr,
+             ne00, ne01, ne1, s01, ne11, s1,
+             ne02, ne12, s02, s12, s2,
+diff --git a/ggml/src/ggml-cuda/mmvq.cu b/ggml/src/ggml-cuda/mmvq.cu
+index affc10c29ee..f540adb5557 100644
+--- a/ggml/src/ggml-cuda/mmvq.cu
++++ b/ggml/src/ggml-cuda/mmvq.cu
+@@ -1234,12 +1234,25 @@ void ggml_cuda_mul_mat_vec_q(
+     }
+ 
+     const int64_t ne10_padded = GGML_PAD(ne10, MATRIX_ROW_PADDING);
+-    ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool(), ne13*ne12 * ne11*ne10_padded * sizeof(block_q8_1)/QK8_1);
++    const size_t  nbytes_src1_q8_1 = ne13*ne12 * ne11*ne10_padded * sizeof(block_q8_1)/QK8_1;
++
++    ggml_cuda_pool_alloc<char> src1_q8_1_own;
++    char * src1_q8_1_ptr = nullptr;
+     {
+-        const int64_t s11 = src1->nb[1] / ts_src1;
+-        const int64_t s12 = src1->nb[2] / ts_src1;
+-        const int64_t s13 = src1->nb[3] / ts_src1;
+-        quantize_row_q8_1_cuda(src1_d, nullptr, src1_q8_1.get(), src0->type, ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);
++        const int64_t qs11 = src1->nb[1] / ts_src1;
++        const int64_t qs12 = src1->nb[2] / ts_src1;
++        const int64_t qs13 = src1->nb[3] / ts_src1;
++
++        bool hit = false;
++        src1_q8_1_ptr = ggml_cuda_q8_1_cache_acquire(ctx, src1, /*variant =*/ 0, ne10_padded,
++                                                     qs11, qs12, qs13, nbytes_src1_q8_1, hit);
++        if (!src1_q8_1_ptr) {
++            src1_q8_1_own.alloc(ctx.pool(), nbytes_src1_q8_1);
++            src1_q8_1_ptr = src1_q8_1_own.get();
++        }
++        if (!hit) {
++            quantize_row_q8_1_cuda(src1_d, nullptr, src1_q8_1_ptr, src0->type, ne10, qs11, qs12, qs13, ne10_padded, ne11, ne12, ne13, stream);
++        }
+     }
+ 
+     const int64_t s01 = src0->nb[1] / ts_src0;
+@@ -1265,7 +1278,7 @@ void ggml_cuda_mul_mat_vec_q(
+     const int64_t ids_stride = ids ? ids->nb[1] / ggml_type_size(ids->type) : 0;
+ 
+     mul_mat_vec_q_switch_type(
+-        src0->data, src0->type, src1_q8_1.get(), ids_d, fusion_local, dst_d, ne00,
++        src0->data, src0->type, src1_q8_1_ptr, ids_d, fusion_local, dst_d, ne00,
+         ne01,              ncols_dst,     s01, stride_col_y,     stride_col_dst,
+         ne02, nchannels_y, nchannels_dst, s02, stride_channel_y, stride_channel_dst,
+         ne03,              ne3,           s03, s13,              s3,               ids_stride, stream);

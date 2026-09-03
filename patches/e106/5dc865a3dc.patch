@@ -1,0 +1,71 @@
+From 5dc865a3dcc7616798d2f03679986951ca5ffb58 Mon Sep 17 00:00:00 2001
+From: mxxm-t <84014+mxxm-t@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 14:48:04 +0300
+Subject: [PATCH] llama: drain pipeline before sequence-layout reset
+
+Sequence-layout changes rebuild persistent per-sequence graph state while an earlier pipeline graph may still reference it. Drain only when the unique layout changes, leaving ordinary cross-ubatch overlap intact.
+
+6x MI50, -sm tensor -tps 2: the failing 53% prefill aperture fault completed twice, and four cache-disabled runs produced the same f78022f1 output hash.
+---
+ src/llama-context.cpp | 19 +++++++++++++++++++
+ src/llama-context.h   |  3 +++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+index 2cc75765ece..451c68e376f 100644
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -1591,6 +1591,8 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
+     // in order to correctly reuse a graph, it's full topology has to be uniquely determined by these parameters
+     const auto gparams = graph_params(res, ubatch, mctx, gtype);
+ 
++    bool graph_sequence_layout_changed = false;
++
+     if (!graph_reuse_disable && res->can_reuse(gparams)) {
+         //LLAMA_LOG_DEBUG("%s: reusing previous graph\n", __func__);
+ 
+@@ -1613,6 +1615,19 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
+ 
+         n_reused++;
+     } else {
++        graph_sequence_layout_changed = graph_seq_ids.size() != ubatch.n_seqs_unq;
++        for (size_t i = 0; !graph_sequence_layout_changed && i < graph_seq_ids.size(); ++i) {
++            graph_sequence_layout_changed = graph_seq_ids[i] != ubatch.seq_id_unq[i];
++        }
++
++        // A sequence-layout transition rebuilds persistent per-sequence graph state.
++        // Pipeline compute is asynchronous, so a previous graph may still be using it
++        // when a server slot joins, leaves, or is replaced. Ordinary single-sequence
++        // shape changes retain their cross-ubatch overlap.
++        if (cparams.pipeline_parallel && !graph_seq_ids.empty() && graph_sequence_layout_changed) {
++            ggml_backend_sched_synchronize(sched.get());
++        }
++
+         res->reset();
+ 
+         ggml_backend_sched_reset(sched.get());
+@@ -1654,6 +1669,10 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
+         return nullptr;
+     }
+ 
++    if (graph_sequence_layout_changed) {
++        graph_seq_ids.assign(ubatch.seq_id_unq, ubatch.seq_id_unq + ubatch.n_seqs_unq);
++    }
++
+     ret = GGML_STATUS_SUCCESS;
+ 
+     return res;
+diff --git a/src/llama-context.h b/src/llama-context.h
+index 135487bbf88..e1b55fe2527 100644
+--- a/src/llama-context.h
++++ b/src/llama-context.h
+@@ -432,6 +432,9 @@ struct llama_context {
+     llm_graph_result_ptr gf_res_prev;
+     llm_graph_result_ptr gf_res_reserve;
+ 
++    // Unique sequence layout submitted by the previous asynchronous graph.
++    std::vector<llama_seq_id> graph_seq_ids;
++
+     // host buffer for the model output (logits and embeddings)
+     ggml_backend_buffer_ptr buf_output;
+ 

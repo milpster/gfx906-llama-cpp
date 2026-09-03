@@ -1,0 +1,94 @@
+From 42b3cfb634dd96c3cd58bff04b31a9ddb9347cb1 Mon Sep 17 00:00:00 2001
+From: mxxm-t <84014+mxxm-t@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 14:48:06 +0300
+Subject: [PATCH] alloc: key graph connectivity in layout cache
+
+Graphs with the same operation and type sequence can have different tensor dependencies. Include stable source and view relationships plus integer input dimensions in the layout key to prevent incompatible storage reuse.
+
+Before the fix, the second identical request changed output and acceptance. After the fix, both requests produced c2eaf232 and accepted 365 of 436 draft tokens.
+---
+ ggml/src/ggml-alloc.c | 53 ++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/ggml/src/ggml-alloc.c b/ggml/src/ggml-alloc.c
+index 8b9f720ee2a..60ff66b1919 100644
+--- a/ggml/src/ggml-alloc.c
++++ b/ggml/src/ggml-alloc.c
+@@ -532,9 +532,40 @@ static bool ggml_gallocr_layout_cache_enabled(void) {
+     return enabled != 0;
+ }
+ 
+-// checksum over the graph's op/type sequence, excluding shapes
++static uint64_t ggml_gallocr_graph_tensor_ordinal(
++        const struct ggml_hash_set * tensors, const uint64_t * ordinals, const struct ggml_tensor * tensor) {
++    if (tensor == NULL) {
++        return 0;
++    }
++    const size_t slot = ggml_hash_find(tensors, tensor);
++    if (slot == GGML_HASHSET_FULL || !ggml_bitset_get(tensors->used, slot)) {
++        return UINT64_MAX;
++    }
++    return ordinals[slot];
++}
++
++// checksum over graph connectivity, ops and types. Floating-point shapes stay
++// excluded so one worst-case prefill layout can serve smaller runtime chunks.
+ static uint64_t ggml_gallocr_graph_key(const struct ggml_cgraph * graph) {
+     uint64_t h = 1469598103934665603ULL;
++    const size_t n_tensors = (size_t) graph->n_nodes + (size_t) graph->n_leafs;
++    if (n_tensors == 0) {
++        return h;
++    }
++
++    struct ggml_hash_set tensors = ggml_hash_set_new(n_tensors);
++    uint64_t * ordinals = calloc(tensors.size, sizeof(*ordinals));
++    GGML_ASSERT(ordinals != NULL);
++
++    for (int i = 0; i < graph->n_nodes; i++) {
++        const size_t slot = ggml_hash_find_or_insert(&tensors, graph->nodes[i]);
++        ordinals[slot] = (uint64_t) i + 1;
++    }
++    for (int i = 0; i < graph->n_leafs; i++) {
++        const size_t slot = ggml_hash_find_or_insert(&tensors, graph->leafs[i]);
++        ordinals[slot] = (uint64_t) graph->n_nodes + (uint64_t) i + 1;
++    }
++
+ #define GGML_GALLOC_KEY_MIX(v) h = (h ^ (uint64_t)(v)) * 1099511628211ULL
+     GGML_GALLOC_KEY_MIX(graph->n_nodes);
+     GGML_GALLOC_KEY_MIX(graph->n_leafs);
+@@ -542,15 +573,35 @@ static uint64_t ggml_gallocr_graph_key(const struct ggml_cgraph * graph) {
+         const struct ggml_tensor * node = graph->nodes[i];
+         GGML_GALLOC_KEY_MIX(node->op);
+         GGML_GALLOC_KEY_MIX(node->type);
++        GGML_GALLOC_KEY_MIX(node->flags);
+         GGML_GALLOC_KEY_MIX(node->view_src != NULL || node->data != NULL);
++        GGML_GALLOC_KEY_MIX(ggml_gallocr_graph_tensor_ordinal(&tensors, ordinals, node->view_src));
++        for (int j = 0; j < GGML_MAX_SRC; j++) {
++            GGML_GALLOC_KEY_MIX(ggml_gallocr_graph_tensor_ordinal(&tensors, ordinals, node->src[j]));
++        }
+     }
+     for (int i = 0; i < graph->n_leafs; i++) {
+         const struct ggml_tensor * leaf = graph->leafs[i];
+         GGML_GALLOC_KEY_MIX(leaf->op);
+         GGML_GALLOC_KEY_MIX(leaf->type);
++        GGML_GALLOC_KEY_MIX(leaf->flags);
+         GGML_GALLOC_KEY_MIX(leaf->view_src != NULL || leaf->data != NULL);
++        GGML_GALLOC_KEY_MIX(ggml_gallocr_graph_tensor_ordinal(&tensors, ordinals, leaf->view_src));
++        // Integer graph inputs carry row, position and sequence plans. Their
++        // dimensions can change the allocation lifetime topology even when the
++        // op/type sequence is identical (for example, a DSV4 ubatch that first
++        // mixes two server slots). Keep variable-size floating-point masks out
++        // of the key so ordinary long-prefill chunks still share one layout.
++        if ((leaf->flags & GGML_TENSOR_FLAG_INPUT) &&
++                (leaf->type == GGML_TYPE_I32 || leaf->type == GGML_TYPE_I64)) {
++            for (int d = 0; d < GGML_MAX_DIMS; d++) {
++                GGML_GALLOC_KEY_MIX(leaf->ne[d]);
++            }
++        }
+     }
+ #undef GGML_GALLOC_KEY_MIX
++    free(ordinals);
++    ggml_hash_set_free(&tensors);
+     return h == 0 ? 1 : h;
+ }
+ 

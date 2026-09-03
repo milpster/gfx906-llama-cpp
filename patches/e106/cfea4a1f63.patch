@@ -1,0 +1,210 @@
+From cfea4a1f6311949c0550be1d5d6174ad89ccee32 Mon Sep 17 00:00:00 2001
+From: mxxm-t <84014+mxxm-t@users.noreply.github.com>
+Date: Sun, 23 Aug 2026 22:09:52 +0300
+Subject: [PATCH] cuda/q8_repack: reuse the quantized activation the cache
+ already holds
+
+One activation feeds several matmuls in a row, but the repacked path never
+asked the Q8_1 activation cache for it, so every repacked mat-vec re-quantized
+the same vector: 353 pairs per token per device. Route the five row-wise sites
+through the cache, the tile sites keep their own copy. Bit-exact (wiki
+perplexity 6.6141 unchanged, draft acceptance identical):
+
+  Qwen3.6-35B-A3B-Q8 MoE      2x MI50  tg128       76.07 ->   78.82  (+3.6%)
+  Qwen3.6-27B-MTP-Q8 dense    2x MI50  tg128       34.26 ->   34.85  (+1.7%)
+  Qwen3.6-35B-A3B-MTP-Q8 MoE  2x MI50  tg128       94.42 ->   95.52  (+1.2%)
+  Qwen3.6-27B-Q8 dense        2x MI50  tg128       21.64 ->   21.43  (unchanged)
+  Qwen3.6-35B-A3B-Q8 MoE      2x MI50  pp512      1530.5 ->  1531.2  (guardrail)
+  quantize_q8_1 launches, that MoE decode run      45279 ->   31089  (-31%)
+
+The gain follows the dispatch floor, largest where small kernels dominate
+decode. gfx906 only.
+---
+ ggml/src/ggml-cuda/q8_repack/mul-mat-id.cu    | 33 ++++++++---------
+ ggml/src/ggml-cuda/q8_repack/mul-mat.cu       | 22 ++++++-----
+ .../src/ggml-cuda/q8_repack/repack-common.cuh | 37 +++++++++++++++++++
+ 3 files changed, 64 insertions(+), 28 deletions(-)
+
+diff --git a/ggml/src/ggml-cuda/q8_repack/mul-mat-id.cu b/ggml/src/ggml-cuda/q8_repack/mul-mat-id.cu
+index c31e7580cfe..02634f71fea 100644
+--- a/ggml/src/ggml-cuda/q8_repack/mul-mat-id.cu
++++ b/ggml/src/ggml-cuda/q8_repack/mul-mat-id.cu
+@@ -63,29 +63,26 @@ void ggml_cuda_mul_mat_id_repacked(ggml_backend_cuda_context & ctx,
+     // 32-wide tile per active expert.
+     if (n_tokens > 1 && n_tokens <= MMQ_RP_Q8_MOE_MMV_MAX_TOKENS &&
+         src0->type == GGML_TYPE_Q8_0) {
+-        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1(ctx.pool(),
+-            (size_t) n_cols * x_stride);
+-        quantize_row_q8_1_cuda((const float *) src1->data, nullptr, src1_q8_1.get(),
+-            src0->type, ne10, s11, s11 * n_cols, s11 * n_cols, ne10_padded,
+-            n_cols, 1, 1, stream);
++        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1_own;
++        block_q8_1 * src1_q8_1_d = repack_quantize_src1_q8_1(ctx, src0, src1, ne10,
++            ne10_padded, s11, s11 * n_cols, s11 * n_cols, n_cols, 1, 1,
++            (size_t) (n_cols * x_stride), src1_q8_1_own, stream);
+ 
+         // Four rows per block, two waves. Five geometries were measured at
+         // the verify widths and all landed within five percent; this was best.
+         const dim3 grid((ne01 + 3) / 4, (unsigned) n_assign, 1);
+         mul_mat_vec_q8_0_repacked_id1<4, 2, 2><<<grid, 128, 0, stream>>>(
+-            w, src1_q8_1.get(), dst_d, (uint32_t) ne00, (uint32_t) ne01,
++            w, src1_q8_1_d, dst_d, (uint32_t) ne00, (uint32_t) ne01,
+             ids_src1.get(), ids_dst.get(), expert_bounds.get(), (uint32_t) ne02,
+             expert_stride, (uint32_t) x_stride, dst_s1);
+         return;
+     }
+ 
+     if (n_tokens == 1) {
+-        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1(ctx.pool(),
+-            (size_t) n_cols * x_stride);
+-        quantize_row_q8_1_cuda((const float *) src1->data, nullptr, src1_q8_1.get(),
+-            src0->type, ne10, s11, s11 * n_cols, s11 * n_cols, ne10_padded,
+-            n_cols, 1, 1, stream);
+-        const block_q8_1 * xq = src1_q8_1.get();
++        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1_own;
++        const block_q8_1 * xq = repack_quantize_src1_q8_1(ctx, src0, src1, ne10,
++            ne10_padded, s11, s11 * n_cols, s11 * n_cols, n_cols, 1, 1,
++            (size_t) (n_cols * x_stride), src1_q8_1_own, stream);
+         const uint32_t nchannels_y = (uint32_t) src1->ne[1];
+         const uint32_t xs_id       = (uint32_t) x_stride;
+         switch (src0->type) {
+@@ -207,10 +204,10 @@ void ggml_cuda_mul_mat_id_vec_repacked_fused(ggml_backend_cuda_context & ctx,
+     const int64_t  n_cols        = src1->ne[1] * src1->ne[2];
+     const int64_t  s11           = src1->nb[1] / sizeof(float);
+ 
+-    ggml_cuda_pool_alloc<block_q8_1> src1_q8_1(ctx.pool(), (size_t) n_cols * x_stride);
+-    quantize_row_q8_1_cuda((const float *) src1->data, nullptr, src1_q8_1.get(),
+-        src0->type, ne10, s11, s11 * n_cols, s11 * n_cols, ne10_padded,
+-        n_cols, 1, 1, stream);
++    ggml_cuda_pool_alloc<block_q8_1> src1_q8_1_own;
++    block_q8_1 * src1_q8_1_d = repack_quantize_src1_q8_1(ctx, src0, src1, ne10,
++        ne10_padded, s11, s11 * n_cols, s11 * n_cols, n_cols, 1, 1,
++        (size_t) (n_cols * x_stride), src1_q8_1_own, stream);
+ 
+     // Eight rows per block, four waves, 32 lanes to a row. Seven geometries
+     // were traced at decode and lane width dominates: a 1024-thread workgroup
+@@ -236,7 +233,7 @@ void ggml_cuda_mul_mat_id_vec_repacked_fused(ggml_backend_cuda_context & ctx,
+         // One row per lane, four waves. Two rows per lane costs a spill and
+         // drops occupancy from 6 to 4 once the gate matrix shares the loop.
+         mul_mat_vec_q8_0_repacked_id1_fused<4, 4, 1><<<grid_nc, 256, 0, stream>>>(
+-            w, src1_q8_1.get(), (float *) dst->data, (uint32_t) ne00, (uint32_t) ne01,
++            w, src1_q8_1_d, (float *) dst->data, (uint32_t) ne00, (uint32_t) ne01,
+             ids_src1.get(), ids_dst.get(), expert_bounds.get(), (uint32_t) ne02,
+             expert_stride, (uint32_t) x_stride, dst_s1,
+             w_gate, x_bias, gate_bias, fusion->glu_op);
+@@ -245,7 +242,7 @@ void ggml_cuda_mul_mat_id_vec_repacked_fused(ggml_backend_cuda_context & ctx,
+ 
+     const dim3 grid((ne01 + 7) / 8, (unsigned) n_assign, 1);
+     mul_mat_vec_q8_0_repacked<8, 4, true, 32, true><<<grid, 256, 0, stream>>>(
+-        w, src1_q8_1.get(), (float *) dst->data, (uint32_t) ne00, (uint32_t) ne01,
++        w, src1_q8_1_d, (float *) dst->data, (uint32_t) ne00, (uint32_t) ne01,
+         (const int32_t *) ids->data, nullptr, nullptr,
+         (uint32_t) ne02, (uint32_t) src1->ne[1], expert_stride,
+         (uint32_t) x_stride, dst_s1,
+diff --git a/ggml/src/ggml-cuda/q8_repack/mul-mat.cu b/ggml/src/ggml-cuda/q8_repack/mul-mat.cu
+index 8cd3e880551..ab2d7bb2645 100644
+--- a/ggml/src/ggml-cuda/q8_repack/mul-mat.cu
++++ b/ggml/src/ggml-cuda/q8_repack/mul-mat.cu
+@@ -47,19 +47,20 @@ void ggml_cuda_mul_mat_repacked(ggml_backend_cuda_context & ctx,
+     if (ne11 >= 1 && ne11 <= MMQ_RP_Q8_MMV_MAX_TOKENS) {
+         // One token, or a narrow batch: plain Q8_1 rows, one weight pass. The
+         // tiled path below computes a full 32-wide tile whatever the batch is.
+-        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1(ctx.pool(),
+-            ne13 * ne12 * ne11 * x_stride);
++        ggml_cuda_pool_alloc<block_q8_1> src1_q8_1_own;
++        block_q8_1 * src1_q8_1_d;
+         {
+             const int64_t s11 = src1->nb[1] / sizeof(float);
+             const int64_t s12 = src1->nb[2] / sizeof(float);
+             const int64_t s13 = src1->nb[3] / sizeof(float);
+-            quantize_row_q8_1_cuda((const float *) src1->data, nullptr, src1_q8_1.get(),
+-                src0->type, ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);
++            src1_q8_1_d = repack_quantize_src1_q8_1(ctx, src0, src1, ne10, ne10_padded,
++                s11, s12, s13, ne11, ne12, ne13,
++                (size_t) (ne13 * ne12 * ne11 * x_stride), src1_q8_1_own, stream);
+         }
+         const uint32_t dst_s1 = dst->nb[1] / sizeof(float);
+         for (int64_t i3 = 0; i3 < ne13; i3++) {
+         for (int64_t i2 = 0; i2 < ne12; i2++) {
+-            const block_q8_1 * xq = src1_q8_1.get()
++            const block_q8_1 * xq = src1_q8_1_d
+                               + (i3 * ne12 + i2) * ne11 * x_stride;
+             float * dst_d = (float *)((char *) dst->data + i3 * dst->nb[3] + i2 * dst->nb[2]);
+             if (ne11 == 1) {
+@@ -289,18 +290,19 @@ void ggml_cuda_mul_mat_vec_repacked_fused(ggml_backend_cuda_context & ctx,
+     const int64_t ne10_padded = GGML_PAD(ne10, MATRIX_ROW_PADDING);
+     const int64_t x_stride    = ne10_padded / QK8_1;
+ 
+-    ggml_cuda_pool_alloc<block_q8_1> src1_q8_1(ctx.pool(),
+-        ne13 * ne12 * x_stride);
++    ggml_cuda_pool_alloc<block_q8_1> src1_q8_1_own;
++    block_q8_1 * src1_q8_1_d;
+     {
+         const int64_t s11 = src1->nb[1] / sizeof(float);
+         const int64_t s12 = src1->nb[2] / sizeof(float);
+         const int64_t s13 = src1->nb[3] / sizeof(float);
+-        quantize_row_q8_1_cuda((const float *) src1->data, nullptr, src1_q8_1.get(),
+-            src0->type, ne10, s11, s12, s13, ne10_padded, 1, ne12, ne13, stream);
++        src1_q8_1_d = repack_quantize_src1_q8_1(ctx, src0, src1, ne10, ne10_padded,
++            s11, s12, s13, 1, ne12, ne13,
++            (size_t) (ne13 * ne12 * x_stride), src1_q8_1_own, stream);
+     }
+     for (int64_t i3 = 0; i3 < ne13; i3++) {
+     for (int64_t i2 = 0; i2 < ne12; i2++) {
+-        const block_q8_1 * xq = src1_q8_1.get()
++        const block_q8_1 * xq = src1_q8_1_d
+                           + (i3 * ne12 + i2) * x_stride;
+         float * dst_d = (float *)((char *) dst->data + i3 * dst->nb[3] + i2 * dst->nb[2]);
+         // Bias is shaped like the single-token dst ([ne0, 1, ne2]): per-channel stride ne01.
+diff --git a/ggml/src/ggml-cuda/q8_repack/repack-common.cuh b/ggml/src/ggml-cuda/q8_repack/repack-common.cuh
+index cf09bf0e038..a654e0742e9 100644
+--- a/ggml/src/ggml-cuda/q8_repack/repack-common.cuh
++++ b/ggml/src/ggml-cuda/q8_repack/repack-common.cuh
+@@ -3,6 +3,7 @@
+ 
+ #include "../common.cuh"
+ #include "../mmq.cuh"
++#include "../quantize.cuh"
+ 
+ #include <cstddef>
+ 
+@@ -166,3 +167,39 @@ const uint8_t * repack_q8_0_view_get_cached(
+ // owning buffer is freed so the allocator cannot hand the same addresses to a
+ // different model and hit a stale entry.
+ void repack_view_cache_purge(int device, const void * base, size_t size);
++
++// Quantize src1 into Q8_1 rows, reusing the graph-wide activation cache when the
++// same activation was already quantized to this exact layout. One activation
++// feeds several matmuls back to back - q/k/v off one attention norm, router and
++// routed gate/up off one ffn norm - and each re-quantized its own copy, so the
++// launch count tracked the matmul count exactly. quantize_row_q8_1_cuda ignores
++// type_src0 and always writes the plain row layout, so variant 0 is the same
++// layout the canonical mat-vec caches under and the two share entries. The MoE
++// sites pass the rows flattened as (n_cols, 1, 1) where the dense sites pass
++// (ne11, ne12, ne13). That is still the same bytes: the kernel writes
++// i_cont = ((i3*ne2 + i2)*ne1 + i1)*ne0 + i0, which is contiguous either way,
++// and it can only collide in the cache when the strides and the size already
++// match, which is the contiguous case where both walk src1 identically.
++// Fusing the quantize into the mat-vec instead is the wrong shape: it is a
++// shared producer, and making every block re-quantize the row cost 42 percent.
++static inline block_q8_1 * repack_quantize_src1_q8_1(
++        ggml_backend_cuda_context & ctx, const ggml_tensor * src0, const ggml_tensor * src1,
++        int64_t ne10, int64_t ne10_padded, int64_t s11, int64_t s12, int64_t s13,
++        int64_t nrows, int64_t ne2, int64_t ne3, size_t nblocks,
++        ggml_cuda_pool_alloc<block_q8_1> & fallback, cudaStream_t stream) {
++    bool hit = false;
++    char * cached = ggml_cuda_q8_1_cache_acquire(ctx, src1, /*variant =*/ 0, ne10_padded,
++                                                 s11, s12, s13, nblocks * sizeof(block_q8_1), hit);
++    block_q8_1 * dstq;
++    if (cached) {
++        dstq = (block_q8_1 *) cached;
++    } else {
++        fallback.alloc(ctx.pool(), nblocks);
++        dstq = fallback.get();
++    }
++    if (!hit) {
++        quantize_row_q8_1_cuda((const float *) src1->data, nullptr, dstq,
++            src0->type, ne10, s11, s12, s13, ne10_padded, nrows, ne2, ne3, stream);
++    }
++    return dstq;
++}

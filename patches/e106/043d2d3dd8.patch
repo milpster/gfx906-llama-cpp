@@ -1,0 +1,39 @@
+From 043d2d3dd857779dd55245bec0b71799e022cf07 Mon Sep 17 00:00:00 2001
+From: mxxm-t <84014+mxxm-t@users.noreply.github.com>
+Date: Tue, 25 Aug 2026 13:56:55 +0300
+Subject: [PATCH] cuda: fattn-vec mask row stride from nb31, not the KV length
+
+The vec kernel indexed the mask per column as j*ne11, assuming mask rows
+are exactly ne11 halves. That holds for contiguous masks, so behavior is
+unchanged there, but any caller passing a shorter KV view than the mask
+row width read the wrong row for every column past the first. The tile
+kernel already derives a proper stride_mask. All archs, zero behavior
+change for in-tree callers.
+---
+ ggml/src/ggml-cuda/fattn-vec.cuh | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/ggml/src/ggml-cuda/fattn-vec.cuh b/ggml/src/ggml-cuda/fattn-vec.cuh
+index 69dd9368624..94b17cdcecc 100644
+--- a/ggml/src/ggml-cuda/fattn-vec.cuh
++++ b/ggml/src/ggml-cuda/fattn-vec.cuh
+@@ -111,6 +111,10 @@ static __global__ void flash_attn_ext_vec(
+     V += nb23*sequence + nb22*(head / gqa_ratio);
+ 
+     const half * maskh  = (const half  *) (mask + nb33*(sequence % ne33) + nb31*ic0);
++    // Mask row stride in halves. Must come from nb31, not ne11: under the
++    // sequence-split fattn path ne11 is the KV SLICE length while the mask
++    // keeps its full-width rows. Identical to ne11 for contiguous masks.
++    const int s31 = nb31 / (int) sizeof(half);
+ 
+     const float slope = get_alibi_slope(max_bias, head, n_head_log2, m0, m1);
+ 
+@@ -278,7 +282,7 @@ static __global__ void flash_attn_ext_vec(
+                 }
+ 
+                 if (mask && (ncols == 1 || ic0 + j < int(ne01.z))) {
+-                    sum += slope*__half2float(maskh[j*ne11 + i_KQ]);
++                    sum += slope*__half2float(maskh[j*s31 + i_KQ]);
+                 }
+ 
+                 KQ_max_new[j] = fmaxf(KQ_max_new[j], sum + FATTN_KQ_MAX_OFFSET);

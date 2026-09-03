@@ -1,0 +1,22 @@
+From 4405b44cd79c3cd6585062c1affa1cc357676be5 Mon Sep 17 00:00:00 2001
+From: iacopPBK <iacop@deneb.com>
+Date: Thu, 6 Aug 2026 08:39:14 +0200
+Subject: [PATCH] Fixed gate for gfx906 only, due to dpp reductions
+
+---
+ ggml/src/ggml-cuda/gated_delta_net_chunk.cu | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ggml/src/ggml-cuda/gated_delta_net_chunk.cu b/ggml/src/ggml-cuda/gated_delta_net_chunk.cu
+index d3573a3f7a0..48ed7006a49 100644
+--- a/ggml/src/ggml-cuda/gated_delta_net_chunk.cu
++++ b/ggml/src/ggml-cuda/gated_delta_net_chunk.cu
+@@ -1,7 +1,7 @@
+ #include "gated_delta_net_chunk.cuh"
+ #include "ggml-cuda/common.cuh"
+ 
+-#if defined(GGML_USE_HIP) && defined(GCN)
++#if defined(GGML_USE_HIP) && defined(__gfx906__)
+ 
+ #define GDN_GCN_DPP_ADD(name, barrier, dpp_ctrl)                                \
+     static __device__ __forceinline__ float name(const float x) {               \

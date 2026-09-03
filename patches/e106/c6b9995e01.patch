@@ -1,0 +1,383 @@
+From c6b9995e01bbfce0919681f9d89f97cb4d1fcfea Mon Sep 17 00:00:00 2001
+From: Marko Tombak <84014+mxxm-t@users.noreply.github.com>
+Date: Mon, 10 Aug 2026 06:15:36 +0000
+Subject: [PATCH] spec: couple the drafter's prompt replay to target prefill
+ progress (+74% prefill)
+
+During target prefill the DSpark drafter replayed the whole prompt after
+the target finished - prefill wall was 92% drafter waits. The drafter now
+polls how many rows the target has completed (cudaEventQuery mapped for
+HIP) and replays just those, batched. The persistent layer tap is ordered
+by its event instead of a scheduler stall, and the decode-side tap wait
+is per-event on GPU backends only. The eager gather keeps a full
+llama_synchronize: an earlier ubatch's readiness event can pass while
+this ubatch's embd_layer_inp copy is still in flight, and the wide sync
+costs nothing (23.4 vs 23.3 tg).
+
+DeepSeek-V4-Flash MXFP4 over 8 MI50 -sm layer: prefill +74% at default
+-b, +64% at 100k (+217% vs the uncoupled drafter). Decode unchanged,
+verify decides every emitted token. LLAMA_DSPARK_OPPORTUNISTIC=0
+restores the deferred replay.
+---
+ common/speculative.cpp           | 74 +++++++++++++++++++++++++++++++-
+ ggml/src/ggml-backend-impl.h     |  2 +
+ ggml/src/ggml-backend.cpp        | 10 +++++
+ ggml/src/ggml-cuda/ggml-cuda.cu  | 13 ++++++
+ ggml/src/ggml-cuda/vendors/hip.h |  2 +
+ src/llama-context.cpp            | 70 ++++++++++++++++++++++++++++--
+ src/llama-context.h              |  6 +++
+ src/llama-ext.h                  | 10 +++++
+ 8 files changed, 183 insertions(+), 4 deletions(-)
+
+diff --git a/common/speculative.cpp b/common/speculative.cpp
+index e448125f1bb..89dfa2fa21e 100644
+--- a/common/speculative.cpp
++++ b/common/speculative.cpp
+@@ -1126,6 +1126,32 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
+         auto * ctx_tgt = params.ctx_tgt;
+         auto * ctx_dft = params.ctx_dft;
+ 
++        // The replay exists to give the draft a KV cache over the prompt, but the
++        // draft only proposes a few tokens ahead and attends causally, so rows far
++        // behind the head contribute little. Encoding all of them is the single
++        // largest cost the drafter adds to prefill and it grows with the prompt.
++        // Keep the newest window and drop the rest: the draft then sees a sliding
++        // context instead of the whole prompt. Positions stay absolute, so the
++        // skipped span is simply absent from its cache rather than misaligned.
++        // 0 keeps every row. 16384 is the largest value that costs no acceptance:
++        // below it 100k TG slips 15.3 -> 15.2 -> 15.0 as the window shrinks.
++        static const int32_t draft_window = []() {
++            const char * e = getenv("LLAMA_DSPARK_DRAFT_WINDOW");
++            return e != nullptr ? atoi(e) : 0;
++        }();
++        if (draft_window > 0 && count > 1) {
++            const auto & newest = pending[count - 1];
++            const llama_pos keep_from = newest.p0 + newest.n - draft_window;
++            size_t drop = 0;
++            while (drop + 1 < count && pending[drop].p0 + pending[drop].n <= keep_from) {
++                drop++;
++            }
++            if (drop > 0) {
++                pending.erase(pending.begin(), pending.begin() + drop);
++                count -= drop;
++            }
++        }
++
+         std::vector<const float *> accum(target_layer_ids_n, nullptr);
+         for (uint32_t k = 0; k < target_layer_ids_n; ++k) {
+             accum[k] = llama_get_embeddings_layer_inp_accum(ctx_tgt, (uint32_t) target_layer_ids[k]);
+@@ -1295,7 +1321,45 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
+                         // work already finished, so the target keeps computing the
+                         // newest chunk while the draft encodes and injects - the
+                         // same GPU overlap the eager path got from serializing.
+-                        if (pending.size() > 1 && !flush_pending_upto(pending.size() - 1)) {
++                        //
++                        // Flushing per call ties the drafter's cost to the caller's
++                        // batch size: each flush host-blocks on the readiness event,
++                        // and a host stuck in the replay is not feeding the target,
++                        // so the target's pipeline drains and has to refill. Over a
++                        // 16k prefill that wait is 58.2s of 63.0s across 8 flushes
++                        // against 13.9s across 1. Accumulate rows so the flush count
++                        // follows the prompt rather than -b. The bound is what keeps
++                        // it honest: deferred chunks hold their draft hidden state in
++                        // g_rows until the injects run, ~16 KB per row, and past ~32k
++                        // rows that buys nothing anyway - a long prompt does enough
++                        // work per call to hide the drain. 0 flushes every call.
++                        static const int32_t flush_rows = []() {
++                            const char * e = getenv("LLAMA_DSPARK_FLUSH_ROWS");
++                            return e != nullptr ? atoi(e) : 32768;
++                        }();
++                        static const bool opportunistic = []() {
++                            const char * e = getenv("LLAMA_DSPARK_OPPORTUNISTIC");
++                            return e == nullptr || atoi(e) != 0;
++                        }();
++                        int32_t rows_ready = 0;
++                        for (size_t i = 0; i + 1 < pending.size(); ++i) {
++                            rows_ready += pending[i].n;
++                        }
++                        // Replay early only when the target has ALREADY passed
++                        // these rows. The wait inside the flush is an event
++                        // synchronize, and events fire in stream order, so it
++                        // blocks until the device reaches that position - the
++                        // host gives up its whole queue lead and the target
++                        // drains behind it. Asking first turns the drafter into
++                        // a consumer of finished work: if the rows are not ready
++                        // the host returns to feeding the target and tries again
++                        // on the next call, by which point they usually are.
++                        bool do_flush = pending.size() > 1 && rows_ready >= flush_rows;
++                        if (do_flush && opportunistic) {
++                            const auto & last = pending[pending.size() - 2];
++                            do_flush = llama_layer_inp_accum_ready(ctx_tgt, last.p0 + last.n);
++                        }
++                        if (do_flush && !flush_pending_upto(pending.size() - 1)) {
+                             return false;
+                         }
+                         continue;
+@@ -1313,6 +1377,13 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
+                 // charged to the extraction and the two could not be told apart.
+                 {
+                     common_time_meas tm_tgtsync(is_pp ? t_pp_tgtsync_us : t_tgtsync_us, !gen_perf);
++                    // Must be a full synchronize. The gather below reads
++                    // embd_layer_inp, the per-batch buffer, while the accum
++                    // readiness event only covers accum rows below p_end - an
++                    // event recorded for an EARLIER ubatch can satisfy that test
++                    // while this ubatch's embd_layer_inp copy is still in flight.
++                    // Swapping in the narrow wait measured 23.4 -> 23.3 tg, i.e.
++                    // nothing, so there is no case for the risk.
+                     llama_synchronize(ctx_tgt);
+                 }
+ 
+@@ -1481,6 +1552,7 @@ struct common_speculative_impl_draft_dflash : public common_speculative_impl {
+ 
+                     const llama_token id = cur_p->data[0].id;
+ 
++
+                     common_sampler_accept(smpl, id, true);
+ 
+                     result.push_back(id);
+diff --git a/ggml/src/ggml-backend-impl.h b/ggml/src/ggml-backend-impl.h
+index 45ccd38cbf0..e71411087d9 100644
+--- a/ggml/src/ggml-backend-impl.h
++++ b/ggml/src/ggml-backend-impl.h
+@@ -200,6 +200,8 @@ extern "C" {
+         ggml_backend_event_t (*event_new)         (ggml_backend_dev_t dev);
+         void                 (*event_free)        (ggml_backend_dev_t dev, ggml_backend_event_t event);
+         void                 (*event_synchronize) (ggml_backend_dev_t dev, ggml_backend_event_t event);
++        // (optional) true if the event has already fired, without blocking
++        bool                 (*event_query)       (ggml_backend_dev_t dev, ggml_backend_event_t event);
+     };
+ 
+     struct ggml_backend_device {
+diff --git a/ggml/src/ggml-backend.cpp b/ggml/src/ggml-backend.cpp
+index 91589625b7d..65f985ffdcd 100644
+--- a/ggml/src/ggml-backend.cpp
++++ b/ggml/src/ggml-backend.cpp
+@@ -550,6 +550,16 @@ void ggml_backend_event_synchronize(ggml_backend_event_t event) {
+     event->device->iface.event_synchronize(event->device, event);
+ }
+ 
++bool ggml_backend_event_query(ggml_backend_event_t event) {
++    GGML_ASSERT(event);
++
++    if (event->device->iface.event_query == NULL) {
++        return true;
++    }
++
++    return event->device->iface.event_query(event->device, event);
++}
++
+ void ggml_backend_event_wait(ggml_backend_t backend, ggml_backend_event_t event) {
+     GGML_ASSERT(backend);
+     GGML_ASSERT(backend->iface.event_wait != NULL);
+diff --git a/ggml/src/ggml-cuda/ggml-cuda.cu b/ggml/src/ggml-cuda/ggml-cuda.cu
+index eab2fa487c8..841dc7cbde0 100644
+--- a/ggml/src/ggml-cuda/ggml-cuda.cu
++++ b/ggml/src/ggml-cuda/ggml-cuda.cu
+@@ -6042,6 +6042,18 @@ static void ggml_backend_cuda_device_event_synchronize(ggml_backend_dev_t dev, g
+     CUDA_CHECK(cudaEventSynchronize((cudaEvent_t)event->context));
+ }
+ 
++static bool ggml_backend_cuda_device_event_query(ggml_backend_dev_t dev, ggml_backend_event_t event) {
++    GGML_UNUSED(dev);
++    cudaError_t err = cudaEventQuery((cudaEvent_t)event->context);
++    if (err == cudaErrorNotReady) {
++        // clear the sticky error so the next CUDA_CHECK does not trip on it
++        (void) cudaGetLastError();
++        return false;
++    }
++    CUDA_CHECK(err);
++    return true;
++}
++
+ static const ggml_backend_device_i ggml_backend_cuda_device_interface = {
+     /* .get_name                = */ ggml_backend_cuda_device_get_name,
+     /* .get_description         = */ ggml_backend_cuda_device_get_description,
+@@ -6058,6 +6070,7 @@ static const ggml_backend_device_i ggml_backend_cuda_device_interface = {
+     /* .event_new               = */ ggml_backend_cuda_device_event_new,
+     /* .event_free              = */ ggml_backend_cuda_device_event_free,
+     /* .event_synchronize       = */ ggml_backend_cuda_device_event_synchronize,
++    /* .event_query             = */ ggml_backend_cuda_device_event_query,
+ };
+ 
+ // backend reg
+diff --git a/ggml/src/ggml-cuda/vendors/hip.h b/ggml/src/ggml-cuda/vendors/hip.h
+index 9aa558f3f4c..47219dae683 100644
+--- a/ggml/src/ggml-cuda/vendors/hip.h
++++ b/ggml/src/ggml-cuda/vendors/hip.h
+@@ -64,6 +64,8 @@
+ #define cudaEventDisableTiming hipEventDisableTiming
+ #define cudaEventRecord hipEventRecord
+ #define cudaEventSynchronize hipEventSynchronize
++#define cudaEventQuery hipEventQuery
++#define cudaErrorNotReady hipErrorNotReady
+ #define cudaEvent_t hipEvent_t
+ #define cudaEventDestroy hipEventDestroy
+ #define cudaFree hipFree
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+index 8933b76c659..d5da117dc99 100644
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -674,7 +674,13 @@ void llama_context::sched_reserve() {
+         for (bool enabled : cparams.embeddings_layer_inp) {
+             n_taps += enabled ? 1 : 0;
+         }
+-        if (want_static && n_taps > 0 && model.split_mode() != LLAMA_SPLIT_MODE_TENSOR && model.dev_output()) {
++        // Tensor split defaults to in-arena taps because it does not show the
++        // realloc that motivated the persistent copy. That also excludes it from
++        // the event-ordered tap path, which is what gave -sm layer its prefill
++        // win, so LLAMA_TAP_STATIC=1 opts it in.
++        const bool tap_static_forced = s_tap_static != nullptr && atoi(s_tap_static) != 0;
++        const bool split_ok = model.split_mode() != LLAMA_SPLIT_MODE_TENSOR || tap_static_forced;
++        if (want_static && n_taps > 0 && split_ok && model.dev_output()) {
+             const ggml_init_params ip = {
+                 /*.mem_size   =*/ ggml_tensor_overhead() * (size_t) n_taps,
+                 /*.mem_buffer =*/ nullptr,
+@@ -1399,6 +1405,20 @@ bool llama_context::layer_inp_accum_wait(llama_pos p_end) {
+     return true;
+ }
+ 
++bool llama_context::layer_inp_accum_ready(llama_pos p_end) {
++    // Same search as the wait, but it never blocks. Lets the drafter replay only
++    // what the target has already finished and hand the host straight back to
++    // feeding the target, instead of surrendering the whole queue lead: the
++    // events fire in stream order, so waiting on one means waiting for the
++    // device to reach that position, not for a copy to land.
++    for (const auto & ev : layer_inp_accum_events) {
++        if (ev.event && ev.pos_end >= p_end && ggml_backend_event_query(ev.event)) {
++            return true;
++        }
++    }
++    return false;
++}
++
+ void llama_context::set_causal_attn(bool value) {
+     LLAMA_LOG_DEBUG("%s: value = %d\n", __func__, value);
+ 
+@@ -2519,10 +2539,20 @@ void llama_context::extract_layer_inputs(const llm_graph_result * res, size_t to
+     // per-batch buffers. Small (decode/verify) ubatches are also skipped - the
+     // consumer only reads prompt-sized chunks from the accum, and writing here
+     // would tick the ring-drain counter and cost stray synchronizes during decode.
++    // Small (verify-sized) ubatches used to be excluded here so they would not
++    // tick the ring-drain counter. The tap is event-ordered now, so they can
++    // record a readiness event too - that lets a consumer wait on the tap
++    // instead of a full llama_synchronize, which during generation costs 5ms a
++    // token waiting on every backend rather than the one that has the rows.
++    static const int32_t accum_min = []() {
++        const char * e = getenv("LLAMA_TAP_ACCUM_MIN");
++        return e != nullptr ? atoi(e) : 16;
++    }();
+     const bool accum_ok = layer_inp_accum && ubatch.pos && ubatch.n_seqs_unq == 1 &&
+-                          n_tokens >= 16 && ubatch.pos[0] >= 0 &&
++                          (int32_t) n_tokens >= accum_min && ubatch.pos[0] >= 0 &&
+                           (size_t) ubatch.pos[0] + n_tokens <= (size_t) layer_inp_accum_cap;
+     bool accum_wrote = false;
++    bool taps_static = true;
+     ggml_backend_t accum_backend = nullptr;
+ 
+     for (uint32_t il = 0; il < cparams.embeddings_layer_inp.size(); ++il) {
+@@ -2556,6 +2586,9 @@ void llama_context::extract_layer_inputs(const llm_graph_result * res, size_t to
+             ggml_backend_tensor_get_async(backend, t, dst, 0, nbytes);
+             accum_wrote = true;
+             accum_backend = backend;
++            if (il >= layer_inp_dev.size() || layer_inp_dev[il] == nullptr) {
++                taps_static = false;
++            }
+         }
+ 
+     }
+@@ -2585,11 +2618,28 @@ void llama_context::extract_layer_inputs(const llm_graph_result * res, size_t to
+                 ev.pos_end = -1;
+                 ggml_backend_event_record(ev.event, accum_backend);
+                 ev.pos_end = ubatch.pos[0] + (llama_pos) n_tokens;
++                if (taps_static) {
++                    tap_readback_event   = ev.event;
++                    tap_readback_backend = accum_backend;
++                }
+             }
+         }
+ 
++        // Two different hazards, two different bounds.
++        //
++        // An in-arena tap reads the scheduler's rotating compute buffers, which
++        // wrap every n_copies ubatches - bounding in-flight extracts to the ring
++        // size is the right guard and it stays.
++        //
++        // A persistent tap (layer_inp_dev) holds a SINGLE ubatch, so the correct
++        // bound is one, not n_copies: ubatch i+1 can overwrite the slot while
++        // ubatch i's readback is still draining. That is why output varies run to
++        // run once a drafter is attached while the same model without one is
++        // reproducible. Handle it where it belongs, as a dependency rather than a
++        // stall - the event recorded above is handed to the next graph_compute,
++        // whose copy waits on it on the device.
+         const int n_copies = ggml_backend_sched_get_n_copies(sched.get());
+-        if (n_copies > 1 && (++layer_inp_accum_ub % n_copies) == 0) {
++        if (!taps_static && n_copies > 1 && (++layer_inp_accum_ub % n_copies) == 0) {
+             ggml_backend_sched_synchronize(sched.get());
+         }
+     }
+@@ -2792,6 +2842,16 @@ ggml_status llama_context::graph_compute(
+         set_n_threads_fn.second(set_n_threads_fn.first, n_threads);
+     }
+ 
++    // The layer tap is a single ubatch deep, so this graph's copy into it would
++    // overwrite rows the previous ubatch's D2H may still be reading. Make the
++    // dependency explicit to the device: the tap backend's stream waits for that
++    // readback to retire before this graph's copy runs. Host side is unaffected,
++    // unlike a synchronize, which drains every backend to achieve the same thing.
++    if (tap_readback_event != nullptr && tap_readback_backend != nullptr) {
++        ggml_backend_event_wait(tap_readback_backend, tap_readback_event);
++        tap_readback_event = nullptr;
++    }
++
+     auto status = ggml_backend_sched_graph_compute_async(sched.get(), gf);
+     if (status != GGML_STATUS_SUCCESS) {
+         LLAMA_LOG_ERROR("%s: ggml_backend_sched_graph_compute_async failed with error %d\n", __func__, status);
+@@ -4086,6 +4146,10 @@ bool llama_layer_inp_accum_wait(llama_context * ctx, llama_pos p_end) {
+     return ctx->layer_inp_accum_wait(p_end);
+ }
+ 
++bool llama_layer_inp_accum_ready(llama_context * ctx, llama_pos p_end) {
++    return ctx->layer_inp_accum_ready(p_end);
++}
++
+ void llama_set_mtp_prefill_kv_only(llama_context * ctx, bool value) {
+     ctx->set_mtp_prefill_kv_only(value);
+ }
+diff --git a/src/llama-context.h b/src/llama-context.h
+index 50b9a8963b1..135487bbf88 100644
+--- a/src/llama-context.h
++++ b/src/llama-context.h
+@@ -134,6 +134,12 @@ struct llama_context {
+     // work enqueued after the covering ubatch. Returns false when no live event
+     // covers p_end (caller must fall back to a full synchronize).
+     bool layer_inp_accum_wait(llama_pos p_end);
++    bool layer_inp_accum_ready(llama_pos p_end);
++
++    // Set after a tap readback is enqueued, consumed by the next graph_compute so
++    // the tap's writer waits on the device for the reader to retire.
++    ggml_backend_event_t tap_readback_event   = nullptr;
++    ggml_backend_t       tap_readback_backend = nullptr;
+     void set_causal_attn(bool value);
+     void set_warmup(bool value);
+ 
+diff --git a/src/llama-ext.h b/src/llama-ext.h
+index 1d0d10dd8f8..62ecd9274c4 100644
+--- a/src/llama-ext.h
++++ b/src/llama-ext.h
+@@ -151,6 +151,16 @@ LLAMA_API const float * llama_get_embeddings_layer_inp_accum(struct llama_contex
+ // caller must then fall back to llama_synchronize.
+ LLAMA_API bool llama_layer_inp_accum_wait(struct llama_context * ctx, llama_pos p_end);
+ 
++// Non-blocking form: true if the accum rows below p_end have already landed.
++// Lets a consumer replay finished work without giving up the host's queue lead.
++LLAMA_API bool llama_layer_inp_accum_ready(struct llama_context * ctx, llama_pos p_end);
++
++// Fork-local declaration of a ggml symbol rather than an edit to the public
++// ggml-backend.h. Defined in ggml-backend.cpp, dispatched through the device
++// interface. Backends without a query report true so a poller still advances.
++struct ggml_backend_event;
++GGML_API bool ggml_backend_event_query(struct ggml_backend_event * event);
++
+ LLAMA_API llama_context * llama_get_ctx_other(struct llama_context * ctx);
+ 
+ //
