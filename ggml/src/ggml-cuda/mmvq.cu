@@ -1650,21 +1650,36 @@ void ggml_cuda_mul_mat_vec_q(
     const int q8_1_layout_block_size = mmvq_select_q8_1_layout_block_size(src0->type, ncols_dst);
     const bool use_q8_1_layout = q8_1_layout_block_size != MMVQ_Q8_1_BLOCK_SIZE_STANDARD;
     const size_t nbytes_src1_q8_1 = ne13*ne12 * ne11*ne10_padded * sizeof(block_q8_1)/QK8_1;
-    ggml_cuda_pool_alloc<char> src1_q8_1(ctx.pool(), nbytes_src1_q8_1);
+
+    ggml_cuda_pool_alloc<char> src1_q8_1_own;
+    char * src1_q8_1_ptr = nullptr;
     {
-        const int64_t s11 = src1->nb[1] / ts_src1;
-        const int64_t s12 = src1->nb[2] / ts_src1;
-        const int64_t s13 = src1->nb[3] / ts_src1;
-        if (use_q8_1_layout) {
-            quantize_row_q8_1_layout_cuda_switch(
-                    q8_1_layout_block_size, src1_d, nullptr, src1_q8_1.get(), src0->type,
-                    ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);
-        } else {
-            quantize_row_q8_1_cuda(src1_d, nullptr, src1_q8_1.get(), src0->type, ne10, s11, s12, s13, ne10_padded, ne11, ne12, ne13, stream);
+        const int64_t qs11 = src1->nb[1] / ts_src1;
+        const int64_t qs12 = src1->nb[2] / ts_src1;
+        const int64_t qs13 = src1->nb[3] / ts_src1;
+
+        // variant separates the row-interleaved q8_1 layouts from the standard one
+        const int variant = use_q8_1_layout ? 1000 + (int) q8_1_layout_block_size : 0;
+
+        bool hit = false;
+        src1_q8_1_ptr = ggml_cuda_q8_1_cache_acquire(ctx, src1, variant, ne10_padded,
+                                                     qs11, qs12, qs13, nbytes_src1_q8_1, hit);
+        if (!src1_q8_1_ptr) {
+            src1_q8_1_own.alloc(ctx.pool(), nbytes_src1_q8_1);
+            src1_q8_1_ptr = src1_q8_1_own.get();
+        }
+        if (!hit) {
+            if (use_q8_1_layout) {
+                quantize_row_q8_1_layout_cuda_switch(
+                        q8_1_layout_block_size, src1_d, nullptr, src1_q8_1_ptr, src0->type,
+                        ne10, qs11, qs12, qs13, ne10_padded, ne11, ne12, ne13, stream);
+            } else {
+                quantize_row_q8_1_cuda(src1_d, nullptr, src1_q8_1_ptr, src0->type, ne10, qs11, qs12, qs13, ne10_padded, ne11, ne12, ne13, stream);
+            }
         }
     }
 
-    const void * src1_q8_1_d = src1_q8_1.get();
+    const void * src1_q8_1_d = src1_q8_1_ptr;
 
     const int64_t s01 = src0->nb[1] / ts_src0;
     const int64_t s11 = ne10_padded / q8_1_layout_block_size;

@@ -1498,6 +1498,29 @@ struct ggml_backend_cuda_context {
 
     ggml_cuda_stream_context concurrent_stream_context;
 
+    // Quantized copies of activations already produced during this graph
+    // evaluation, so repeated matmuls off one activation quantize it once.
+    struct q8_1_cache_entry {
+        const ggml_tensor * src1 = nullptr;
+        const void *        data = nullptr;
+        int64_t             ne[4]      = { 0, 0, 0, 0 };
+        int64_t             stride[3]  = { 0, 0, 0 };
+        int64_t             ne_padded  = 0;
+        size_t              nbytes     = 0;
+        int                 variant    = -1;
+        char *              buf        = nullptr;
+        // ggml_cuda_pool_alloc deletes both copy and move, so it cannot be held by
+        // value in a vector - the indirection is required, not stylistic.
+        std::unique_ptr<ggml_cuda_pool_alloc<char>> alloc;
+    };
+    std::vector<q8_1_cache_entry> q8_1_cache;
+    size_t q8_1_cache_hits   = 0;
+    size_t q8_1_cache_misses = 0;
+    size_t q8_1_cache_peak   = 0; // most entries alive at once, over the run
+    void q8_1_cache_reset() {
+        q8_1_cache.clear();
+    }
+
     ~ggml_backend_cuda_context();
 
     cudaStream_t stream(int device, int stream) {
@@ -1690,3 +1713,12 @@ static __inline__ void ggml_cuda_kernel_launch(Kernel kernel, const ggml_cuda_ke
     kernel<<<launch_params.block_nums, launch_params.block_dims, launch_params.shmem, launch_params.stream>>>(std::forward<Args>(args)... );
     CUDA_CHECK(cudaGetLastError());
 }
+
+// Defined in ggml-cuda.cu. Hands back the quantized copy of src1 made earlier in
+// this graph evaluation, or returns nullptr so the caller allocates and quantizes
+// itself. `variant` separates layouts that are not interchangeable, since only an
+// identical layout may be shared.
+char * ggml_cuda_q8_1_cache_acquire(
+        ggml_backend_cuda_context & ctx, const ggml_tensor * src1, int variant,
+        int64_t ne_padded, int64_t s11, int64_t s12, int64_t s13,
+        size_t nbytes, bool & hit);
