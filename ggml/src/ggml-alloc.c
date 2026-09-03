@@ -824,6 +824,15 @@ static void ggml_gallocr_alloc_graph_impl(ggml_gallocr_t galloc, struct ggml_cgr
 
 static bool ggml_gallocr_reserve_n_impl(
         ggml_gallocr_t galloc, struct ggml_cgraph * graph, const int * node_buffer_ids, const int * leaf_buffer_ids, bool no_alloc) {
+    // e106 probe: count full re-reserves (layout-cache candidate evidence)
+    {
+        static _Atomic int n_reserves = 0;
+        const bool trace_on = getenv("GGML_GALLOC_RESERVE_TRACE") != NULL;
+        const int n = ++n_reserves;
+        if (trace_on && (n <= 20 || n % 1000 == 0)) {
+            fprintf(stderr, "galloc-reserve #%d nodes=%d leafs=%d\n", n, graph->n_nodes, graph->n_leafs);
+        }
+    }
     size_t min_hash_size = graph->n_nodes + graph->n_leafs;
     // add 25% margin to avoid hash collisions
     min_hash_size += min_hash_size / 4;
