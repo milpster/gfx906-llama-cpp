@@ -29,19 +29,6 @@
 > deep fill **257 t/s**, TG1024 12.0-12.3 t/s, draft acc 0.65-0.66,
 > repro gate true.
 >
-> Draft mirror A/B (2026-09-04, same full protocol, prod binary vs
-> prod+mirror; temp-0 sha identical across builds, e54019ff6b42, plus a
-> direct token-for-token greedy comparison with the full spec chain:
-> byte-identical output):
->
-> | | PP16384 t/s | 120k fill t/s | TG1024 t/s @120k | draft ms/round | draft acc. |
-> |---|---|---|---|---|---|
-> | prod baseline | 394.7 | 259.4 | 11.7 | 32.2 | 0.644 |
-> | + draft mirror | **406.5** | **263.8** | **13.0 (+11%)** | **18.8 (-42%)** | 0.657 |
->
-> At shallow fill the TG gain is larger (+28%); the mirror is validated
-> but not yet in the production launcher (promotion pending).
->
  > Versus upstream master (A/B 2026-09-03, identical config, -c 200000,
  > only the binary differs; upstream at c5a5535e6 = this fork's sync
  > point 95ef7fc16 +2 commits, Q6_K retune included on the fork side;
@@ -54,9 +41,12 @@
 >
 > Total fork gains vs upstream master, mirror included: **~+23% PP,
 > ~+14% fill, ~+11% TG at 120k depth** (composed: the 2026-09-03 direct
-> pair above x the 2026-09-04 mirror A/B deltas +3.0% PP / +1.7% fill /
-> +11.1% TG@120k, sha parity both steps; a fresh direct mainline pair
-> with the mirror build is pending).
+> pair above x the 2026-09-04 draft-mirror deltas +3.0% PP / +1.7% fill
+> / +11.1% TG@120k, draft rounds -42%; both steps sha-gated, and the
+> mirror additionally verified by a token-for-token temp-0 comparison -
+> byte-identical output; mirror promotion to the production launcher
+> pending; a fresh direct mainline pair with the mirror build is
+> pending).
 >
 > ### What is changed
 >
