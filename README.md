@@ -51,7 +51,7 @@
 >   Benefit: no startup aborts or capture corruption on tight fits,
 >   honest fit tables.
 > - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
->   buffers (compute ~5x smaller than stock), HIP graph robustness.
+>   buffers (compute 4.7x smaller than stock), HIP graph robustness.
 >   Benefit: the 250k-on-40GB fit itself - stock cannot load it.
 > - **Robustness ports, bit-exact** (mx-llama.cpp survey): fattn-vec
 >   stride fix, pipeline drain before seq-layout reset, HIP graph exec
@@ -65,15 +65,37 @@
 >
 > | idea | why out |
 > |---|---|
-> | MMQ inner-loop restructures, 5 variants (fork probes; upstream #21698, #23685) | ~41% issue ceiling is structural on gfx906 |
-> | fattn scheduling/geometry probes (fork; upstream #25635/#28102 wrong path for gfx906) | compiler schedule is a local optimum (-0.5 to -5.8%) |
-> | upstream #27173 draft chain | launch overhead TG-neutral here; one-decode drafting already |
-> | deeper draft n_max 5/6 (fork lane) | 6-row verify hits a kernel-shape cliff (-28% TG) |
+> | MMQ inner-loop restructures, 5 variants (fork probes) | ~41% issue ceiling is structural on gfx906 |
+> | fattn scheduling/geometry probes (fork lanes) | compiler schedule is a local optimum (-0.5 to -5.8%) |
+> | deeper draft n_max=5 (fork lane) | 6-row verify hits a kernel-shape cliff (-28% TG) |
 > | K quantization beyond q8_0-V (fork measurement, E54) | native tile -2.6 t/s, depth effect only ~5% |
 > | ts rebalance / drafter relocation (fork lanes, E105 + 08-15 sweeps) | decode is overhead-bound, not bandwidth-bound |
 > | checkpoint sparsify / off (fork lanes, AB6 + E119.4) | neutral / breaks prompt restore |
-> | mx-fork layout cache, replay coupling, TP/AllReduce; eaman rs line (wedges on abort) | fixes pathologies we do not have, or not our topology |
-> | full survey (adopted/rejected per PR) | journal/ + bench/FINDINGS.md |
+> | full survey (adopted/rejected per PR) | table below + journal/ + bench/FINDINGS.md |
+>
+> ### Upstream PRs and projects evaluated
+>
+> | name | what was tested | why not adopted |
+> |---|---|---|
+> | upstream #27173 (PatrickWalther) draft-chain perf | full triage + our graphs-off lane | launch overhead TG-neutral here; dflash already one-decode; output-head mirror taken instead |
+> | upstream #21698 (iacopPBK) q8_0 loader remap | ported + A/B, Q8LDR build | +1.0% = noise; PR gains measured under upstream's RDNA2-fallback tiles, not our vega table |
+> | upstream #23685 (ravel7524) packed Q8_1 MMVQ | trial merge + confound screen | no gain on the target path; parked as reference for the Q4_K drafter |
+> | upstream #24546 (ravel7524) MoE expert-width N-tiles | triage vs PMU attribution | 96.9% of MMQ cycles already run J=64 fb=0 - no headroom |
+> | upstream #28313 (pwilkin) ROCm top-k resolve | triage vs E53 gate | top-k worth <= 0.4 t/s in TG |
+> | upstream #28178 (GiuseppeCapaldo93) small-D2D copy kernel | live-graph copy probe | no per-layer-per-token small copies on our path |
+> | upstream #25635 (ynankani) fattn XOR swizzle | fork probes of the same schedule | -0.5 to -5.8%; compiler schedule already a local optimum |
+> | upstream #28102 (pwilkin) fattn tuning (gfx1201) | geometry probes | wrong target arch; same local-optimum result |
+> | upstream #27694 (praneshgo) probabilistic drafter | triage | rejection-sampling verify = sha-breaking; no dflash support |
+> | upstream #28305 (ynankani) static sampling subgraph | triage | dflash2 walks the lattice on CPU; no backend sampling |
+> | upstream #28390 (am17an) drafter meta-backend | triage | VRAM saving only under -sm tensor; we run -sm layer |
+> | upstream #28391 (ggerganov) default spec config | triage | perf-neutral; re-verify additive flag semantics at next sync |
+> | upstream #28333 (mxxm-t) zero MTP carrier | triage | MTP-family fix; dflash carrier is separate - check at sync |
+> | upstream #27692 (kilofox) speculative prefill | triage | lossy prefill; watch |
+> | upstream #21170 (uaruss) ROCm multi-GPU IMA fix | hand-applied for crash tests | fixes recurrent-state restore; our crash class was device-context D2D |
+> | upstream #21849 (avialallon) per-arch MMQ tiles | triage | converges with our vega table; drop our gate only after it merges |
+> | upstream #26592 (Geramy) hipCUB top-k | triage | no hot sort on our path |
+> | mx-llama.cpp (mxxm-t) | full survey | 3 robustness ports adopted (bit-exact); GDN chunk + q8_1 cache perf-neutral; TP/AllReduce, layout cache, replay coupling not our topology |
+> | eaman patch store (store.piffa.net/lm/bug) | full survey | pipeline-parallel controls + fit refinements adopted 2026-08-24; rs sync line wedges on abort |
 >
 > ### Evidence and build
 >
