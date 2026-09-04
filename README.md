@@ -40,11 +40,15 @@
 >
 > ### What is changed
 >
-> - **Kernel tuning** (`GGML_CUDA_VEGA_TUNE_*`, default-on): per-arch MMQ
->   GEMM table `mmq-config-vega.cuh` (Q6_K at I=64/occ2: +4.5% PP, +2.7%
->   fill, sha-identical), tiled top-k, HIP graph tuning. Rejected probes
->   (fattn cols16/occ3/qpipe, MMQ dual-acc, q8_0 loader remap) stay in
->   tree, default-off, for reruns.
+ > - **Kernel tuning** (`GGML_CUDA_VEGA_TUNE_*`, default-on): per-arch MMQ
+ >   GEMM table `mmq-config-vega.cuh` (Q6_K at I=64/occ2: +4.5% PP, +2.7%
+ >   fill, sha-identical - Q6_K is 96.9% of this model's MMQ cycles and
+ >   prefill is GEMM-bound; I=64 shrinks the VGPR accumulator footprint,
+ >   lifting occupancy from 1 to 2 waves so the GPU hides the latency the
+ >   1-wave config waited on; gfx906 is VGPR-sensitive, cf. the E93
+ >   dual-acc rejection), tiled top-k, HIP graph tuning. Rejected probes
+ >   (fattn cols16/occ3/qpipe, MMQ dual-acc, q8_0 loader remap) stay in
+ >   tree, default-off, for reruns.
 > - **Flash attention dispatch**: context-based path selector, native
 >   q8_0-V tile geometry, small-Q narrow tiles for MTP-verify batches.
 > - **Speculative decoding**: DFlash2 integration + per-round acceptance
