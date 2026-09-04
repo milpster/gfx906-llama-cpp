@@ -1,5 +1,10 @@
 > ## gfx906 fork (this repository)
 >
+> **TLDR:** +23% prefill, +11% TG at depth, 250k context on 40 GB,
+> bit-identical outputs vs upstream master - for gfx906 (Radeon VII /
+> MI50) and mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-03
+> (95ef7fc16, 65 commits, lane-gated).
+>
 > **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
 > (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
 > no gfx906 tuning and no controllable pipeline parallelism for
@@ -35,7 +40,8 @@
 >   --spec-draft-device): device-local copy of the borrowed vocab head,
 >   single-device draft graph -> draft rounds -42%, TG +11%.
 > - **Pipeline parallelism**: fork-only on/off switch, safe fallback,
->   draft-ctx exclusion.
+>   draft-ctx exclusion (controls + per-device fit refinements from the
+>   eaman patch store, store.piffa.net/lm/bug; A/B-adopted 2026-08-24).
 > - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
 >   buffers, HIP graph robustness -> 250k on 40 GB.
 > - **Env-gated ports, bit-exact**: GDN chunked prefill, q8_1 cache,
