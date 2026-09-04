@@ -28,7 +28,7 @@
 > |---|---|
 > | gfx906 / MI50 / Radeon VII | wave64-correct kernel tables, sha-gated |
 > | mixed ROCm + Vulkan | controllable pipeline parallelism + safe fallback |
-> | big model, tight VRAM | 250k ctx on 40 GB, quantized KV, robust fits |
+> | heterogeneous GPU setups | 250k ctx on 40 GB across mixed devices, quantized KV, robust fits |
 > | Qwen3.8 / qwen4exp | DFlash2 drafter, adaptive depth, GDN prefill |
 > | anyone reproducibility-minded | every change gated on unchanged temp-0 sha |
 >
