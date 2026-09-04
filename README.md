@@ -53,9 +53,11 @@
 > - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
 >   buffers (compute ~5x smaller than stock), HIP graph robustness.
 >   Benefit: the 250k-on-40GB fit itself - stock cannot load it.
-> - **Env-gated ports, bit-exact** (mx-llama.cpp survey): GDN chunked
->   prefill, q8_1 cache, pipeline drain + graph exec fixes. Benefit:
->   robustness on the tight-fit + HIP-graph regime, at zero measured cost.
+> - **Robustness ports, bit-exact** (mx-llama.cpp survey): fattn-vec
+>   stride fix, pipeline drain before seq-layout reset, HIP graph exec
+>   reinstantiation. Benefit: stability on tight-fit + HIP-graph
+>   regimes. (GDN chunked prefill and q8_1 activation cache also
+>   carried, env-gated; measured perf-neutral here.)
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
 >   Benefit: current fixes ride along at zero measured cost.
 >
