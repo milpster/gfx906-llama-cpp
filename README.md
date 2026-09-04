@@ -1,9 +1,9 @@
 > ## gfx906 fork (this repository)
 >
-> **TLDR:** +23% prefill, +11% TG at depth, 250k context on 40 GB,
-> bit-identical outputs vs upstream master - for gfx906 (Radeon VII /
-> MI50) and mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-03
-> (95ef7fc16, 65 commits, lane-gated).
+> **TLDR:** +23% prefill, +11% TG @120k depth, 250k context for a 27B
+> Q6_K on 40 GB VRAM, bit-identical outputs vs upstream master - for
+> gfx906 (Radeon VII / MI50) and mixed ROCm + Vulkan rigs. Last upstream
+> sync: 2026-09-03 (95ef7fc16, 65 commits, lane-gated).
 >
 > **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
 > (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
@@ -38,15 +38,20 @@
 >   dispatch. Occupancy 1 -> 2 waves hides latency -> +20% PP.
 > - **Draft head mirror** (LLAMA_DFLASH_MIRROR_OUTPUT=1 +
 >   --spec-draft-device): device-local copy of the borrowed vocab head,
->   single-device draft graph -> draft rounds -42%, TG +11%.
+>   single-device draft graph -> draft rounds -42%, TG +11% @120k depth.
 > - **Pipeline parallelism**: fork-only on/off switch, safe fallback,
 >   draft-ctx exclusion (controls + per-device fit refinements from the
 >   eaman patch store, store.piffa.net/lm/bug; A/B-adopted 2026-08-24).
+>   Benefit: no startup aborts or capture corruption on tight fits,
+>   honest fit tables.
 > - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
->   buffers, HIP graph robustness -> 250k on 40 GB.
+>   buffers (compute ~5x smaller than stock), HIP graph robustness.
+>   Benefit: the 250k-on-40GB fit itself - stock cannot load it.
 > - **Env-gated ports, bit-exact**: GDN chunked prefill, q8_1 cache,
->   pipeline drain + graph exec fixes.
+>   pipeline drain + graph exec fixes. Benefit: robustness on the
+>   tight-fit + HIP-graph regime, at zero measured cost.
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
+>   Benefit: current fixes ride along at zero measured cost.
 >
 > ### What did not work (measured)
 >
