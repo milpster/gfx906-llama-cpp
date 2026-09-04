@@ -7,9 +7,10 @@
  > tight mixed ROCm+Vulkan fits (audit E117). This fork
  > keeps those GPUs production-viable: it runs Qwen3.8-27B (i1-Q6_K) with
 > DFlash2 speculative decoding at **250k context on 40 GB of VRAM**
- > across 2x Radeon VII + a GTX 3080 (Vulkan), at **+20% prefill over
- > upstream master** (includes the 2026-09-03 Q6_K tile retune)
- > with **bit-identical outputs**.
+> across 2x Radeon VII + a GTX 3080 (Vulkan), at **~+23% prefill and
+> ~+11% TG at depth over upstream master** (2026-09-03 Q6_K tile retune
+> + 2026-09-04 draft head mirror, composed per the Numbers section)
+> with **bit-identical outputs**.
 >
 > ### Who it benefits, and how
 >
@@ -46,10 +47,16 @@
  > point 95ef7fc16 +2 commits, Q6_K retune included on the fork side;
  > temp-0 sha identical across builds, e54019ff6b42):
  >
- > | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
- > |---|---|---|---|---|
- > | fork (tuned) | **398.5** | **259.7** | 13.6 | 0.691 |
- > | upstream master | 332.5 | 231.4 | 13.6 | 0.691 |
+> | | PP16384 t/s | 120k fill t/s | TG512 t/s (temp 0) | draft acc. |
+> |---|---|---|---|---|
+> | fork (tuned) | **398.5** | **259.7** | 13.6 | 0.691 |
+> | upstream master | 332.5 | 231.4 | 13.6 | 0.691 |
+>
+> Total fork gains vs upstream master, mirror included: **~+23% PP,
+> ~+14% fill, ~+11% TG at 120k depth** (composed: the 2026-09-03 direct
+> pair above x the 2026-09-04 mirror A/B deltas +3.0% PP / +1.7% fill /
+> +11.1% TG@120k, sha parity both steps; a fresh direct mainline pair
+> with the mirror build is pending).
 >
 > ### What is changed
 >

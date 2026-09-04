@@ -35,7 +35,7 @@ FORK_BIN=${FORK_BIN:-$PWD/build-dflash-novega}
 MAIN_BIN=${MAIN_BIN:-/home/srcds/dev/llama.cpp/build-stock}
 
 case $SIDE in
-    fork)     PORT=8021; BIN=$FORK_BIN; EXTRA="--pipeline-parallel off" ;;
+    fork)     PORT=8021; BIN=$FORK_BIN; EXTRA="--pipeline-parallel off ${FORK_EXTRA:-}" ;;
     mainline) PORT=8022; BIN=$MAIN_BIN; EXTRA="" ;;
     *) echo "unknown SIDE '$SIDE' (fork|mainline)"; exit 1 ;;
 esac
