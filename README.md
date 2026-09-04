@@ -77,7 +77,8 @@
 >
 > Every claim has a lane row: journal/ (experiment log), bench/
 > (A/B harness, FINDINGS.md, vram-test, rocprof stack). Build:
-> ./build-dflash-novega.sh (ROCm 6.1 + Vulkan, gfx906, tunes on).
+> ./build-dflash-novega.sh (Vulkan + ROCm 6.1 - pinned, the measured
+> optimum for gfx906 here; launchers also pin its userspace).
 >
 # llama.cpp
 
