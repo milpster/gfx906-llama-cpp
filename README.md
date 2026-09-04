@@ -28,6 +28,19 @@
 > deep fill **257 t/s**, TG1024 12.0-12.3 t/s, draft acc 0.65-0.66,
 > repro gate true.
 >
+> Draft mirror A/B (2026-09-04, same full protocol, prod binary vs
+> prod+mirror; temp-0 sha identical across builds, e54019ff6b42, plus a
+> direct token-for-token greedy comparison with the full spec chain:
+> byte-identical output):
+>
+> | | PP16384 t/s | 120k fill t/s | TG1024 t/s @120k | draft ms/round | draft acc. |
+> |---|---|---|---|---|---|
+> | prod baseline | 394.7 | 259.4 | 11.7 | 32.2 | 0.644 |
+> | + draft mirror | **406.5** | **263.8** | **13.0 (+11%)** | **18.8 (-42%)** | 0.657 |
+>
+> At shallow fill the TG gain is larger (+28%); the mirror is validated
+> but not yet in the production launcher (promotion pending).
+>
  > Versus upstream master (A/B 2026-09-03, identical config, -c 200000,
  > only the binary differs; upstream at c5a5535e6 = this fork's sync
  > point 95ef7fc16 +2 commits, Q6_K retune included on the fork side;
@@ -52,7 +65,13 @@
 > - **Flash attention dispatch**: context-based path selector, native
 >   q8_0-V tile geometry, small-Q narrow tiles for MTP-verify batches.
 > - **Speculative decoding**: DFlash2 integration + per-round acceptance
->   logging, `draft-mtp-adaptive` depth (upstream PR #27210 carried here).
+>   logging, `draft-mtp-adaptive` depth (upstream PR #27210 carried here),
+>   and the **DFlash2 draft output-head mirror** (`LLAMA_DFLASH_MIRROR_OUTPUT=1`,
+>   env-gated, plus `--spec-draft-device ROCm0`): the draft context gets a
+>   device-local copy of the borrowed target output head (995 MiB, host-staged
+>   copy, head+tail verified), so the draft graph runs single-device - no
+>   cross-device hop per round. Draft rounds 32.2 -> 18.8 ms, TG +11% at
+>   120k depth, PP top-of-band, bit-exact.
 > - **Multi-GPU**: `--pipeline-parallel` for `-sm layer` (fork-only),
 >   drafter pinning via `--spec-draft-override-tensor`.
 > - **Ported extras, env-gated, bit-exact** (mx-llama.cpp survey): GDN
@@ -82,6 +101,7 @@
  > | mx-llama.cpp fork | GDN chunked prefill, q8_1 activation cache | bit-exact, perf-neutral on this model; kept default-on, env-gated |
 > | mx-llama.cpp fork | robustness family (fattn-vec stride, pipeline drain, HIP graph exec reinstantiate) | adopted; targets our tight-VRAM + HIP-graph regime |
 > | upstream 2026-09-03 merge | qwen4exp fixes, MoE expert-reduction fusion (#25952), vulkan FA dequant (#28190), RAM-peak (#27483), quantize row-slab (#27830) | all ride along at zero measured cost (lane-gated) |
+> | fork E119 (own; mirror-output idea kin to #27173's) | DFlash2 draft output-head mirror + single-device draft ctx | draft rounds **-42%**, TG **+11% @120k / +28% shallow**, PP top-of-band, bit-exact (sha + token-for-token temp-0) |
 >
 > **Measured and rejected** (kept default-off in tree where cheap)
 >
@@ -94,6 +114,8 @@
  > | eaman patch store | experimental rs line (recurrent-state speculative checkpoints) | wedges the server permanently on a client abort mid-PP (Vulkan fence never signals; gdb evidence bench/logs/gdb-wedge.log); author marks it experimental - reverted, branch `eaman-rs` kept for reference |
  > | mx fork | TP/`-sm tensor` + custom AllReduce stack | homogeneous-AMD-only; this rig is heterogeneous ROCm+Vulkan `-sm layer` |
 > | fork probes | fattn cols16/occ3/qpipe, MMQ dual-acc | measured, rejected (E93: -13.1% pp; E101: -5.8%), kept env-off for reruns |
+> | fork lane | `--spec-draft-n-max 5` rebracket on the cheap draft | TG -28%: the 6-row verify batch hits a kernel-shape cliff (~+50 ms/round, MoE MUL_MAT_ID batch threshold or shadow-convert geometry suspected); depth stays 4; fixing the cliff is a parked lever |
+> | fork lane | checkpoint sparsify (`--checkpoint-min-step 16384`) | perf-neutral vs baseline (restore intact); checkpoints off cannot be measured by the lane protocol (breaks prompt restore, AB6/AB8 class) |
 >
 > **Checked, not applicable** (code-path or measurement proof)
 >
@@ -109,14 +131,27 @@
 > | upstream #26705, #27962 | Q4_K/Q5_K MMVQ branchless, IQ2/IQ3 SWAR | wrong quant mix (i1-Q6_K) |
 > | upstream #21170 | ROCm multi-GPU IMA fix | crash never recurred; branch `crash-test-setdevice` parked with runbook |
 >
-> Also on watch (upstream, unmerged): #27173 spec draft chain (+10% TG
-> claim), #27692 speculative prefill (lossy), #21849 per-arch MMQ tiles
-> (stale; superseded by #27841 for us).
+> Also on watch (upstream, unmerged): #27692 speculative prefill (lossy),
+> #27694 probabilistic drafter + rejection-sampling verify (changes
+> sampling semantics = sha-breaking), #28391 default spec config (flag
+> semantics change at next sync: `--spec-type` additive,
+> `--no-spec-type`), #28333 MTP carrier zeroing (check dflash carrier on
+> sync). #27173 spec draft chain is CLOSED for us: rejected whole (D7
+> multi-GPU regression profile; our DFlash2 already drafts in one
+> decode, SCHED_POOL moot - launch overhead measured TG-neutral, and
+> defer-catch-up structurally absent); its mirror-output idea landed as
+> the fork's own draft head mirror (adopted table). #21849 stale,
+> superseded by #27841.
 >
 > Tooling provenance: PMU profiling via an archived 6.1-matched rocprof
-> stack (`bench/rocprof-stack/`, rebuildable), D2D-copy histogramming via
+> stack (`bench/rocprof-stack/`, rebuildable; note: the TG-phase profile
+> zone crashes under the interposer - E91 class, twice - keep rocprof
+> PP-only until the stack is repaired), D2D-copy histogramming via
 > the `bench/rd2d-count` LD_PRELOAD shim (version-script interposition for
-> `hipMemcpyAsync@hip_4.2`).
+> `hipMemcpyAsync@hip_4.2`), VRAM integrity probing via `bench/vram-test`
+> (write/readback pattern test per card; born from the 2026-09-04
+> transient-corruption incident, which self-healed and is documented in
+> the journal).
 >
 > ### Evidence and build
 >

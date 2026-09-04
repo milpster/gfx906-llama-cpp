@@ -373,6 +373,15 @@ private:
     // host buffer for the model output (logits and embeddings)
     ggml_backend_buffer_ptr buf_output;
 
+    // device-local copy of the borrowed target output head, so a single-device
+    // DFlash draft ctx needs no target device in its sched (LLAMA_DFLASH_MIRROR_OUTPUT)
+    ggml_context_ptr       mirror_ctx;
+    ggml_backend_buffer_ptr mirror_buf;
+    ggml_tensor *          mirror_output   = nullptr;
+    ggml_tensor *          mirror_output_s = nullptr;
+
+    void init_mirror_output();
+
     // keep copies of the per-sequence memory on the device
     std::map<llama_seq_id, llama_memory_buffers> mem_storage;
 

@@ -471,6 +471,8 @@ llama_context::llama_context(
             LLAMA_LOG_INFO("%s: pipeline parallelism enabled\n", __func__);
         }
 
+        init_mirror_output();
+
         sched_reserve();
 
         if (!cparams.flash_attn) {
@@ -2539,6 +2541,113 @@ ggml_cgraph * llama_context::graph_reserve(
     return gf;
 }
 
+void llama_context::init_mirror_output() {
+    if (getenv("LLAMA_DFLASH_MIRROR_OUTPUT") == nullptr) {
+        return;
+    }
+
+    if (model.arch != LLM_ARCH_DFLASH || model.output != nullptr || cparams.ctx_other == nullptr) {
+        return;
+    }
+
+    const auto * model_other = llama_get_model(cparams.ctx_other);
+    auto * src   = model_other->output;
+    auto * src_s = model_other->output_s;
+
+    if (src == nullptr) {
+        return;
+    }
+
+    ggml_backend_buffer_type_t buft = nullptr;
+    for (const auto & backend : backends) {
+        auto * dev = ggml_backend_get_device(backend.get());
+        if (dev == nullptr || ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_CPU) {
+            continue;
+        }
+        buft = ggml_backend_dev_buffer_type(dev);
+        break;
+    }
+
+    if (buft == nullptr) {
+        LLAMA_LOG_WARN("%s: LLAMA_DFLASH_MIRROR_OUTPUT set, but no GPU backend found - skipping\n", __func__);
+        return;
+    }
+
+    const size_t size = ggml_nbytes(src) + (src_s ? ggml_nbytes(src_s) : 0);
+
+    struct ggml_init_params iparams = {
+        /*.mem_size   =*/ ggml_tensor_overhead() * 2,
+        /*.mem_buffer =*/ nullptr,
+        /*.no_alloc   =*/ true,
+    };
+    mirror_ctx.reset(ggml_init(iparams));
+
+    mirror_output = ggml_new_tensor(mirror_ctx.get(), src->type, GGML_MAX_DIMS, src->ne);
+    if (src_s) {
+        mirror_output_s = ggml_new_tensor(mirror_ctx.get(), src_s->type, GGML_MAX_DIMS, src_s->ne);
+    }
+
+    mirror_buf.reset(ggml_backend_buft_alloc_buffer(buft, size));
+    if (mirror_buf == nullptr) {
+        LLAMA_LOG_WARN("%s: failed to allocate the output head mirror (%.2f MiB) - skipping\n",
+                __func__, size / 1024.0 / 1024.0);
+        mirror_output   = nullptr;
+        mirror_output_s = nullptr;
+        mirror_ctx.reset();
+        return;
+    }
+
+    ggml_tallocr talloc = ggml_tallocr_new(mirror_buf.get());
+    ggml_tallocr_alloc(&talloc, mirror_output);
+    if (mirror_output_s) {
+        ggml_tallocr_alloc(&talloc, mirror_output_s);
+    }
+
+    // copy through the host: a direct device-to-device copy between buffers of
+    // the same backend type can run on the wrong device context (E87 class)
+    {
+        std::vector<uint8_t> host(ggml_nbytes(mirror_output));
+        ggml_backend_tensor_get(src, host.data(), 0, host.size());
+        ggml_backend_tensor_set(mirror_output, host.data(), 0, host.size());
+
+        uint8_t check[4096] = {};
+        ggml_backend_tensor_get(mirror_output, check, 0, sizeof(check));
+        ggml_backend_tensor_get(src, host.data(), 0, sizeof(check));
+        const bool head_ok = memcmp(check, host.data(), sizeof(check)) == 0;
+
+        uint8_t check_t[4096] = {};
+        ggml_backend_tensor_get(mirror_output, check_t, host.size() - sizeof(check_t), sizeof(check_t));
+        ggml_backend_tensor_get(src, host.data(), host.size() - sizeof(check_t), sizeof(check_t));
+        const bool tail_ok = memcmp(check_t, host.data(), sizeof(check_t)) == 0;
+
+        LLAMA_LOG_INFO("%s: mirror check src type %s ne %lldx%lldx%lldx%lld nb %lld/%lld/%lld/%lld nbytes %zu mirror type %s ne %lldx%lldx%lldx%lld nb %lld/%lld/%lld/%lld nbytes %zu head %s tail %s\n",
+                __func__,
+                ggml_type_name(src->type), (long long) src->ne[0], (long long) src->ne[1], (long long) src->ne[2], (long long) src->ne[3],
+                (long long) src->nb[1], (long long) src->nb[2], (long long) src->nb[3], (long long) src->nb[0], ggml_nbytes(src),
+                ggml_type_name(mirror_output->type), (long long) mirror_output->ne[0], (long long) mirror_output->ne[1], (long long) mirror_output->ne[2], (long long) mirror_output->ne[3],
+                (long long) mirror_output->nb[1], (long long) mirror_output->nb[2], (long long) mirror_output->nb[3], (long long) mirror_output->nb[0], ggml_nbytes(mirror_output),
+                head_ok ? "OK" : "BAD", tail_ok ? "OK" : "BAD");
+
+        if (!head_ok || !tail_ok) {
+            LLAMA_LOG_ERROR("%s: output head mirror verify FAILED - skipping mirror\n", __func__);
+            mirror_output   = nullptr;
+            mirror_output_s = nullptr;
+            mirror_ctx.reset();
+            mirror_buf.reset();
+            return;
+        }
+    }
+
+    if (mirror_output_s) {
+        std::vector<uint8_t> host(ggml_nbytes(mirror_output_s));
+        ggml_backend_tensor_get(src_s, host.data(), 0, host.size());
+        ggml_backend_tensor_set(mirror_output_s, host.data(), 0, host.size());
+    }
+
+    LLAMA_LOG_INFO("%s: dflash output head mirrored to %s (%.2f MiB)\n",
+            __func__, ggml_backend_buft_name(buft), size / 1024.0 / 1024.0);
+}
+
 llm_graph_params llama_context::graph_params(
                         llm_graph_result * res,
                       const llama_ubatch & ubatch,
@@ -2560,6 +2669,8 @@ llm_graph_params llama_context::graph_params(
         /*.n_outputs   =*/ n_outputs,
         /*.cb          =*/ graph_get_cb(),
         /*.res         =*/ res,
+        /*.mirror_output   =*/ mirror_output,
+        /*.mirror_output_s =*/ mirror_output_s,
     };
 }
 

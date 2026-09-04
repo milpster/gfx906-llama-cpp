@@ -1489,6 +1489,8 @@ llm_graph_context::llm_graph_context(const llm_graph_params & params) :
     samplers         (params.samplers),
     cb_func          (params.cb),
     res              (params.res),
+    mirror_output    (params.mirror_output),
+    mirror_output_s  (params.mirror_output_s),
     ctx0             (res->get_ctx()),
     gf               (res->get_gf()) {
         res->set_params(params);

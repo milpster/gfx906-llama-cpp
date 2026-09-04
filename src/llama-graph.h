@@ -809,6 +809,11 @@ struct llm_graph_params {
 
     llm_graph_result * res;
 
+    // device-local copy of the borrowed target output head (DFlash draft
+    // contexts, LLAMA_DFLASH_MIRROR_OUTPUT); null otherwise
+    ggml_tensor * mirror_output   = nullptr;
+    ggml_tensor * mirror_output_s = nullptr;
+
     // return true if the "other" params would result in a graph with the same topology as with the current params
     //   having the same topology allows us to reuse the graph in some cases
     bool allow_reuse(const llm_graph_params & other) const {
@@ -1031,6 +1036,9 @@ struct llm_graph_context {
     const llm_graph_cb & cb_func;
 
     llm_graph_result * res;
+
+    ggml_tensor * mirror_output   = nullptr;
+    ggml_tensor * mirror_output_s = nullptr;
 
     ggml_context * ctx0 = nullptr;
     ggml_cgraph  * gf   = nullptr;

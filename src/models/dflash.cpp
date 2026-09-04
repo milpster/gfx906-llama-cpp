@@ -780,6 +780,11 @@ llama_model_dflash::graph<false>::graph(const llama_model & model, const llm_gra
         output_s = model_other->output_s;
     }
 
+    if (mirror_output != nullptr) {
+        output   = mirror_output;
+        output_s = mirror_output_s != nullptr ? mirror_output_s : output_s;
+    }
+
     cur = build_lora_mm(output, cur, output_s);
 
     // DFlash2 feeds these logits to the selector, so they need the target's output
@@ -987,6 +992,11 @@ llama_model_dflash::graph_dsv4::graph_dsv4(const llama_model & model, const llm_
         GGML_ASSERT(model_other->output != nullptr && "DSpark decoder requires the target model's output projection");
         output   = model_other->output;
         output_s = model_other->output_s;
+    }
+
+    if (mirror_output != nullptr) {
+        output   = mirror_output;
+        output_s = mirror_output_s != nullptr ? mirror_output_s : output_s;
     }
 
     cur = build_lora_mm(output, cur, output_s);
