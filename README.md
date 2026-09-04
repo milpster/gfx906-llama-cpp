@@ -39,8 +39,9 @@
 >
 > ### What we changed, and why
 >
-> - **wave64 kernel tables**: MMQ tiles (Q6_K I=64), top-k, fattn
->   dispatch. Occupancy 1 -> 2 waves hides latency -> +20% PP.
+> - **wave64 kernel tables** (fork + upstream #27841's GCN row): MMQ
+>   tiles (Q6_K I=64), top-k, fattn dispatch. Occupancy 1 -> 2 waves
+>   hides latency -> +20% PP.
 > - **Draft head mirror** (LLAMA_DFLASH_MIRROR_OUTPUT=1 +
 >   --spec-draft-device): device-local copy of the borrowed vocab head,
 >   single-device draft graph -> draft rounds -42%, TG +11% @120k depth.
@@ -52,9 +53,9 @@
 > - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
 >   buffers (compute ~5x smaller than stock), HIP graph robustness.
 >   Benefit: the 250k-on-40GB fit itself - stock cannot load it.
-> - **Env-gated ports, bit-exact**: GDN chunked prefill, q8_1 cache,
->   pipeline drain + graph exec fixes. Benefit: robustness on the
->   tight-fit + HIP-graph regime, at zero measured cost.
+> - **Env-gated ports, bit-exact** (mx-llama.cpp survey): GDN chunked
+>   prefill, q8_1 cache, pipeline drain + graph exec fixes. Benefit:
+>   robustness on the tight-fit + HIP-graph regime, at zero measured cost.
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
 >   Benefit: current fixes ride along at zero measured cost.
 >
@@ -62,14 +63,14 @@
 >
 > | idea | why out |
 > |---|---|
-> | MMQ inner-loop restructures (5 variants) | ~41% issue ceiling is structural on gfx906 |
-> | fattn scheduling/geometry probes | compiler schedule is a local optimum (-0.5 to -5.8%) |
+> | MMQ inner-loop restructures, 5 variants (fork probes; upstream #21698, #23685) | ~41% issue ceiling is structural on gfx906 |
+> | fattn scheduling/geometry probes (fork; upstream #25635/#28102 wrong path for gfx906) | compiler schedule is a local optimum (-0.5 to -5.8%) |
 > | upstream #27173 draft chain | launch overhead TG-neutral here; one-decode drafting already |
-> | deeper draft (n_max 5/6) | 6-row verify hits a kernel-shape cliff (-28% TG) |
-> | K quantization beyond q8_0-V | native tile -2.6 t/s, depth effect only ~5% |
-> | ts rebalance / drafter relocation | decode is overhead-bound, not bandwidth-bound |
-> | checkpoint sparsify / off | neutral / breaks prompt restore |
-> | mx-fork layout cache, TP, AllReduce | fixes pathologies we do not have |
+> | deeper draft n_max 5/6 (fork lane) | 6-row verify hits a kernel-shape cliff (-28% TG) |
+> | K quantization beyond q8_0-V (fork measurement, E54) | native tile -2.6 t/s, depth effect only ~5% |
+> | ts rebalance / drafter relocation (fork lanes, E105 + 08-15 sweeps) | decode is overhead-bound, not bandwidth-bound |
+> | checkpoint sparsify / off (fork lanes, AB6 + E119.4) | neutral / breaks prompt restore |
+> | mx-fork layout cache, replay coupling, TP/AllReduce; eaman rs line (wedges on abort) | fixes pathologies we do not have, or not our topology |
 > | full survey (adopted/rejected per PR) | journal/ + bench/FINDINGS.md |
 >
 > ### Evidence and build
