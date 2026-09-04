@@ -14,13 +14,18 @@
 >
 > ### How much it helps (vs upstream master, same-config A/B)
 >
-> | metric | gain | source |
-> |---|---|---|
-> | prefill PP16384 | **~+23%** | kernel tables +20%, draft mirror +3% |
-> | 120k deep fill | **~+14%** | same |
-> | token gen @120k depth | **~+11%** | draft mirror |
-> | context | 250k on 40 GB | tight-fit machinery (stock cannot fit) |
-> | outputs | bit-identical | sha-gated + token-for-token compare |
+> Config: 2x Radeon VII + GTX 3080 (Vulkan), `-ts 35,20,45 -sm layer`,
+> f16-K/q8_0-V, DFlash2 depth-4. Upstream column measured direct
+> (2026-09-03); fork column = direct pair x draft-mirror deltas
+> (composed, marked ~).
+>
+> | metric | upstream t/s | fork t/s | gain |
+> |---|---|---|---|
+> | prefill PP16384 | 332.5 | ~410 | **+23%** |
+> | 120k deep fill | 231.4 | ~264 | **+14%** |
+> | TG @120k depth | 13.6 | ~15.1 | **+11%** (parity pre-mirror) |
+> | context | cannot fit | 250k on 40 GB | tight-fit machinery |
+> | outputs | - | - | bit-identical (sha + token-for-token) |
 >
 > ### Who benefits
 >
