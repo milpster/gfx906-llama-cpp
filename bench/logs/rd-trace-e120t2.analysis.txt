@@ -1,0 +1,27 @@
+window: 120.0s, 792087 recs: 0=758749, 1=15970, 2=19, 4=17349
+kernel launches: 758749 (6323/s)
+top grids (gx,gy,gz,bx,by,shm):
+     84614  (480, 1, 1, 64, 1, 0)
+     51372  (120, 1, 1, 128, 1, 0)
+     39563  (20, 6, 1, 256, 1, 0)
+     36373  (6, 1, 1, 1024, 1, 128)
+     36150  (2560, 1, 1, 64, 1, 0)
+     35830  (8704, 1, 1, 64, 1, 0)
+     24489  (2, 1, 1, 256, 1, 0)
+     24320  (24, 1, 1, 64, 1, 0)
+     24168  (1, 2, 1, 24, 5, 0)
+     24016  (16, 6, 1, 32, 1, 0)
+     17711  (408, 1, 1, 256, 1, 0)
+     17711  (68, 6, 1, 256, 1, 0)
+     16116  (144, 1, 1, 256, 1, 0)
+     16116  (24, 6, 1, 256, 1, 0)
+     14710  (512, 1, 1, 64, 1, 0)
+streams: 3, busiest share 45%
+memcpys: 15970, 12.28 GB total
+card2 busy: avg 44% over 5783 samples
+card3 busy: avg 46% over 5783 samples
+card4 busy: avg 2% over 5783 samples
+bursts (>=8 launches, gap>5ms): 1116
+  launches/burst med 822, burst span med 1.9ms, quiet between med 65.4ms
+  card2 busy inside bursts 50% vs quiet 45%
+host inter-launch gap histogram (2^n ns): 15:736, 16:336, 17:19, 18:3, 19:4, 20:7, 21:27, 22:311, 23:6, 24:46, 25:359, 26:188, 27:459, 28:16, 29:1, 30:44, 31:4, 32:1

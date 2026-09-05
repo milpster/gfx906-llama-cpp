@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/srcds/dev/uf3_rocm6.1_llama.cpp/bench/rd-trace-analyze.py", line 131, in <module>
+    main()
+  File "/home/srcds/dev/uf3_rocm6.1_llama.cpp/bench/rd-trace-analyze.py", line 51, in main
+    recs = load(args.trace)
+           ^^^^^^^^^^^^^^^^
+  File "/home/srcds/dev/uf3_rocm6.1_llama.cpp/bench/rd-trace-analyze.py", line 20, in load
+    ts, stream, a0, a1, a2, shm, kind, _ = REC.unpack(b)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 8, got 7)
