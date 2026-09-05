@@ -1,0 +1,7 @@
+hip_4.2 {
+  global: hipMemcpy; hipMemcpyAsync; hipMemsetAsync; hipLaunchKernel;
+          hipStreamSynchronize; hipEventSynchronize;
+};
+hip_4.3 {
+  global: hipGraphLaunch;
+};
