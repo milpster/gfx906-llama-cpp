@@ -27,6 +27,34 @@
 > | context | cannot fit | 250k on 40 GB | tight-fit machinery |
 > | outputs | - | - | bit-identical (sha + token-for-token) |
 >
+> ### Output identity and quality vs upstream (2026-09-06, E122-E124)
+>
+> Same-config A/B, fork build-dflash-novega vs upstream build-stock
+> (mainline-cmp c5a5535e6). Qwen3.8-27B i1-Q6_K, 65-chunk PPL lane +
+> full production config temp-0 lane + logit-level KLD lane
+> (bench/perplexity-upstream-fork*.sh, bench/kld-probe-archive.sh,
+> bench/kld-fullstats.py).
+>
+> | metric | upstream | fork | verdict |
+> |---|---|---|---|
+> | perplexity (65 chunks) | 1.3033 +/- 0.0056 | 1.3043 +/- 0.0056 | identical within noise |
+> | PPL pass speed | 19.6 s | 14.7 s | fork +25% |
+> | temp-0 repro sha / TG sha | e54019ff6b42 / fd0d0fd872c2 | identical | greedy outputs match |
+> | KL divergence, mean | 0 | 0.0248 | tail-driven, median 1.6e-6 |
+> | KL divergence, p95 / p99 / max | 0 | 0.010 / 0.31 / ~16 | near-tie tail only |
+> | top-1 agreement | 100% | 98.65% | flips on near-ties only |
+> | upstream top-1 in fork top-5 | 100% | 99.81% | sampling-relevant |
+> | logit RMSE, full vocab / top-100 | 0 | 0.067 / 0.50 | quant-floor + rare flips |
+>
+> Attribution (E123, archive-build probe series): build flags and
+> toolchain exonerated (exact zero); divergence is the vega MMQ tune
+> set's accumulation order (E82 restoration, signature stable and
+> unchanged since 2026-09-02); upstream sync, q6k64 tile, draft mirror,
+> GDN and q8_1 ports are numerics-neutral. Sampled outputs (temp 1.0
+> prod config) unaffected; rare token flips possible only on long
+> temp-0 runs over flat distributions.
+>
+>
 > ### Who benefits
 >
 > | You run... | You get... |
