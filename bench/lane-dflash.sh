@@ -10,7 +10,7 @@
 # breakdown tables only print from the fit pass (--fit off = no tables).
 #
 # Usage: LANE=F1 [TS=.. SM=.. C=.. MODEL=.. CTK=.. CTV=.. PORT=.. TG_N=..
-#                FILL1=.. FILL2=.. EXTRA=..] ./lane-dflash.sh
+#                FILL1=.. FILL2=.. CLIENT=.. EXTRA=..] ./lane-dflash.sh
 # Protocol: PP16384 first-batch -> fill FILL1 (120k) -> TG1024 @depth
 #           (FILL2=0 default: one fill pass, user protocol D16).
 # Server log: bench/logs/lane-$LANE.log ; result -> bench/logs/lane-results.jsonl
@@ -25,6 +25,7 @@ MD=${MD:-/home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf}
 TS=${TS:-40,20,40}
 SM=${SM:-layer}
 C=${C:-195000}
+CLIENT=${CLIENT:-bench/lane-client.py}
 OT=${OT:-}
 CTK=${CTK:-}
 CTV=${CTV:-}
@@ -58,6 +59,13 @@ trap 'echo FAILED > "$STATUS" 2>/dev/null || true' ERR
 pkill -9 -f "llama-server.*--port $PORT" 2>/dev/null || true
 sleep 1
 
+# --no-mmap was replaced by --load-mode none upstream (#26934); old binaries reject the new flag.
+if "$BIN_DIR/bin/llama-server" --help 2>/dev/null | grep -q -- '--load-mode'; then
+  MMAPFLAG=(--load-mode none)
+else
+  MMAPFLAG=(--no-mmap)
+fi
+
 env HIP_GRAPH=${HIP_GRAPH:-1} AMD_LOG_LEVEL=0 \
   GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 HSA_OVERRIDE_GFX_VERSION=9.0.6 \
   HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 HIP_FORCE_P2P=1 \
@@ -70,7 +78,7 @@ env HIP_GRAPH=${HIP_GRAPH:-1} AMD_LOG_LEVEL=0 \
   -md "$MD" \
   "${SPECARGS[@]}" \
   --spec-draft-override-tensor '.*=ROCm0' -ngld 99 \
-  --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \
+  --threads-batch 10 --threads 9 "${MMAPFLAG[@]}" -fa on -ngl 333 \
   -b 16384 -ub 384 --ctx-checkpoints ${CKPT:-30} \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
@@ -102,7 +110,7 @@ if [ "${PROBE:-0}" = "1" ]; then
 fi
 
 if ! FILL2="${FILL2:-0}" FILL1="${FILL1:-120000}" TG_N="${TG_N:-1024}" \
-     python3 bench/lane-client.py "$PORT" | tee /tmp/opencode/lane-$LANE.json; then
+     python3 "$CLIENT" "$PORT" | tee /tmp/opencode/lane-$LANE.json; then
   echo "LANE $LANE FAILED - server log tail:" >&2
   tail -30 "$LOG" >&2
   pkill -9 -f "llama-server.*--port $PORT" 2>/dev/null || true
