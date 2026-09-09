@@ -14,8 +14,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-dflash-novega/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-dflash-novega/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
 
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 GGML_CUDA_FATTN_PATH=force_convert \
@@ -30,7 +30,7 @@ exec "$BIN" \
   -md /home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf \
   --spec-type draft-dflash --spec-draft-n-max 4 \
   --spec-draft-override-tensor '.*=ROCm0' -ngld 99 \
-  --threads-batch 10 --threads 9 --no-mmap -fa on -ngl 333 \
+  --threads-batch 10 --threads 9 --load-mode none -fa on -ngl 333 \
   -b 16384 -ub 384 --ctx-checkpoints 30 \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
