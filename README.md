@@ -1,46 +1,57 @@
 > ## gfx906 fork (this repository)
 >
-> **TLDR:** +23% prefill, +11% TG @120k depth, 250k context for a 27B
-> Q6_K on 40 GB VRAM, bit-identical outputs vs upstream master - for
-> gfx906 (Radeon VII / MI50) and mixed ROCm + Vulkan rigs. Last upstream
-> sync: 2026-09-03 (95ef7fc16, 65 commits, lane-gated).
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
 >
 > **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
 > (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
 > no gfx906 tuning and no controllable pipeline parallelism for
 > heterogeneous tight-VRAM fits. Reference deployment: Qwen3.8-27B
 > (i1-Q6_K) + DFlash2 speculative decoding at **250k context on 40 GB
-> VRAM** (2x Radeon VII + GTX 3080), **bit-identical outputs**.
+> VRAM** (2x Radeon VII + GTX 3080), deterministic lane outputs.
 >
-> ### How much it helps (vs upstream master, same-config A/B)
+> ### How much it helps (vs upstream master 2026-09-09, same-config A/B)
 >
-> Config: 2x Radeon VII + GTX 3080 (Vulkan), `-ts 35,20,45 -sm layer`,
-> f16-K/q8_0-V, DFlash2 depth-4. Upstream column measured direct
-> (2026-09-03); fork column = direct pair x draft-mirror deltas
-> (composed, marked ~).
+> Direct naked pair (identical common-subset args, -c 130000 -sm layer
+> -ts 35,20,45, f16-K/f16-V, NO speculative decoding on either side;
+> bench/ab-mainline-0909.sh, E140): isolates pure fork kernels/tunes.
+> Prod pair = fork's full DFlash2 deployment vs mainline naked (mainline
+> has no DFlash; also cannot fit 250k on this rig at all).
 >
-> | metric | upstream t/s | fork t/s | gain |
+> | metric | mainline t/s | fork t/s | gain |
 > |---|---|---|---|
-> | prefill PP16384 | 332.5 | ~410 | **+23%** |
-> | 120k deep fill | 231.4 | ~264 | **+14%** |
-> | TG @120k depth | 13.6 | ~15.1 | **+11%** (parity pre-mirror) |
-> | context | cannot fit | 250k on 40 GB | tight-fit machinery |
-> | outputs | - | - | bit-identical (sha + token-for-token) |
+> | prefill PP16384 (naked pair) | 320.0 | 439.6 | **+37%** |
+> | 120k deep fill (naked pair) | 241.1 | 280.7 | **+16%** |
+> | TG @120k depth (naked pair) | 9.8 | 9.5 | parity (fork's TG edge is spec-decode) |
+> | TG @120k (prod configs) | 9.8 (no spec available) | 14.0 (DFlash2 n4) | **+43%** |
+> | context | cannot fit 250k | 250k on 40 GB | tight-fit machinery |
+> | outputs | - | - | KLD ~5e-4 mean, same-top 99.14% (E140) |
 >
-> ### Output identity and quality vs upstream (2026-09-06, E122-E124)
+> ### Output identity and quality vs upstream
 >
-> Same-config A/B, fork build-dflash-novega vs upstream build-stock
-> (mainline-cmp c5a5535e6). Qwen3.8-27B i1-Q6_K, 65-chunk PPL lane +
-> full production config temp-0 lane + logit-level KLD lane
-> (bench/perplexity-upstream-fork*.sh, bench/kld-probe-archive.sh,
-> bench/kld-fullstats.py).
+> 2026-09-09 refresh (E140, both builds on the same upstream base
+> 434ddbbc0: fork build-sync0909 vs mainline ~/dev/llama.cpp build-0909;
+> wikitext-2 10k ctx, bench/ab-mainline-0909.sh):
+>
+> | metric | mainline | fork | verdict |
+> |---|---|---|---|
+> | perplexity (29 chunks, c=10000) | 6.2785 +/- 0.04076 | 6.2777 +/- 0.04074 | tie (fork epsilon better, in-noise) |
+> | KLD mean / same-top (cross, 6 chunks) | - | ~0.0005 / 99.140% | 50x tighter than the 2026-09-06 pair |
+> | temp-1.0 lane reproducibility | repro_ok | repro_ok | both deterministic |
+>
+> Historical 2026-09-06 pair (E122-E124, fork build-dflash-novega vs
+> mainline-cmp c5a5535e6, BEFORE the shared 2026-09-09 numerics base;
+> full PPL 65-chunk lane + logit KLD tables in journal/JOURNAL-2026-09-06.md):
 >
 > | metric | upstream | fork | verdict |
 > |---|---|---|---|
 > | perplexity (65 chunks) | 1.3033 +/- 0.0056 | 1.3043 +/- 0.0056 | identical within noise |
-> | PPL pass speed | 19.6 s | 14.7 s | fork +25% |
-> | temp-0 repro sha / TG sha | e54019ff6b42 / fd0d0fd872c2 | identical | greedy outputs match |
-> | KL divergence, mean | 0 | 0.0248 | tail-driven, median 1.6e-6 |
+> | PPL pass speed (c=4096) | 19.6 s | 14.7 s | fork +25% (note: at c=10000 on 2026-09-09 builds mainline passes are 13% faster - batch-shape specific, under investigation) |
+> | KL divergence, mean / median | 0 | 0.0248 / 1.6e-6 | tail-driven |
 > | KL divergence, p95 / p99 / max | 0 | 0.010 / 0.31 / ~16 | near-tie tail only |
 > | top-1 agreement | 100% | 98.65% | flips on near-ties only |
 > | upstream top-1 in fork top-5 | 100% | 99.81% | sampling-relevant |
@@ -86,6 +97,13 @@
 >   reinstantiation. Benefit: stability on tight-fit + HIP-graph
 >   regimes. (GDN chunked prefill and q8_1 activation cache also
 >   carried, env-gated; measured perf-neutral here.)
+> - **Checkpoint rewind** (#26004 + upstream #28302, adopted 2026-09-09):
+>   slot save/restore with context-checkpoint persistence and eviction
+>   fixes - prompt rewind after save/restore drops ~455 s re-prefill to
+>   <1 s (T2 probe: 23 tokens reprocessed vs 868, bit-exact output).
+> - **MoE MMQ OOB fix** (host-side padding, 2026-09-09): fixes
+>   out-of-bounds reads in expert-routed MMQ at flattened sizing; PPL
+>   tie, perf-neutral.
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
 >   Benefit: current fixes ride along at zero measured cost.
 >
@@ -99,6 +117,8 @@
 > | K quantization beyond q8_0-V (fork measurement, E54) | native tile -2.6 t/s, depth effect only ~5% |
 > | ts rebalance / drafter relocation (fork lanes, E105 + 08-15 sweeps) | decode is overhead-bound, not bandwidth-bound |
 > | checkpoint sparsify / off (fork lanes, AB6 + E119.4) | neutral / breaks prompt restore |
+> | WY-chunked GDN prefill, software tiles (upstream #26001 port, E137) | x0.5 vs recurrent - gfx906 has no matrix units; op is latency-bound at 2.6% FP32 peak |
+> | GDN chain-shortening family (micro-chunk CS=5, pair-pipelining, E138) | GDN wall shares too small: 7.6% of fill, 2% of TG round - ceilings under campaign threshold |
 > | full survey (adopted/rejected per PR) | table below + journal/ + bench/FINDINGS.md |
 >
 > ### Upstream PRs and projects evaluated
@@ -130,7 +150,9 @@
 > Every claim has a lane row: journal/ (experiment log), bench/
 > (A/B harness, FINDINGS.md, vram-test, rocprof stack). Build:
 > ./build-dflash-novega.sh (Vulkan + ROCm 6.1 - pinned, the measured
-> optimum for gfx906 here; launchers also pin its userspace).
+> optimum for gfx906 here; launchers also pin its userspace). Current
+> prod build: build-sync0909/bin (0.4.0-dev b11053, master 2026-09-09);
+> launchers 2llama-start-*.sh point there (rollback: build-dflash-novega).
 >
 # llama.cpp
 
