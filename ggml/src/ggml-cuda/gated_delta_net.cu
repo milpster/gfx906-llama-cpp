@@ -181,9 +181,12 @@ static void launch_gated_delta_net(
     // chunked prefill path: state lives in registers across the whole batch,
     // so the per-token HBM round-trips of the recurrent kernel go away
     const int CS = KDA ? 16 : 64;
+    // Off by default: intermittent wrong outputs on gfx906 mixed-backend lanes
+    // (E141.9, MTP arms flip with it on, deterministic with GGML_CUDA_GDN_CHUNK=0).
+    // GGML_CUDA_GDN_CHUNK=1 restores the chunked path, which is perf-neutral here.
     static const bool chunk_enabled = []() {
         const char * e = getenv("GGML_CUDA_GDN_CHUNK");
-        return e == nullptr || atoi(e) != 0;
+        return e != nullptr && atoi(e) != 0;
     }();
 
     if constexpr (!keep_rs_t) {

@@ -1803,12 +1803,14 @@ static bool ggml_cuda_should_fuse_mul_mat_vec_f(const ggml_tensor * tensor) {
 // scales with ubatch. Two entries at -ub 384 stay a few MiB per device.
 #define GGML_CUDA_Q8_1_CACHE_MAX_ENTRIES 2
 
-// On by default. GGML_CUDA_Q8_1_CACHE=0 disables it, which restores the previous
-// behaviour exactly: every matmul quantizes its own copy of src1.
+// Off by default: cache eviction relies on pool reuse staying on one stream,
+// which does not hold under concurrent streams or split schedules - a reused
+// entry can then perturb logits run-to-run. Set GGML_CUDA_Q8_1_CACHE=1 to
+// enable it on lanes measured safe (single-stream, perf-neutral here).
 static bool ggml_cuda_q8_1_cache_enabled() {
     static const bool enabled = [] {
         const char * e = getenv("GGML_CUDA_Q8_1_CACHE");
-        return e == nullptr || atoi(e) != 0;
+        return e != nullptr && atoi(e) != 0;
     }();
     return enabled;
 }
