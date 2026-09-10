@@ -18,6 +18,7 @@
 *.metallib
 *.o
 *.so
+*.so.*
 *.swp
 *.tmp
 *.DS_Store
