@@ -1710,6 +1710,29 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                     const int64_t n_expert   = node->op == GGML_OP_MUL_MAT_ID ? input->ne[2] : input->ne[1];
                     const size_t expert_size = node->op == GGML_OP_MUL_MAT_ID ? input->nb[2] : input->nb[1];
 
+                    // E147.6: at large ubatches nearly every expert is routed
+                    // (expected unique ~= n_expert once n_tokens * n_sel >>
+                    // n_expert), so the ids round-trip (a device sync), the
+                    // bitset scan and the many grouped small copies cost more
+                    // than one contiguous full-tensor copy. Threshold is the
+                    // ubatch token count; override with GGML_MOE_FULLCOPY_TOKENS
+                    // (set it very high to force the old grouped path).
+                    const int64_t n_ubatch_tokens = node->src[2] ? node->src[2]->ne[1] : 0;
+                    static const int64_t fullcopy_min_tokens = []() {
+                        const char * e = getenv("GGML_MOE_FULLCOPY_TOKENS");
+                        // default: disabled - E147.6 measured the grouped path
+                        // faster even at ub4096 (~92% experts hot): copying the
+                        // extra ~8% costs more than the ids sync saves
+                        return e ? atoll(e) : (1ll << 30);
+                    }();
+
+                    if (n_ubatch_tokens >= fullcopy_min_tokens) {
+                        ggml_backend_synchronize(input_backend);
+                        ggml_backend_tensor_set_async(split_backend, input_cpy, (const uint8_t *) input->data, 0, ggml_nbytes(input));
+                        prev_ids_tensor = nullptr;
+                        continue; // next input of this split - full copy done
+                    }
+
                     ggml_backend_synchronize(input_backend);
 
                     // get the ids
