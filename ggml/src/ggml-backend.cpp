@@ -1656,6 +1656,28 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
 
     int prev_backend_id = -1;
 
+    // E153: MoE expert-staging phase instrumentation + pinned staging ring.
+    // GGML_SCHED_COPY_PHASES=1 prints per-graph (per-ubatch) decomposition of
+    // the expert-copy path: ids round-trip/sync vs CPU-side copy issue.
+    // GGML_EXPS_RING=1 stages expert bytes through a 3-slot pinned host ring
+    // (same bytes, same transaction pattern) so the HIP pageable staged-copy
+    // path is bypassed and copies become genuinely queueable.
+    static const bool exps_copy_phases = getenv("GGML_SCHED_COPY_PHASES") != nullptr;
+    static const bool exps_ring_on = getenv("GGML_EXPS_RING") != nullptr;
+    static double exps_ids_sync_ms = 0.0;
+    static double exps_issue_ms = 0.0;
+    static double exps_bytes = 0.0;
+    exps_ids_sync_ms = exps_issue_ms = exps_bytes = 0.0;
+
+    struct exps_ring_slot {
+        ggml_backend_buffer_t buf;
+        size_t size;
+        ggml_backend_event_t ev;
+        bool used;
+    };
+    static exps_ring_slot exps_ring[3] = {};
+    static int exps_ring_cur = 0;
+
     for (int split_id = 0; split_id < sched->n_splits; split_id++) {
         struct ggml_backend_sched_split * split = &splits[split_id];
         int split_backend_id = split->backend_id;
@@ -1733,6 +1755,8 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                         continue; // next input of this split - full copy done
                     }
 
+                    const int64_t t_ids0 = ggml_time_us();
+
                     ggml_backend_synchronize(input_backend);
 
                     // get the ids
@@ -1768,44 +1792,123 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                         prev_ids_tensor = ids_tensor;
                     }
 
-                    // group consecutive experts and copy them together
-                    auto copy_experts = [&](int32_t first_id, int32_t last_id) {
-                        const size_t expert_offset = first_id * expert_size;
-                        const size_t expert_size_copy =  (last_id - first_id + 1) * expert_size;
-                        const size_t padding = std::min<size_t>(expert_size, 512);
-                        const size_t padding_end = last_id < n_expert - 1 ? padding : 0;
+                    exps_ids_sync_ms += (ggml_time_us() - t_ids0) / 1000.0;
 
-                        ggml_backend_tensor_set_async(split_backend,
-                            input_cpy,
-                            (const uint8_t *)input->data + expert_offset, expert_offset,
-                            // copy a bit extra at the to ensure there are no NaNs in the padding of the last expert
-                            // this is necessary for MMQ in the CUDA backend
-                            expert_size_copy + padding_end);
-                    };
-
-                    int id = 0;
-                    while (!ggml_bitset_get(used_ids.data(), id)) {
-                        id++;
-                    }
-                    int32_t first_id = id;
-                    int32_t last_id = first_id;
-
-                    for (++id; id < n_expert; ++id) {
-                        if (!ggml_bitset_get(used_ids.data(), id)) {
-                            continue;
+                    int32_t span_first = -1, span_last = -1;
+                    for (int32_t id = 0; id < n_expert; ++id) {
+                        if (ggml_bitset_get(used_ids.data(), id)) {
+                            if (span_first < 0) span_first = id;
+                            span_last = id;
                         }
+                    }
+                    const size_t span_off = span_first * expert_size;
+                    const size_t span_len = (span_last - span_first + 1) * expert_size;
 
-                        if (id == last_id + 1) {
+                    const int64_t t_issue0 = ggml_time_us();
+
+                    bool ring_used = false;
+                    if (exps_ring_on) {
+                        ggml_backend_dev_t dev = ggml_backend_get_device(split_backend);
+                        ggml_backend_buffer_type_t host_buft = dev ? ggml_backend_dev_host_buffer_type(dev) : nullptr;
+                        if (host_buft) {
+                            exps_ring_slot & slot = exps_ring[exps_ring_cur++ % 3];
+                            if (slot.used) {
+                                ggml_backend_event_synchronize(slot.ev);
+                            }
+                            if (slot.size < span_len) {
+                                if (slot.buf) {
+                                    ggml_backend_buffer_free(slot.buf);
+                                    slot.buf = nullptr;
+                                    slot.size = 0;
+                                }
+                                const size_t alloc_size = span_len + span_len / 4 + (1u << 20);
+                                slot.buf = ggml_backend_buft_alloc_buffer(host_buft, alloc_size);
+                                if (slot.buf) {
+                                    slot.size = alloc_size;
+                                    slot.ev  = slot.ev ? slot.ev : ggml_backend_event_new(dev);
+                                    slot.used = false;
+                                    fprintf(stderr, "EXPSRING: slot %d grew to %.1f MiB (pinned)\n",
+                                            (int)(&slot - exps_ring), alloc_size / 1048576.0);
+                                }
+                            }
+                            if (slot.buf) {
+                                uint8_t * slot_data = (uint8_t *) ggml_backend_buffer_get_base(slot.buf);
+                                auto copy_experts_ring = [&](int32_t first_id, int32_t last_id) {
+                                    const size_t src_off = first_id * expert_size;
+                                    const size_t dst_off = src_off - span_off;
+                                    const size_t len = (last_id - first_id + 1) * expert_size;
+                                    const size_t padding = std::min<size_t>(expert_size, 512);
+                                    const size_t padding_end = last_id < n_expert - 1 ? padding : 0;
+                                    memcpy(slot_data + dst_off, (const uint8_t *) input->data + src_off, len + padding_end);
+                                    ggml_backend_tensor_set_async(split_backend, input_cpy,
+                                        slot_data + dst_off, src_off, len + padding_end);
+                                };
+                                int id = span_first;
+                                int32_t first_id = id, last_id = id;
+                                for (++id; id <= span_last; ++id) {
+                                    if (!ggml_bitset_get(used_ids.data(), id)) {
+                                        continue;
+                                    }
+                                    if (id == last_id + 1) {
+                                        last_id = id;
+                                        continue;
+                                    }
+                                    copy_experts_ring(first_id, last_id);
+                                    first_id = id;
+                                    last_id = id;
+                                }
+                                copy_experts_ring(first_id, last_id);
+                                ggml_backend_event_record(slot.ev, split_backend);
+                                slot.used = true;
+                                ring_used = true;
+                                exps_bytes += span_len;
+                            }
+                        }
+                    }
+
+                    if (!ring_used) {
+                        // group consecutive experts and copy them together
+                        auto copy_experts = [&](int32_t first_id, int32_t last_id) {
+                            const size_t expert_offset = first_id * expert_size;
+                            const size_t expert_size_copy =  (last_id - first_id + 1) * expert_size;
+                            const size_t padding = std::min<size_t>(expert_size, 512);
+                            const size_t padding_end = last_id < n_expert - 1 ? padding : 0;
+
+                            ggml_backend_tensor_set_async(split_backend,
+                                input_cpy,
+                                (const uint8_t *)input->data + expert_offset, expert_offset,
+                                // copy a bit extra at the to ensure there are no NaNs in the padding of the last expert
+                                // this is necessary for MMQ in the CUDA backend
+                                expert_size_copy + padding_end);
+                            exps_bytes += expert_size_copy;
+                        };
+
+                        int id = 0;
+                        while (!ggml_bitset_get(used_ids.data(), id)) {
+                            id++;
+                        }
+                        int32_t first_id = id;
+                        int32_t last_id = first_id;
+
+                        for (++id; id < n_expert; ++id) {
+                            if (!ggml_bitset_get(used_ids.data(), id)) {
+                                continue;
+                            }
+
+                            if (id == last_id + 1) {
+                                last_id = id;
+                                continue;
+                            }
+
+                            copy_experts(first_id, last_id);
+
+                            first_id = id;
                             last_id = id;
-                            continue;
                         }
-
                         copy_experts(first_id, last_id);
-
-                        first_id = id;
-                        last_id = id;
                     }
-                    copy_experts(first_id, last_id);
+
+                    exps_issue_ms += (ggml_time_us() - t_issue0) / 1000.0;
                 } else {
                     // try async copy, but if not possible, we can still use a sync copy without synchronizing the dst backend, since we handle the synchronization here with multiple copies and events
                     // TODO: add public function to facilitate this, since applications do not have direct access to the backend interface
@@ -1880,6 +1983,13 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
         }
 
         prev_backend_id = split_backend_id;
+    }
+
+    if (exps_copy_phases && exps_bytes > 0) {
+        const double gb = exps_bytes / 1e9;
+        fprintf(stderr, "EXPCOPY ids_sync=%.1f ms issue=%.1f ms bytes=%.2f GB issue_rate=%.2f GB/s\n",
+                exps_ids_sync_ms, exps_issue_ms, gb,
+                exps_issue_ms > 0 ? gb / (exps_issue_ms / 1000.0) : 0.0);
     }
 
     return GGML_STATUS_SUCCESS;
