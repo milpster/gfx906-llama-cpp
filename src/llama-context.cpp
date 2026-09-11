@@ -1382,11 +1382,21 @@ bool llama_context::set_adapter_cvec(
 }
 
 llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, llm_graph_type gtype, llama_memory_context_i * mctx, ggml_status & ret) {
+    // E147.3: per-ubatch phase timing, opt-in via LLAMA_PP_PHASE_TIMING=1.
+    // Times mctx-apply, reuse check, (reset|build|alloc) on rebuild,
+    // set_inputs (incl. PLE gather), and graph compute. Reported in ms
+    // together with n_tokens, graph nodes, sched splits and sched copies.
+    const bool pp_timing = getenv("LLAMA_PP_PHASE_TIMING") != nullptr;
+    const int64_t t_pp0 = ggml_time_us();
+    int64_t t_apply = 0, t_reuse = 0, t_reuse0 = 0, t_reset = 0, t_build = 0, t_alloc = 0, t_setin = 0, t_comp = 0;
+    int pp_reused = 0;
+
     if (mctx && !mctx->apply()) {
         LLAMA_LOG_ERROR("%s: failed to apply memory context\n", __func__);
         ret = GGML_STATUS_FAILED;
         return nullptr;
     }
+    t_apply = ggml_time_us();
 
     auto * res = gf_res_prev.get();
     auto * gf  = res->get_gf();
@@ -1408,7 +1418,9 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
         }
 
         n_reused++;
+        pp_reused = 1;
     } else {
+        t_reuse0 = ggml_time_us();
         graph_sequence_layout_changed = graph_seq_ids.size() != ubatch.n_seqs_unq;
         for (size_t i = 0; !graph_sequence_layout_changed && i < graph_seq_ids.size(); ++i) {
             graph_sequence_layout_changed = graph_seq_ids[i] != ubatch.seq_id_unq[i];
@@ -1426,41 +1438,60 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
 
         ggml_backend_sched_reset(sched.get());
         ggml_backend_sched_set_eval_callback(sched.get(), cparams.cb_eval, cparams.cb_eval_user_data);
-
-        //const auto t_start_us = ggml_time_us();
+        t_reset = ggml_time_us();
 
         gf = model.build_graph(gparams);
-
-        //LLAMA_LOG_INFO("graph build time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
 
         if (!gf) {
             LLAMA_LOG_ERROR("%s: failed to initialize graph\n", __func__);
             ret = GGML_STATUS_FAILED;
             return nullptr;
         }
+        t_build = ggml_time_us();
 
         if (!ggml_backend_sched_alloc_graph(sched.get(), gf)) {
             LLAMA_LOG_ERROR("%s: failed to allocate graph\n", __func__);
             ret = GGML_STATUS_ALLOC_FAILED;
             return nullptr;
         }
+        t_alloc = ggml_time_us();
     }
+    t_reuse = ggml_time_us();
 
     // set the input data for the input tensors
     {
-        //const auto t_start_us = ggml_time_us();
-
         // FIXME this call causes a crash if any model inputs were not used in the graph and were therefore not allocated
         res->set_inputs(&ubatch);
-
-        //LLAMA_LOG_INFO("graph set inputs time: %.3f ms\n", (ggml_time_us() - t_start_us)/1000.0);
     }
+    t_setin = ggml_time_us();
 
     const auto status = graph_compute(res->get_gf(), ubatch.n_tokens > 1);
     if (status != GGML_STATUS_SUCCESS) {
         LLAMA_LOG_ERROR("%s: failed to compute graph, compute status: %d\n", __func__, status);
         ret = status;
         return nullptr;
+    }
+    // E147.3: drain async backend tails under timing so the compute phase owns
+    // its full wall time instead of billing it to the next ubatch's alloc
+    if (pp_timing) {
+        ggml_backend_sched_synchronize(sched.get());
+    }
+    t_comp = ggml_time_us();
+
+    if (pp_timing) {
+        fprintf(stderr, "PPPHASE n_tok=%d reused=%d apply=%.1f reusechk=%.1f reset=%.1f build=%.1f alloc=%.1f setin=%.1f compute=%.1f total=%.1f nodes=%d splits=%d copies=%d\n",
+                (int) ubatch.n_tokens, pp_reused,
+                (t_apply - t_pp0) / 1000.0,
+                (t_reuse - (t_alloc ? t_alloc : t_apply)) / 1000.0,
+                (t_reset ? (t_reset - t_reuse0) : 0.0) / 1000.0,
+                (t_build ? (t_build - t_reset) : 0.0) / 1000.0,
+                (t_alloc ? (t_alloc - t_build) : 0.0) / 1000.0,
+                (t_setin - t_reuse) / 1000.0,
+                (t_comp - t_setin) / 1000.0,
+                (t_comp - t_pp0) / 1000.0,
+                (int) ggml_graph_n_nodes(res->get_gf()),
+                ggml_backend_sched_get_n_splits(sched.get()),
+                ggml_backend_sched_get_n_copies(sched.get()));
     }
 
     if (graph_sequence_layout_changed) {
