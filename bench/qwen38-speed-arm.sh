@@ -25,7 +25,8 @@ if [ ! -s "$PROMPT_SOURCE" ]; then
 fi
 
 mkdir -p "$OUTDIR"
-dd if="$PROMPT_SOURCE" of="$PROMPT" bs=1 count=7200 status=none
+# PROMPT_BYTES selects the prompt length (default 7200 chars ~ 2684 tok, E147)
+dd if="$PROMPT_SOURCE" of="$PROMPT" bs=1 count=${PROMPT_BYTES:-7200} status=none
 : > "$OUTDIR/summary.txt"
 
 cleanup() {
@@ -41,11 +42,21 @@ BASE_ARGS=(
     --device rocm0,vulkan1,rocm1 -np 1 -mg 0
     --pipeline-parallel off -sm layer -ts 66,10,24
     -c 204800 -ctk f16 -ctv f16
-    -md "$DRAFT" --spec-type draft-mtp-adaptive
-    --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3
-    -ngld all -ctkd f16 -ctvd f16 -otd '.*=ROCm0'
-    -mm "$MMPROJ" -mmdev none
     --temp 0 --seed 42 -n 0 --no-warmup
+)
+
+# FULL_STACK=0 drops the MTP draft + mmproj sidecars for pure-PP probing
+# (E147): the draft bundle wastes 2647 MiB VRAM and never runs at -n 0.
+if [ "${FULL_STACK:-1}" = "1" ]; then
+    BASE_ARGS+=(
+        -md "$DRAFT" --spec-type draft-mtp-adaptive
+        --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3
+        -ngld all -ctkd f16 -ctvd f16 -otd '.*=ROCm0'
+        -mm "$MMPROJ" -mmdev none
+    )
+fi
+
+BASE_ARGS+=(
     --single-turn --simple-io --no-display-prompt --log-verbosity 3
     -f "$PROMPT"
 )
