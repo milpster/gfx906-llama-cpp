@@ -1644,6 +1644,12 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
     GGML_ASSERT(sched);
     struct ggml_backend_sched_split * splits = sched->splits;
 
+    // E147.3: per-split phase timing, opt-in via GGML_SCHED_SPLIT_TIMING=1.
+    // Reports per split: prev-split sync, input copies (incl. MoE expert
+    // staging), subgraph compute, event record. Diagnoses the measured
+    // ~92 ms/split fixed cost on the qwen38f PP lane.
+    const bool split_timing = getenv("GGML_SCHED_SPLIT_TIMING") != nullptr;
+
     ggml_tensor * prev_ids_tensor = nullptr;
     std::vector<int32_t> ids;
     std::vector<ggml_bitset_t> used_ids;
@@ -1655,6 +1661,9 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
         int split_backend_id = split->backend_id;
         ggml_backend_t split_backend = sched->backends[split_backend_id];
 
+        const int64_t t_split0 = ggml_time_us();
+        int64_t t_presync = t_split0, t_inputs = t_split0, t_graph = t_split0;
+
         // ensure the previous split's async work has completed before we start
         // this split, the allocator may have reused buffer regions across splits
         if (split->n_inputs == 0 && prev_backend_id >= 0 && prev_backend_id != split_backend_id) {
@@ -1664,6 +1673,8 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                 ggml_backend_synchronize(sched->backends[prev_backend_id]);
             }
         }
+
+        t_presync = ggml_time_us();
 
         // copy the input tensors to the split backend
         for (int input_id = 0; input_id < split->n_inputs; input_id++) {
@@ -1787,6 +1798,7 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                 }
             }
         }
+        t_inputs = ggml_time_us();
 
         if (!sched->callback_eval) {
             enum ggml_status ec = ggml_backend_graph_compute_async(split_backend, &split->graph);
@@ -1827,9 +1839,21 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
             }
         }
 
+        t_graph = ggml_time_us();
+
         // record the event of this split
         if (sched->events[split_backend_id][sched->cur_copy] != NULL) {
             ggml_backend_event_record(sched->events[split_backend_id][sched->cur_copy], split_backend);
+        }
+
+        if (split_timing) {
+            fprintf(stderr, "SPLIT id=%d backend=%s n_in=%d n_nodes=%d presync=%.2f inputs=%.2f graph=%.2f ev=%.2f total=%.2f ms\n",
+                    split_id, ggml_backend_name(split_backend), split->n_inputs, (int) split->graph.n_nodes,
+                    (t_presync - t_split0) / 1000.0,
+                    (t_inputs - t_presync) / 1000.0,
+                    (t_graph - t_inputs) / 1000.0,
+                    (ggml_time_us() - t_graph) / 1000.0,
+                    (ggml_time_us() - t_split0) / 1000.0);
         }
 
         prev_backend_id = split_backend_id;
