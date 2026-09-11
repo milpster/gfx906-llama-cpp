@@ -1294,6 +1294,13 @@ static void * ggml_cuda_host_malloc(size_t size) {
     if (err != cudaSuccess) {
         // clear the error
         (void)cudaGetLastError();
+        // E147.5: this silent fallback to a pageable CPU buffer is invisible in
+        // filtered logs and produces false negatives when testing pinned expert
+        // staging - make it loud under the debug env
+        if (getenv("LLAMA_EXPS_BUFT_DEBUG")) {
+            fprintf(stderr, "PPBUFT pinned allocation FAILED for %.2f MiB: %s (falling back to pageable CPU)\n",
+                    size / 1024.0 / 1024.0, cudaGetErrorString(err));
+        }
         GGML_LOG_DEBUG("%s: failed to allocate %.2f MiB of pinned memory: %s\n", __func__,
                            size / 1024.0 / 1024.0, cudaGetErrorString(err));
         return nullptr;

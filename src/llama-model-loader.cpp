@@ -1262,11 +1262,26 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         // avoid using a host buffer when using mmap
         auto * buft_dev = ggml_backend_buft_get_device(buft);
         if (use_mmap && buft_dev && buft == ggml_backend_dev_host_buffer_type(buft_dev)) {
-            auto * cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
-            if (!cpu_dev) {
-                throw std::runtime_error("no CPU backend found");
+            // E147.5: op-offloaded expert weights are the one case where keeping
+            // the host buffer under mmap can pay off: the scheduler H2D-stages the
+            // used experts every ubatch, and pageable pages cap that stream at
+            // ~2-3 GB/s on this rig. Opt-in via LLAMA_EXPS_PINNED=1.
+            const char * exps_pin_env = getenv("LLAMA_EXPS_PINNED");
+            const bool exps_pin = op == GGML_OP_MUL_MAT_ID && exps_pin_env && atoi(exps_pin_env) != 0;
+            if (!exps_pin) {
+                auto * cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+                if (!cpu_dev) {
+                    throw std::runtime_error("no CPU backend found");
+                }
+                buft = ggml_backend_dev_buffer_type(cpu_dev);
             }
-            buft = ggml_backend_dev_buffer_type(cpu_dev);
+        }
+
+        // E147.5: prove where expert-weight tensors actually land (see also the
+        // loud pinned-alloc-failure fprintf in ggml_cuda_host_malloc)
+        if (getenv("LLAMA_EXPS_BUFT_DEBUG") && op == GGML_OP_MUL_MAT_ID) {
+            fprintf(stderr, "PPBUFT %s -> %s (mmap=%d op=MUL_MAT_ID)\n",
+                    tn.str().c_str(), ggml_backend_buft_name(buft), (int) use_mmap);
         }
 
         if (buft != buft_list->front().second) {
