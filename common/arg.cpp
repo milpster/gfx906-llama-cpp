@@ -1677,6 +1677,16 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_env("LLAMA_ARG_UBATCH"));
     add_opt(common_arg(
+        {"--n-outputs-max"}, "N",
+        string_format("maximum outputs (logits rows) reserved per ubatch, caps the full-vocab logits intermediate (default: %d = n_batch)", params.n_outputs_max),
+        [](common_params & params, int value) {
+            if (value <= 0) {
+                throw std::invalid_argument("error: invalid value for n_outputs_max\n");
+            }
+            params.n_outputs_max = value;
+        }
+    ).set_env("LLAMA_ARG_N_OUTPUTS_MAX"));
+    add_opt(common_arg(
         {"--keep"}, "N",
         string_format("number of tokens to keep from the initial prompt (default: %d, -1 = all)", params.n_keep),
         [](common_params & params, int value) {
