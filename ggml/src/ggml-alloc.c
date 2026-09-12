@@ -868,8 +868,8 @@ static bool ggml_gallocr_reserve_n_impl(
             if (hn->buffer_id < 0) continue;
             size_t size = ggml_backend_buft_get_alloc_size(galloc->bufts[hn->buffer_id], node);
             if (size >= dump_min) {
-                fprintf(stderr, "galloc-dump buf=%d size=%zu name=%s op=%s\n",
-                        hn->buffer_id, size, node->name[0] ? node->name : "(anon)", ggml_op_name(node->op));
+                fprintf(stderr, "galloc-dump buf=%d size=%zu type=%s name=%s op=%s\n",
+                        hn->buffer_id, size, ggml_type_name(node->type), node->name[0] ? node->name : "(anon)", ggml_op_name(node->op));
             }
         }
     }
