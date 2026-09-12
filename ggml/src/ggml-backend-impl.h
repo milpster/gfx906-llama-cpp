@@ -130,6 +130,10 @@ extern "C" {
         void (*get_tensor_2d_async)(ggml_backend_t backend, const struct ggml_tensor * tensor,       void * data, size_t offset, size_t size, size_t n_copies, size_t stride_tensor, size_t stride_data);
         bool (*cpy_tensor_async)(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst);
 
+        // (optional) build the used-expert range list of a MUL_MAT_ID ids tensor on the device,
+        // copying only the compact [{first,last},...] range pairs back to host memory
+        bool (*moe_build_ranges)(ggml_backend_t backend, const struct ggml_tensor * ids, int n_expert, int * ranges_out, int ranges_max, int * n_ranges_out);
+
         // (optional) complete all pending operations (required if the backend supports async operations)
         void (*synchronize)(ggml_backend_t backend);
 

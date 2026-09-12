@@ -198,6 +198,7 @@ static const struct ggml_backend_i ggml_backend_cpu_i = {
     /* .set_tensor_2d_async     = */ NULL,
     /* .get_tensor_2d_async     = */ NULL,
     /* .cpy_tensor_async        = */ NULL,
+    /* .moe_build_ranges        = */ NULL,
     /* .synchronize             = */ NULL,
     /* .graph_plan_create       = */ ggml_backend_cpu_graph_plan_create,
     /* .graph_plan_free         = */ ggml_backend_cpu_graph_plan_free,

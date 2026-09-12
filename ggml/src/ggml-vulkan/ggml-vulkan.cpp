@@ -18752,6 +18752,7 @@ static ggml_backend_i ggml_backend_vk_interface = {
     /* .set_tensor_2d_async     = */ ggml_backend_vk_set_tensor_2d_async,
     /* .get_tensor_2d_async     = */ ggml_backend_vk_get_tensor_2d_async,
     /* .cpy_tensor_async        = */ ggml_backend_vk_cpy_tensor_async,
+    /* .moe_build_ranges        = */ NULL,
     /* .synchronize             = */ ggml_backend_vk_synchronize,
     /* .graph_plan_create       = */ NULL,
     /* .graph_plan_free         = */ NULL,

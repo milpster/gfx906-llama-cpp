@@ -2472,6 +2472,7 @@ static const ggml_backend_i ggml_backend_meta_i = {
     /* .set_tensor_2d_async     = */ nullptr,
     /* .get_tensor_2d_async     = */ nullptr,
     /* .cpy_tensor_async        = */ nullptr,
+    /* .moe_build_ranges        = */ nullptr,
     /* .synchronize             = */ ggml_backend_meta_synchronize,
     /* .graph_plan_create       = */ nullptr,
     /* .graph_plan_free         = */ nullptr,

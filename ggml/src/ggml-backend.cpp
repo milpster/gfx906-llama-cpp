@@ -1774,22 +1774,46 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                     }
 
                     if (ids_tensor != prev_ids_tensor) {
-                        ids.resize(ggml_nbytes(ids_tensor) / sizeof(int32_t));
-                        ggml_backend_tensor_get_async(ids_backend, ids_tensor, ids.data(), 0, ggml_nbytes(ids_tensor));
-                        ggml_backend_synchronize(ids_backend);
-
-                        // find the used experts
-                        used_ids.clear();
-                        used_ids.resize(ggml_bitset_size(n_expert));
-                        for (int64_t i1 = 0; i1 < ids_tensor->ne[1]; i1++) {
-                            for (int64_t i0 = 0; i0 < ids_tensor->ne[0]; i0++) {
-                                int32_t id = ids[i1 * ids_tensor->nb[1]/sizeof(int32_t) + i0 * ids_tensor->nb[0]/sizeof(int32_t)];
-                                GGML_ASSERT(id >= 0 && id < n_expert);
-                                ggml_bitset_set(used_ids.data(), id);
+                        // E159: GGML_EXPS_GPUGATHER=1 builds the used-expert set on the device
+                        // (backend moe_build_ranges: bitmap + range-scan kernels, compact pinned
+                        // D2H, stream-scoped event) instead of the ids round-trip that drains
+                        // every queued expert H2D once per host layer per ubatch.
+                        static const bool gpu_gather_on = getenv("GGML_EXPS_GPUGATHER") != nullptr;
+                        bool gathered = false;
+                        if (gpu_gather_on && ids_backend == split_backend && split_backend->iface.moe_build_ranges) {
+                            int gpu_ranges[2 * 2049 + 2];
+                            int n_gpu_ranges = 0;
+                            if (split_backend->iface.moe_build_ranges(split_backend, ids_tensor, (int) n_expert,
+                                        gpu_ranges, 2049, &n_gpu_ranges)) {
+                                used_ids.clear();
+                                used_ids.resize(ggml_bitset_size(n_expert));
+                                for (int r = 0; r < n_gpu_ranges; ++r) {
+                                    for (int32_t id = gpu_ranges[2 * r]; id <= gpu_ranges[2 * r + 1]; ++id) {
+                                        ggml_bitset_set(used_ids.data(), id);
+                                    }
+                                }
+                                prev_ids_tensor = ids_tensor;
+                                gathered = true;
                             }
                         }
+                        if (!gathered) {
+                            ids.resize(ggml_nbytes(ids_tensor) / sizeof(int32_t));
+                            ggml_backend_tensor_get_async(ids_backend, ids_tensor, ids.data(), 0, ggml_nbytes(ids_tensor));
+                            ggml_backend_synchronize(ids_backend);
 
-                        prev_ids_tensor = ids_tensor;
+                            // find the used experts
+                            used_ids.clear();
+                            used_ids.resize(ggml_bitset_size(n_expert));
+                            for (int64_t i1 = 0; i1 < ids_tensor->ne[1]; i1++) {
+                                for (int64_t i0 = 0; i0 < ids_tensor->ne[0]; i0++) {
+                                    int32_t id = ids[i1 * ids_tensor->nb[1]/sizeof(int32_t) + i0 * ids_tensor->nb[0]/sizeof(int32_t)];
+                                    GGML_ASSERT(id >= 0 && id < n_expert);
+                                    ggml_bitset_set(used_ids.data(), id);
+                                }
+                            }
+
+                            prev_ids_tensor = ids_tensor;
+                        }
                     }
 
                     exps_ids_sync_ms += (ggml_time_us() - t_ids0) / 1000.0;

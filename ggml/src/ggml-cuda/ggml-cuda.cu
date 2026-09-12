@@ -2575,6 +2575,124 @@ static void ggml_backend_cuda_get_tensor_2d_async(ggml_backend_t backend, const 
         data, stride_data, (const char *) tensor->data + offset, stride_tensor, size, n_copies, cudaMemcpyDeviceToHost, cuda_ctx->stream()));
 }
 
+// E159: device-side used-expert range construction for MUL_MAT_ID expert staging.
+// Replaces the per-layer ids D2H + full backend sync (pipeline drain) with two
+// microsecond kernels and a few-hundred-byte pinned D2H, all stream-ordered on
+// the backend's own stream so the scoped event wait is correct by construction.
+#define GGML_CUDA_MOE_MAX_EXPERTS  4096
+#define GGML_CUDA_MOE_RANGES_MAX   ((GGML_CUDA_MOE_MAX_EXPERTS / 2) + 2)
+
+static __global__ void ggml_cuda_moe_used_bitmap_kernel(
+        const int32_t * __restrict__ ids, int n0, int n1, int s0, int s1,
+        uint32_t * __restrict__ bitmap) {
+    const int64_t n = (int64_t) n0 * n1;
+    for (int64_t i = blockIdx.x * (int64_t) blockDim.x + threadIdx.x; i < n; i += (int64_t) gridDim.x * blockDim.x) {
+        const int i0 = i % n0;
+        const int i1 = i / n0;
+        const int32_t id = ids[(int64_t) i1 * s1 + i0 * s0];
+        atomicOr(&bitmap[id >> 5], 1u << (id & 31));
+    }
+}
+
+static __global__ void ggml_cuda_moe_ranges_kernel(
+        const uint32_t * __restrict__ bitmap, int n_expert,
+        int2 * __restrict__ ranges, int * __restrict__ n_ranges) {
+    if (threadIdx.x != 0 || blockIdx.x != 0) {
+        return;
+    }
+    int count = 0;
+    int prev  = -1;
+    for (int e = 0; e < n_expert; ++e) {
+        const bool used = (bitmap[e >> 5] >> (e & 31)) & 1u;
+        if (!used) {
+            continue;
+        }
+        if (count > 0 && e == prev + 1) {
+            ranges[count - 1].y = e;
+        } else {
+            ranges[count].x = e;
+            ranges[count].y = e;
+            ++count;
+        }
+        prev = e;
+    }
+    *n_ranges = count;
+}
+
+static bool ggml_backend_cuda_moe_build_ranges(ggml_backend_t backend, const ggml_tensor * ids, int n_expert,
+        int * ranges_out, int ranges_max, int * n_ranges_out) {
+    ggml_backend_cuda_context * cuda_ctx = (ggml_backend_cuda_context *) backend->context;
+
+    if (n_expert > GGML_CUDA_MOE_MAX_EXPERTS || ids->type != GGML_TYPE_I32) {
+        return false;
+    }
+    if (ranges_max < n_expert / 2 + 2) {
+        return false;
+    }
+    if (ranges_max > GGML_CUDA_MOE_RANGES_MAX) {
+        ranges_max = GGML_CUDA_MOE_RANGES_MAX;
+    }
+
+    struct moe_scratch {
+        uint32_t   * bitmap;
+        int2       * ranges;
+        int        * count;
+        uint8_t    * pinned;
+        cudaEvent_t  ev;
+    };
+    static moe_scratch scratch[GGML_CUDA_MAX_DEVICES] = {};
+
+    ggml_cuda_set_device(cuda_ctx->device);
+    moe_scratch & s = scratch[cuda_ctx->device];
+    cudaStream_t stream = cuda_ctx->stream();
+
+    if (s.pinned == nullptr) {
+        if (cudaMalloc(&s.bitmap,  GGML_CUDA_MOE_MAX_EXPERTS / 32 * sizeof(uint32_t)) != cudaSuccess ||
+            cudaMalloc(&s.ranges, GGML_CUDA_MOE_RANGES_MAX   * sizeof(int2))         != cudaSuccess ||
+            cudaMalloc(&s.count,  sizeof(int))                                       != cudaSuccess) {
+            GGML_LOG_WARN("%s: scratch allocation failed, falling back to the ids round-trip\n", __func__);
+            return false;
+        }
+        s.pinned = (uint8_t *) ggml_cuda_host_malloc(GGML_CUDA_MOE_RANGES_MAX * sizeof(int2) + sizeof(int));
+        if (s.pinned == nullptr) {
+            return false;
+        }
+        CUDA_CHECK(cudaEventCreateWithFlags(&s.ev, cudaEventDisableTiming));
+    }
+
+    const int n0 = ids->ne[0];
+    const int n1 = ids->ne[1];
+    const int s0 = ids->nb[0] / sizeof(int32_t);
+    const int s1 = ids->nb[1] / sizeof(int32_t);
+
+    const int bitmap_words = n_expert / 32 + 1;
+    CUDA_CHECK(cudaMemsetAsync(s.bitmap, 0, bitmap_words * sizeof(uint32_t), stream));
+    {
+        const int64_t n = (int64_t) n0 * n1;
+        const int blocks = (int) std::min<int64_t>((n + 255) / 256, 8);
+        ggml_cuda_moe_used_bitmap_kernel<<<blocks, 256, 0, stream>>>(
+                (const int32_t *) ids->data, n0, n1, s0, s1, s.bitmap);
+    }
+    ggml_cuda_moe_ranges_kernel<<<1, 32, 0, stream>>>(s.bitmap, n_expert, s.ranges, s.count);
+    CUDA_CHECK(cudaMemcpyAsync(s.pinned, s.ranges, ranges_max * sizeof(int2), cudaMemcpyDeviceToHost, stream));
+    CUDA_CHECK(cudaMemcpyAsync(s.pinned + GGML_CUDA_MOE_RANGES_MAX * sizeof(int2), s.count, sizeof(int), cudaMemcpyDeviceToHost, stream));
+    CUDA_CHECK(cudaEventRecord(s.ev, stream));
+    CUDA_CHECK(cudaEventSynchronize(s.ev));
+
+    const int n = *(const int *) (const void *) (s.pinned + GGML_CUDA_MOE_RANGES_MAX * sizeof(int2));
+    if (n < 0 || n > ranges_max) {
+        return false;
+    }
+    const int2 * r = (const int2 *) (const void *) s.pinned;
+    for (int i = 0; i < n; ++i) {
+        ranges_out[2 * i + 0] = r[i].x;
+        ranges_out[2 * i + 1] = r[i].y;
+    }
+    *n_ranges_out = n;
+    return true;
+}
+
+
 static bool ggml_backend_cuda_cpy_tensor_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, const ggml_tensor * src, ggml_tensor * dst) {
     ggml_backend_buffer_t buf_src = src->view_src ? src->view_src->buffer : src->buffer;
     ggml_backend_buffer_t buf_dst = dst->view_src ? dst->view_src->buffer : dst->buffer;
@@ -4947,6 +5065,7 @@ static const ggml_backend_i ggml_backend_cuda_interface = {
     /* .set_tensor_2d_async     = */ ggml_backend_cuda_set_tensor_2d_async,
     /* .get_tensor_2d_async     = */ ggml_backend_cuda_get_tensor_2d_async,
     /* .cpy_tensor_async        = */ ggml_backend_cuda_cpy_tensor_async,
+    /* .moe_build_ranges        = */ ggml_backend_cuda_moe_build_ranges,
     /* .synchronize             = */ ggml_backend_cuda_synchronize,
     /* .graph_plan_create       = */ NULL,
     /* .graph_plan_free         = */ NULL,
