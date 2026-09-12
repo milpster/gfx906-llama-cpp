@@ -2512,6 +2512,14 @@ extern "C" {
             struct ggml_tensor * a,
             struct ggml_tensor * sinks);
 
+    // per-row causal cutoff: KV cell j is visible to query row i iff j < nvis[i].
+    // I32 [n_q_rows]; mutually exclusive with a dense mask. the {0, -inf} mask
+    // is derived from the index compare in-kernel, so no [n_kv, n_rows] tensor
+    // is materialized or copied.
+    GGML_API void ggml_flash_attn_ext_set_kq_nvis(
+            struct ggml_tensor * a,
+            struct ggml_tensor * nvis);
+
     // TODO: needs to be adapted to ggml_flash_attn_ext
     GGML_API struct ggml_tensor * ggml_flash_attn_back(
            struct ggml_context * ctx,

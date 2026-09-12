@@ -24,6 +24,7 @@ static __global__ void flash_attn_ext_vec(
         const char * V_ptr,
         const char * mask_ptr,
         const char * sinks_ptr,
+        const int  * nvis_ptr,
         const int  * KV_max_ptr,
         float      * dst_ptr,
         float2     * dst_meta_ptr,
@@ -47,13 +48,14 @@ static __global__ void flash_attn_ext_vec(
     const char * GGML_CUDA_RESTRICT V        = V_ptr;
     const char * GGML_CUDA_RESTRICT mask     = mask_ptr;
     const char * GGML_CUDA_RESTRICT sinks    = sinks_ptr;
+    const int  * GGML_CUDA_RESTRICT nvis     = nvis_ptr;
     const int  * GGML_CUDA_RESTRICT KV_max   = KV_max_ptr;
     float      * GGML_CUDA_RESTRICT dst      = dst_ptr;
     float2     * GGML_CUDA_RESTRICT dst_meta = dst_meta_ptr;
 
     // Skip unused kernel variants for faster compilation:
     if (use_logit_softcap && !(D == 128 || D == 256)) {
-        GGML_UNUSED_VARS(Q, K, V, mask, sinks, KV_max, dst, dst_meta, scale,
+        GGML_UNUSED_VARS(Q, K, V, mask, sinks, nvis, KV_max, dst, dst_meta, scale,
             max_bias, m0, m1, n_head_log2, logit_softcap,
             ne00, ne01, ne02, ne03,
                   nb01, nb02, nb03,
@@ -117,6 +119,13 @@ static __global__ void flash_attn_ext_vec(
     const int s31 = nb31 / (int) sizeof(half);
 
     const float slope = get_alibi_slope(max_bias, head, n_head_log2, m0, m1);
+
+    int nv[ncols];
+    if (nvis) {
+        for (int j = 0; j < ncols; ++j) {
+            nv[j] = (ic0 + j < int(ne01.x)) ? nvis[ic0 + j] : 0;
+        }
+    }
 
     static_assert(D % (2*WARP_SIZE) == 0, "D not divisible by 2*WARP_SIZE == 64.");
     constexpr int nwarps = nthreads / WARP_SIZE;
@@ -281,7 +290,11 @@ static __global__ void flash_attn_ext_vec(
                     sum = logit_softcap*tanhf(sum);
                 }
 
-                if (mask && (ncols == 1 || ic0 + j < int(ne01.z))) {
+                if (nvis) {
+                    if (k_VKQ_0 + i_KQ >= nv[j]) {
+                        sum = -INFINITY;
+                    }
+                } else if (mask && (ncols == 1 || ic0 + j < int(ne01.z))) {
                     sum += slope*__half2float(maskh[j*s31 + i_KQ]);
                 }
 

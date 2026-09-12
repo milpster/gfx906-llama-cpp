@@ -119,6 +119,13 @@ ACC_TYPE smearReduce(const in ACC_TYPE x, const in ACC_TYPE y) {
     return x;
 }
 
+ACC_TYPE applyNvis(const in uint32_t row, const in uint32_t col, const in ACC_TYPE elem, const in uint32_t kv_offset) {
+    const uint32_t qr = i * Br + row;
+    return qr < N && kv_offset + col >= uint32_t(data_nvis[qr])
+        ? ACC_TYPE(uintBitsToFloat(0xFEFFFFFF))
+        : elem;
+}
+
 // Replace matrix elements >= numRows or numCols with 'replace'
 ACC_TYPE replacePadding(const in uint32_t row, const in uint32_t col, const in ACC_TYPE elem, const in ACC_TYPE replace, const in uint32_t numRows, const in uint32_t numCols) {
     if (row >= numRows || col >= numCols) {
@@ -332,6 +339,9 @@ void main() {
 
         if (MASK_ENABLE) {
             S += slopeMat*coopmat<ACC_TYPE, gl_ScopeWorkgroup, Br, Bc, gl_MatrixUseAccumulator>(mv);
+        }
+        if (NVIS_ENABLE) {
+            coopMatPerElementNV(S, S, applyNvis, j * Bc);
         }
 
         // Clear padding elements to -inf, so they don't contribute to rowmax

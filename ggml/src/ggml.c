@@ -5583,6 +5583,18 @@ void ggml_flash_attn_ext_add_sinks(
     a->src[4] = sinks;
 }
 
+void ggml_flash_attn_ext_set_kq_nvis(
+        struct ggml_tensor * a,
+        struct ggml_tensor * nvis) {
+    GGML_ASSERT(a->op == GGML_OP_FLASH_ATTN_EXT);
+    GGML_ASSERT(a->src[5] == NULL);
+    GGML_ASSERT(a->src[3] == NULL);
+    GGML_ASSERT(a->src[0]->ne[1] == nvis->ne[0]);
+    GGML_ASSERT(nvis->type == GGML_TYPE_I32);
+
+    a->src[5] = nvis;
+}
+
 // ggml_flash_attn_back
 
 struct ggml_tensor * ggml_flash_attn_back(

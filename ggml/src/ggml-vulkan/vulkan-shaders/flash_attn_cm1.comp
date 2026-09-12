@@ -342,6 +342,24 @@ void main() {
             barrier();
         }
 
+        if (NVIS_ENABLE) {
+            [[unroll]] for (uint32_t idx = 0; idx < Bc * Br / 4; idx += gl_WorkGroupSize.x) {
+                const uint32_t c = (idx + tid) / (Br / 4);
+                const uint32_t r = (idx + tid) % (Br / 4);
+                if (idx + tid < Bc * Br / 4 || idx + gl_WorkGroupSize.x <= Bc * Br / 4) {
+                    ACC_TYPEV4 scores = sfsh[c * sfshstride + r];
+                    [[unroll]] for (uint32_t x = 0; x < 4; ++x) {
+                        const uint32_t qr = i * Br + r * 4 + x;
+                        if (qr < N && j * Bc + c >= uint32_t(data_nvis[qr])) {
+                            scores[x] = ACC_TYPE(NEG_FLT_MAX_OVER_2);
+                        }
+                    }
+                    sfsh[c * sfshstride + r] = scores;
+                }
+            }
+            barrier();
+        }
+
         float eMf[rows_per_thread];
         [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {
             const uint r_vec  = tile_row(r) / 4;

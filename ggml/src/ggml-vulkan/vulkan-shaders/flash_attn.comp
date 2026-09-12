@@ -456,6 +456,18 @@ void main() {
             }
         }
 
+        if (NVIS_ENABLE) {
+            [[unroll]] for (uint32_t c = 0; c < cols_per_thread; ++c) {
+                [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {
+                    const uint32_t qr = i * Br + tile_row(r);
+                    const uint32_t kc = j * Bc + c * cols_per_iter + col_tid;
+                    if (qr < N && kc >= uint32_t(data_nvis[qr])) {
+                        Sf[r][c] = ACC_TYPE(NEG_FLT_MAX_OVER_2);
+                    }
+                }
+            }
+        }
+
         float eMf[rows_per_thread];
         [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {
             float rowmaxf = NEG_FLT_MAX_OVER_2;

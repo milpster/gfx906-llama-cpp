@@ -2607,7 +2607,8 @@ ggml_tensor * llm_graph_context::build_attn_mha(
          ggml_tensor * v_mla,
              int64_t   n_kv_max,
                float   kq_scale,
-                 int   il) const {
+                 int   il,
+         ggml_tensor * kq_nvis) const {
     const bool v_trans = v->nb[1] > v->nb[2];
 
     // split the batch into streams if needed
@@ -2640,6 +2641,9 @@ ggml_tensor * llm_graph_context::build_attn_mha(
 
         cur = ggml_flash_attn_ext(ctx0, q, k, v, kq_mask, kq_scale, hparams.f_max_alibi_bias,
                                   hparams.attn_soft_cap ? hparams.f_attn_logit_softcapping : 0.0f);
+        if (kq_nvis) {
+            ggml_flash_attn_ext_set_kq_nvis(cur, kq_nvis);
+        }
         ggml_set_name(cur, "kqv_fa");
         res->add_fused_node({LLM_FUSED_OP_FLASH_ATTN, cur, il});
 
@@ -2971,16 +2975,26 @@ ggml_tensor * llm_graph_context::build_attn(
 
     ggml_tensor * cur = nullptr;
 
-    // dense consumers read the same generated mask as the QSA paths: chunked over the token
-    // axis so neither the dense input nor any split-sized copy of it is ever materialized;
-    // LLAMA_QSA_CHUNK drives both, defaulting to a sane chunk when only MASK_GEN is set
+    // Generated masks remain the fallback for backends without direct-nvis FA support.
+    // LLAMA_QSA_CHUNK drives both dense and QSA consumers, defaulting to a bounded chunk.
     static const int64_t mask_chunk = [] {
         const char * e = getenv("LLAMA_QSA_CHUNK");
         const int64_t c = e ? (int64_t) atoll(e) : (int64_t) 0;
         return c > 0 ? c : getenv("LLAMA_KQ_MASK_GEN") ? (int64_t) 1024 : (int64_t) 0;
     }();
+    static const int mask_gen_mode = [] {
+        const char * e = getenv("LLAMA_KQ_MASK_GEN");
+        return e ? atoi(e) : 0;
+    }();
 
-    if (inp->self_kq_mask_col && !kq_b && !sinks && q->ne[2] == (kq_mask ? kq_mask->ne[1] : q->ne[2]) && mask_chunk > 0 && mask_chunk < q->ne[2]) {
+    const bool generated_mask = inp->self_kq_mask_col && !kq_b && !sinks &&
+            q->ne[2] == inp->self_kq_mask_nvis->ne[0];
+    const bool direct_nvis = generated_mask && mask_gen_mode == 2 && cparams.flash_attn;
+
+    if (direct_nvis) {
+        cur = build_attn_mha(q, k, v, kq_b, nullptr, sinks, v_mla, 0, kq_scale, il,
+                inp->self_kq_mask_nvis);
+    } else if (generated_mask && mask_chunk > 0 && mask_chunk < q->ne[2]) {
         const int64_t n_kv  = mctx_cur->get_n_kv();
         const int64_t n_tps = q->ne[2];
         const ggml_type mask_type = kq_mask ? kq_mask->type : (cparams.flash_attn ? GGML_TYPE_F16 : GGML_TYPE_F32);
@@ -2989,9 +3003,7 @@ ggml_tensor * llm_graph_context::build_attn(
             const int64_t cs = std::min<int64_t>(mask_chunk, n_tps - c0);
 
             ggml_tensor * mask_c = build_kq_mask_rows(ctx0, inp->self_kq_mask_col, inp->self_kq_mask_nvis, n_kv, c0, cs, mask_type);
-
             ggml_tensor * q_c = ggml_view_3d(ctx0, q, q->ne[0], q->ne[1], cs, q->nb[1], q->nb[2], c0*q->nb[2]);
-
             ggml_tensor * cur_c = build_attn_mha(q_c, k, v, kq_b, mask_c, sinks, v_mla, 0, kq_scale, il);
 
             cur = cur ? ggml_concat(ctx0, cur, cur_c, 1) : cur_c;

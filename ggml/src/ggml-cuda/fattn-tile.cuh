@@ -733,6 +733,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
         const block_q8_0 * const __restrict__ K_q8,
         const block_q8_0 * const __restrict__ V_q8,
         const half  * const __restrict__ mask,
+        const int   * const __restrict__ nvis,
         const uint3 ne01,
         const float logit_softcap,
         const float slope,
@@ -749,6 +750,7 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
         const half2 * const __restrict__ K_h2,
         const half2 * const __restrict__ V_h2,
         const half  * const __restrict__ mask,
+        const int   * const __restrict__ nvis,
         const uint3 ne01,
         const float logit_softcap,
         const float slope,
@@ -834,10 +836,16 @@ static __device__ __forceinline__ void flash_attn_tile_iter(
             }
 
             if (!oob_check || i_KQ < k_VKQ_sup) {
-                KQ_acc[(i_KQ_0/(np*warp_size))*cpw + jc0] += (ncols2 > 1 || mask) ?
-                    slope*__half2float(mask[j*stride_mask + k_VKQ_0 + i_KQ]) : 0.0f;
+                float & kq = KQ_acc[(i_KQ_0/(np*warp_size))*cpw + jc0];
+                if (nvis) {
+                    if (k_VKQ_0 + i_KQ >= nvis[j]) {
+                        kq = -INFINITY;
+                    }
+                } else if (ncols2 > 1 || mask) {
+                    kq += slope*__half2float(mask[j*stride_mask + k_VKQ_0 + i_KQ]);
+                }
 
-                KQ_max_new[jc0] = fmaxf(KQ_max_new[jc0], KQ_acc[(i_KQ_0/(np*warp_size))*cpw + jc0] + FATTN_KQ_MAX_OFFSET);
+                KQ_max_new[jc0] = fmaxf(KQ_max_new[jc0], kq + FATTN_KQ_MAX_OFFSET);
             }
         }
 
@@ -1009,6 +1017,7 @@ static __global__ void flash_attn_tile(
         const char * V_ptr,
         const char * mask_ptr,
         const char * sinks_ptr,
+        const int  * nvis_ptr,
         const int  * KV_max_ptr,
         float      * dst_ptr,
         float2     * dst_meta_ptr,
@@ -1031,6 +1040,7 @@ static __global__ void flash_attn_tile(
     const char * GGML_CUDA_RESTRICT V        = V_ptr;
     const char * GGML_CUDA_RESTRICT mask     = mask_ptr;
     const char * GGML_CUDA_RESTRICT sinks    = sinks_ptr;
+    const int  * GGML_CUDA_RESTRICT nvis     = nvis_ptr;
     const int  * GGML_CUDA_RESTRICT KV_max   = KV_max_ptr;
     float      * GGML_CUDA_RESTRICT dst      = dst_ptr;
     float2     * GGML_CUDA_RESTRICT dst_meta = dst_meta_ptr;
@@ -1038,7 +1048,7 @@ static __global__ void flash_attn_tile(
     // Skip unused kernel variants for faster compilation:
 
     if ((use_logit_softcap && !(DV == 128 || DV == 256 || DV == 512))) {
-        GGML_UNUSED_VARS(Q, K, V, mask, sinks, KV_max, dst, dst_meta, scale,
+        GGML_UNUSED_VARS(Q, K, V, mask, sinks, nvis, KV_max, dst, dst_meta, scale,
             max_bias, m0, m1, n_head_log2, logit_softcap,
             ne00, ne01, ne02, ne03,
                   nb01, nb02, nb03,
@@ -1187,11 +1197,11 @@ static __global__ void flash_attn_tile(
             constexpr bool oob_check = false;
 #if GGML_CUDA_VEGA_TUNE_FATTN
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
-                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #else
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check>
-                (Q_tmp, K_h2, V_h2, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #endif
             k_VKQ_0 += gridDim.y*nbatch_fa;
@@ -1200,11 +1210,11 @@ static __global__ void flash_attn_tile(
             constexpr bool oob_check = true;
 #if GGML_CUDA_VEGA_TUNE_FATTN
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
-                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #else
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check>
-                (Q_tmp, K_h2, V_h2, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #endif
         }
@@ -1214,11 +1224,11 @@ static __global__ void flash_attn_tile(
             constexpr bool oob_check = false;
 #if GGML_CUDA_VEGA_TUNE_FATTN
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
-                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, K_q8, V_q8, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_K_q8, stride_V_q8, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #else
             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check>
-                (Q_tmp, K_h2, V_h2, maskh, ne01, logit_softcap, slope, KQ, KV_tmp,
+                (Q_tmp, K_h2, V_h2, maskh, nvis, ne01, logit_softcap, slope, KQ, KV_tmp,
                 stride_K2, stride_V2, stride_mask, KQ_max, KQ_sum, VKQ, k_VKQ_0, k_VKQ_max, col_Q_0);
 #endif
         }
@@ -1378,7 +1388,7 @@ static __global__ void flash_attn_tile(
         }
     }
 #else
-    GGML_UNUSED_VARS(Q_ptr, K_ptr, V_ptr, mask_ptr, sinks_ptr, KV_max_ptr, dst_ptr, dst_meta_ptr, scale,
+    GGML_UNUSED_VARS(Q_ptr, K_ptr, V_ptr, mask_ptr, sinks_ptr, nvis_ptr, KV_max_ptr, dst_ptr, dst_meta_ptr, scale,
         max_bias, m0, m1, n_head_log2, logit_softcap,
         ne00, ne01, ne02, ne03,
               nb01, nb02, nb03,
