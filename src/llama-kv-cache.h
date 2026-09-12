@@ -229,6 +229,10 @@ public:
     void set_input_kq_mask   (ggml_tensor * dst, const llama_ubatch * ubatch, bool causal_attn) const;
     void set_input_pos_bucket(ggml_tensor * dst, const llama_ubatch * ubatch) const;
 
+    // fills the tiny inputs of the generated (in-graph) kq mask; single-sequence causal
+    // prefix visibility only - the graph builder guarantees the precondition
+    void set_input_kq_nvis   (ggml_tensor * nvis, ggml_tensor * col, const llama_ubatch * ubatch, bool causal_attn) const;
+
     void set_input_k_rot(ggml_tensor * dst) const;
     void set_input_v_rot(ggml_tensor * dst) const;
 
@@ -422,6 +426,10 @@ public:
     void set_input_k_shift   (ggml_tensor * dst) const;
     void set_input_kq_mask   (ggml_tensor * dst, const llama_ubatch * ubatch, bool causal_attn) const;
     void set_input_pos_bucket(ggml_tensor * dst, const llama_ubatch * ubatch) const;
+
+    // fills the tiny inputs of the generated (in-graph) kq mask: per-token visible cell counts
+    // plus the cell-index arange; only valid for single-sequence causal prefix visibility
+    void set_input_kq_nvis   (ggml_tensor * nvis, ggml_tensor * col, const llama_ubatch * ubatch, bool causal_attn) const;
 
     void set_input_k_rot(ggml_tensor * dst) const;
     void set_input_v_rot(ggml_tensor * dst) const;

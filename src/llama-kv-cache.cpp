@@ -1785,6 +1785,66 @@ void llama_kv_cache::set_input_kq_mask(ggml_tensor * dst, const llama_ubatch * u
     //LLAMA_LOG_ERROR("%s: kq mask time: %0.3f ms\n", __func__, (t_end - t_start)/1000.0);
 }
 
+void llama_kv_cache::set_input_kq_nvis(ggml_tensor * nvis, ggml_tensor * col, const llama_ubatch * ubatch, bool causal_attn) const {
+    GGML_ASSERT(causal_attn && "generated kq mask requires causal attention");
+    GGML_ASSERT(ggml_backend_buffer_is_host(nvis->buffer));
+    GGML_ASSERT(ggml_backend_buffer_is_host(col->buffer));
+
+    const uint32_t n_tokens = ubatch->n_tokens;
+
+    GGML_ASSERT(nvis->ne[0] == (int64_t) n_tokens);
+
+    const int64_t n_kv = col->ne[0];
+
+    // caller guarantees single-sequence ubatches (enforced when the inputs are created)
+    const llama_seq_id seq_id = ubatch->seq_id[0][0];
+    for (uint32_t i = 1; i < n_tokens; ++i) {
+        GGML_ASSERT(ubatch->seq_id[i][0] == seq_id && "generated kq mask got a multi-sequence ubatch");
+    }
+
+    const auto & cells = v_cells.at(seq_to_stream.at(seq_id));
+
+    {
+        int32_t * data = (int32_t *) col->data;
+
+        for (int64_t j = 0; j < n_kv; ++j) {
+            data[j] = (int32_t) j;
+        }
+    }
+
+    {
+        int32_t * data = (int32_t *) nvis->data;
+
+        // the generated mask expresses visibility as a prefix over cell indices, so the
+        // sweep doubles as the invariant check: filled cells must form a contiguous,
+        // position-ordered prefix for the count to match the prefix cutoff
+        uint32_t visible = 0;
+        llama_pos p_prev = -1;
+
+        for (uint32_t i = 0; i < n_tokens; ++i) {
+            const llama_pos p1 = ubatch->pos[i];
+
+            while (visible < (uint32_t) n_kv) {
+                const uint32_t j = visible;
+
+                if (cells.is_empty(j) || !cells.seq_has(j, seq_id) || cells.pos_get(j) > p1) {
+                    break;
+                }
+
+                if (j > 0) {
+                    GGML_ASSERT(cells.pos_get(j) >= p_prev && "generated kq mask requires position-ordered cells");
+                }
+
+                p_prev = cells.pos_get(j);
+
+                visible++;
+            }
+
+            data[i] = (int32_t) visible;
+        }
+    }
+}
+
 void llama_kv_cache::set_input_pos_bucket(ggml_tensor * dst, const llama_ubatch * ubatch) const {
     const int64_t n_tokens = ubatch->n_tokens;
 
@@ -2796,6 +2856,10 @@ void llama_kv_cache_context::set_input_v_idxs(ggml_tensor * dst, const llama_uba
 
 void llama_kv_cache_context::set_input_kq_mask(ggml_tensor * dst, const llama_ubatch * ubatch, bool causal_attn) const {
     kv->set_input_kq_mask(dst, ubatch, causal_attn);
+}
+
+void llama_kv_cache_context::set_input_kq_nvis(ggml_tensor * nvis, ggml_tensor * col, const llama_ubatch * ubatch, bool causal_attn) const {
+    kv->set_input_kq_nvis(nvis, col, ubatch, causal_attn);
 }
 
 void llama_kv_cache_context::set_input_pos_bucket(ggml_tensor * dst, const llama_ubatch * ubatch) const {

@@ -2311,6 +2311,15 @@ enum ggml_status ggml_backend_tensor_alloc(ggml_backend_buffer_t buffer, struct 
     GGML_ASSERT(tensor->data == NULL);
     GGML_ASSERT(tensor->view_src == NULL);
     GGML_ASSERT(addr >= ggml_backend_buffer_get_base(buffer));
+    if (!(ggml_backend_buffer_is_meta(buffer) ||
+        (char *) addr + ggml_backend_buffer_get_alloc_size(buffer, tensor) <=
+        (char *) ggml_backend_buffer_get_base(buffer) + ggml_backend_buffer_get_size(buffer))) {
+        fprintf(stderr, "tensor_alloc OOB: name=%s op=%s type=%s ne=[%lld,%lld,%lld,%lld] alloc=%zu buf_size=%zu addr_off=%zd\n",
+                tensor->name[0] ? tensor->name : "(anon)", ggml_op_name(tensor->op), ggml_type_name(tensor->type),
+                (long long) tensor->ne[0], (long long) tensor->ne[1], (long long) tensor->ne[2], (long long) tensor->ne[3],
+                ggml_backend_buffer_get_alloc_size(buffer, tensor), ggml_backend_buffer_get_size(buffer),
+                (char *) addr - (char *) ggml_backend_buffer_get_base(buffer));
+    }
     GGML_ASSERT(ggml_backend_buffer_is_meta(buffer) ||
         (char *) addr + ggml_backend_buffer_get_alloc_size(buffer, tensor) <=
         (char *) ggml_backend_buffer_get_base(buffer) + ggml_backend_buffer_get_size(buffer));

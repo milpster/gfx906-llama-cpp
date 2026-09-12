@@ -2413,6 +2413,8 @@ struct llama_model_qwen4exp : public llama_model_base {
                     ggml_tensor * cur,
                     ggml_tensor * inp_pos,
                     ggml_tensor * kq_mask,
+                    ggml_tensor * mask_col,
+                    ggml_tensor * mask_nvis,
                             int * sections,
                             int   il);
 

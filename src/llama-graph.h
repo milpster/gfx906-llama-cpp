@@ -345,6 +345,11 @@ public:
     ggml_tensor * self_kq_mask     = nullptr; // F32/F16 [n_kv, n_batch/n_stream, 1, n_stream]
     ggml_tensor * self_kq_mask_cnv = nullptr; //         [n_kv, n_batch/n_stream, 1, n_stream]
 
+    // when the mask is generated in-graph (LLAMA_KQ_MASK_GEN), these replace the dense input:
+    // per-token visible cell counts and the cell-index arange the where(less) form consumes
+    ggml_tensor * self_kq_mask_nvis = nullptr; // I32 [n_batch]
+    ggml_tensor * self_kq_mask_col  = nullptr; // I32 [n_kv]
+
     // note: assumes v_rot^2 == I
     ggml_tensor * self_k_rot = nullptr;
     ggml_tensor * self_v_rot = nullptr;

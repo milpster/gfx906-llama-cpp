@@ -477,6 +477,12 @@ void llm_graph_input_attn_kv::set_input(const llama_ubatch * ubatch) {
         mctx->set_input_kq_mask(self_kq_mask, ubatch, cparams.causal_attn);
     }
 
+    // the dense mask tensor is left unreferenced by graphs that read the generated form,
+    // so only these tiny inputs need filling in that case
+    if (self_kq_mask_nvis && self_kq_mask_nvis->buffer) {
+        mctx->set_input_kq_nvis(self_kq_mask_nvis, self_kq_mask_col, ubatch, cparams.causal_attn);
+    }
+
     if (self_k_rot && self_k_rot->buffer) {
         mctx->set_input_k_rot(self_k_rot);
     }
@@ -496,7 +502,8 @@ bool llm_graph_input_attn_kv::can_reuse(const llm_graph_params & params) {
     res &= self_k_idxs->ne[0] == params.ubatch.n_tokens;
   //res &= self_v_idxs->ne[0] == params.ubatch.n_tokens; // TODO: need to move this to the unified cache and check there
 
-    res &= can_reuse_kq_mask(self_kq_mask, mctx, params.ubatch, params.cparams);
+    // under the generated mask the shape checks are covered by the graph rebuild logic
+    res &= !self_kq_mask || can_reuse_kq_mask(self_kq_mask, mctx, params.ubatch, params.cparams);
 
     return res;
 }
@@ -2806,6 +2813,66 @@ ggml_tensor * llm_graph_context::build_attn(
     return cur;
 }
 
+static bool kq_mask_gen_supported(
+        const llama_hparams & hparams,
+        const llama_cparams & cparams,
+        const llama_ubatch  & ubatch) {
+    // the generated form expresses single-sequence causal prefix visibility only:
+    // mask[i][j] = (j < n_visible[i]); anything richer must keep the dense input
+    if (!cparams.causal_attn) return false;
+    if (hparams.swa_type != LLAMA_SWA_TYPE_NONE) return false;
+    if (hparams.f_max_alibi_bias > 0.0f) return false;
+    // mrope layouts only reach the writer's 2d comparison when coordinates are non-zero;
+    // text-only batches (all secondary components zero, as on this rig) degenerate to the
+    // plain causal prefix, which the generated form expresses exactly
+    if (ubatch.n_pos > 1) {
+        for (uint32_t i = 0; i < ubatch.n_tokens; ++i) {
+            for (uint32_t c = 1; c < (uint32_t) ubatch.n_pos; ++c) {
+                if (ubatch.pos[i + c*ubatch.n_tokens] != 0) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    const int64_t n_stream = cparams.kv_unified ? 1 : ubatch.n_seqs_unq;
+    if (n_stream != 1) return false;
+
+    for (uint32_t i = 1; i < ubatch.n_tokens; ++i) {
+        if (ubatch.seq_id[i][0] != ubatch.seq_id[0][0]) return false;
+    }
+
+    return true;
+}
+
+// causal-prefix mask rows built in-graph from the tiny arange/nvis inputs:
+// log(clamp(col - nvis, 0, 1)) is {0, -inf} with no 0*inf NaN path, matching the dense
+// input's values exactly while staying chunk-sized next to its consumer
+static ggml_tensor * build_kq_mask_rows(
+        ggml_context * ctx0,
+        ggml_tensor * col,       // I32 [n_kv]
+        ggml_tensor * nvis,      // I32 [n_tokens]
+        int64_t n_kv,
+        int64_t row0,
+        int64_t nrows,
+        ggml_type type = GGML_TYPE_F32) {
+    // out_prod of the column with a computed ones-vector lifts it to full shape without
+    // any full-size source: fill/repeat shape-carriers become graph leaves, which the
+    // scheduler would copy across splits
+    ggml_tensor * colf = ggml_reshape_2d(ctx0,
+            ggml_cast(ctx0, ggml_view_1d(ctx0, col, n_kv, 0), GGML_TYPE_F32), n_kv, 1);
+    ggml_tensor * ones = ggml_reshape_2d(ctx0,
+            ggml_clamp(ctx0, ggml_arange(ctx0, 0, (float) nrows, 1.0f), 1.0f, 1.0f), nrows, 1);
+
+    ggml_tensor * colrep = ggml_out_prod(ctx0, colf, ones);
+
+    ggml_tensor * nvisf = ggml_cast(ctx0, ggml_view_2d(ctx0, nvis, 1, nrows, nvis->nb[0], row0*nvis->nb[0]), GGML_TYPE_F32);
+
+    ggml_tensor * res = ggml_log(ctx0, ggml_clamp(ctx0, ggml_sub(ctx0, colrep, nvisf), 0.0f, 1.0f));
+
+    return type == GGML_TYPE_F32 ? res : ggml_cast(ctx0, res, type);
+}
+
 static std::unique_ptr<llm_graph_input_attn_kv> build_attn_inp_kv_impl(
            ggml_context * ctx0,
      const llama_ubatch & ubatch,
@@ -2821,8 +2888,23 @@ static std::unique_ptr<llm_graph_input_attn_kv> build_attn_inp_kv_impl(
         inp->self_k_idxs = mctx_cur->build_input_k_idxs(ctx0, ubatch);
         inp->self_v_idxs = mctx_cur->build_input_v_idxs(ctx0, ubatch);
 
-        inp->self_kq_mask = build_attn_inp_kq_mask(ctx0, mctx_cur, ubatch, cparams);
-        inp->self_kq_mask_cnv = inp->self_kq_mask;
+        // the dense mask is not merely unreferenced when the generated form is active:
+        // any ggml_set_input tensor becomes an alloc-forced OP_NONE node in graph_copy,
+        // so under gen it must not be created at all
+        if (getenv("LLAMA_KQ_MASK_GEN") && kq_mask_gen_supported(hparams, cparams, ubatch)) {
+            const int64_t n_kv = mctx_cur->get_n_kv();
+
+            inp->self_kq_mask_col = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, n_kv);
+            ggml_set_input(inp->self_kq_mask_col);
+            ggml_set_name(inp->self_kq_mask_col, "attn_inp_kq_col");
+
+            inp->self_kq_mask_nvis = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, ubatch.n_tokens);
+            ggml_set_input(inp->self_kq_mask_nvis);
+            ggml_set_name(inp->self_kq_mask_nvis, "attn_inp_kq_nvis");
+        } else {
+            inp->self_kq_mask = build_attn_inp_kq_mask(ctx0, mctx_cur, ubatch, cparams);
+            inp->self_kq_mask_cnv = inp->self_kq_mask;
+        }
     }
 
     inp->self_k_rot = mctx_cur->build_input_k_rot(ctx0);
@@ -2887,7 +2969,37 @@ ggml_tensor * llm_graph_context::build_attn(
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = mctx_cur->get_v(ctx0, il);
 
-    ggml_tensor * cur = build_attn_mha(q, k, v, kq_b, kq_mask, sinks, v_mla, 0, kq_scale, il);
+    ggml_tensor * cur = nullptr;
+
+    // dense consumers read the same generated mask as the QSA paths: chunked over the token
+    // axis so neither the dense input nor any split-sized copy of it is ever materialized;
+    // LLAMA_QSA_CHUNK drives both, defaulting to a sane chunk when only MASK_GEN is set
+    static const int64_t mask_chunk = [] {
+        const char * e = getenv("LLAMA_QSA_CHUNK");
+        const int64_t c = e ? (int64_t) atoll(e) : (int64_t) 0;
+        return c > 0 ? c : getenv("LLAMA_KQ_MASK_GEN") ? (int64_t) 1024 : (int64_t) 0;
+    }();
+
+    if (inp->self_kq_mask_col && !kq_b && !sinks && q->ne[2] == (kq_mask ? kq_mask->ne[1] : q->ne[2]) && mask_chunk > 0 && mask_chunk < q->ne[2]) {
+        const int64_t n_kv  = mctx_cur->get_n_kv();
+        const int64_t n_tps = q->ne[2];
+        const ggml_type mask_type = kq_mask ? kq_mask->type : (cparams.flash_attn ? GGML_TYPE_F16 : GGML_TYPE_F32);
+
+        for (int64_t c0 = 0; c0 < n_tps; c0 += mask_chunk) {
+            const int64_t cs = std::min<int64_t>(mask_chunk, n_tps - c0);
+
+            ggml_tensor * mask_c = build_kq_mask_rows(ctx0, inp->self_kq_mask_col, inp->self_kq_mask_nvis, n_kv, c0, cs, mask_type);
+
+            ggml_tensor * q_c = ggml_view_3d(ctx0, q, q->ne[0], q->ne[1], cs, q->nb[1], q->nb[2], c0*q->nb[2]);
+
+            ggml_tensor * cur_c = build_attn_mha(q_c, k, v, kq_b, mask_c, sinks, v_mla, 0, kq_scale, il);
+
+            cur = cur ? ggml_concat(ctx0, cur, cur_c, 1) : cur_c;
+        }
+    } else {
+        cur = build_attn_mha(q, k, v, kq_b, kq_mask, sinks, v_mla, 0, kq_scale, il);
+    }
+
     cb(cur, "kqv_out", il);
 
     if (inp->self_v_rot) {

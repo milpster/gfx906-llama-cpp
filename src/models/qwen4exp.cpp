@@ -763,11 +763,41 @@ public:
     const bool blk_bias;
 };
 
+// causal-prefix mask rows built in-graph from the tiny arange/nvis inputs:
+// log(clamp(col - nvis, 0, 1)) is {0, -inf} with no 0*inf NaN path, matching the dense
+// input's values exactly while staying chunk-sized next to its consumer
+static ggml_tensor * build_kq_mask_rows(
+        ggml_context * ctx0,
+        ggml_tensor * col,       // I32 [n_kv]
+        ggml_tensor * nvis,      // I32 [n_tokens]
+        int64_t n_kv,
+        int64_t row0,
+        int64_t nrows,
+        ggml_type type = GGML_TYPE_F32) {
+    // out_prod of the column with a computed ones-vector lifts it to full shape without
+    // any full-size source: fill/repeat shape-carriers become graph leaves, which the
+    // scheduler would copy across splits
+    ggml_tensor * colf = ggml_reshape_2d(ctx0,
+            ggml_cast(ctx0, ggml_view_1d(ctx0, col, n_kv, 0), GGML_TYPE_F32), n_kv, 1);
+    ggml_tensor * ones = ggml_reshape_2d(ctx0,
+            ggml_clamp(ctx0, ggml_arange(ctx0, 0, (float) nrows, 1.0f), 1.0f, 1.0f), nrows, 1);
+
+    ggml_tensor * colrep = ggml_out_prod(ctx0, colf, ones);
+
+    ggml_tensor * nvisf = ggml_cast(ctx0, ggml_view_2d(ctx0, nvis, 1, nrows, nvis->nb[0], row0*nvis->nb[0]), GGML_TYPE_F32);
+
+    ggml_tensor * res = ggml_log(ctx0, ggml_clamp(ctx0, ggml_sub(ctx0, colrep, nvisf), 0.0f, 1.0f));
+
+    return type == GGML_TYPE_F32 ? res : ggml_cast(ctx0, res, type);
+}
+
 ggml_tensor * llama_model_qwen4exp::graph::build_qsa_top_k(
         const llama_memory_hybrid_idx_context * mctx_hyb,
         ggml_tensor *                           cur,
         ggml_tensor *                           inp_pos,
         ggml_tensor *                           kq_mask,
+        ggml_tensor *                           mask_col,
+        ggml_tensor *                           mask_nvis,
         int *                                   sections,
         int                                     il) {
     const llama_kv_cache_context * mctx_idx = mctx_hyb->get_idx();
@@ -918,9 +948,15 @@ ggml_tensor * llama_model_qwen4exp::graph::build_qsa_top_k(
 
         if (blk_bias) {
             // flash attention keeps the mask in f16; the scores are f32
-            ggml_tensor * mask = kq_mask->type == GGML_TYPE_F32 ? kq_mask : ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
-            ggml_tensor * mask_c = ggml_view_3d(ctx0, mask, n_kv, cs, n_stream,
-                    mask->nb[1], mask->nb[2], c0*mask->nb[1]);
+            ggml_tensor * mask_c;
+            if (mask_col) {
+                mask_c = build_kq_mask_rows(ctx0, mask_col, mask_nvis, n_kv, c0*n_stream, cs*n_stream);
+                mask_c = ggml_reshape_3d(ctx0, mask_c, n_kv, cs, n_stream);
+            } else {
+                ggml_tensor * mask = kq_mask->type == GGML_TYPE_F32 ? kq_mask : ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
+                mask_c = ggml_view_3d(ctx0, mask, n_kv, cs, n_stream,
+                        mask->nb[1], mask->nb[2], c0*mask->nb[1]);
+            }
             expanded = ggml_add(ctx0, expanded, mask_c);
         } else {
             ggml_tensor * bias_c = ggml_view_3d(ctx0, inp->bias, n_kv, cs, n_stream,
@@ -994,7 +1030,7 @@ ggml_tensor * llama_model_qwen4exp::graph::build_attn_qsa(
         const char * e = getenv("LLAMA_QSA_CHUNK");
         return e ? (int64_t) atoll(e) : (int64_t) 0;
     }();
-    const int64_t n_tps = kq_mask->ne[1];
+    const int64_t n_tps = kq_mask ? kq_mask->ne[1] : n_tokens;
     const int64_t chunk = qsa_attn_chunk > 0 && qsa_attn_chunk < n_tps ? qsa_attn_chunk : n_tps;
 
     ggml_tensor * cur = nullptr;
@@ -1002,8 +1038,14 @@ ggml_tensor * llama_model_qwen4exp::graph::build_attn_qsa(
     for (int64_t c0 = 0; c0 < n_tps; c0 += chunk) {
         const int64_t cs = std::min<int64_t>(chunk, n_tps - c0);
 
-        ggml_tensor * mask_c = ggml_view_4d(ctx0, kq_mask, kq_mask->ne[0], cs, 1, kq_mask->ne[3],
-                kq_mask->nb[1], kq_mask->nb[2], kq_mask->nb[3], c0*kq_mask->nb[1]);
+        ggml_tensor * mask_c;
+        if (inp->self_kq_mask_col) {
+            mask_c = build_kq_mask_rows(ctx0, inp->self_kq_mask_col, inp->self_kq_mask_nvis, mctx_cur->get_n_kv(), c0, cs,
+                    cparams.flash_attn ? GGML_TYPE_F16 : GGML_TYPE_F32);
+        } else {
+            mask_c = ggml_view_4d(ctx0, kq_mask, kq_mask->ne[0], cs, 1, kq_mask->ne[3],
+                    kq_mask->nb[1], kq_mask->nb[2], kq_mask->nb[3], c0*kq_mask->nb[1]);
+        }
 
         // prepare new kq mask - starts filled with -INFINITY
         ggml_tensor * kq_mask_all = ggml_fill(ctx0, mask_c, -INFINITY);
@@ -1064,7 +1106,7 @@ ggml_tensor * llama_model_qwen4exp::graph::build_layer_attn(
     // indexer reads the same block input as q/k/v; no cache or no ratio means dense
     const bool qsa = mctx_hyb->get_idx() != nullptr && hparams.dsv4_compress_ratios[il] > 0;
 
-    ggml_tensor * top_k = qsa ? build_qsa_top_k(mctx_hyb, cur, inp_pos, inp->get_kq_mask(), sections, il) : nullptr;
+    ggml_tensor * top_k = qsa ? build_qsa_top_k(mctx_hyb, cur, inp_pos, inp->get_kq_mask(), inp->self_kq_mask_col, inp->self_kq_mask_nvis, sections, il) : nullptr;
 
     // Qwen3Next uses a single Q projection that outputs query + gate
     ggml_tensor * Qcur_full = build_lora_mm(model.layers[il].wq, cur, model.layers[il].wq_s); // [ (n_embd_head * 2) * n_head, n_tokens ]
