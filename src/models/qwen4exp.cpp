@@ -867,45 +867,73 @@ ggml_tensor * llama_model_qwen4exp::graph::build_qsa_top_k(
 
     // rectify each head dot product before the sum, as in the DeepSeek lightning indexer
     // mul_mat matches ne[2], so the queries of stream s only meet the blocks of stream s
-    ggml_tensor * score = ggml_mul_mat(ctx0, pooled,
-            ggml_reshape_3d(ctx0, q, idx_dim, n_idx_h*n_tps, n_stream));
-    score = ggml_reshape_4d(ctx0, score, n_blocks, n_idx_h, n_tps, n_stream);
-    score = ggml_relu(ctx0, score);
+    q = ggml_reshape_4d(ctx0, q, idx_dim, n_idx_h, n_tps, n_stream);
 
-    // the heads sit side by side on ne[1] and there are only a few of them
-    ggml_tensor * summed = nullptr;
-    for (int64_t h = 0; h < n_idx_h; ++h) {
-        ggml_tensor * slice = ggml_view_3d(ctx0, score, n_blocks, n_tps, n_stream,
-                score->nb[2], score->nb[3], h*score->nb[1]);
-        summed = summed ? ggml_add(ctx0, summed, slice) : ggml_cont(ctx0, slice);
-    }
-
-    score = summed;
-    cb(score, "indexer_score", il);
-
-    // one value per block, so it is cheaper to bias here than after the cells are expanded
-    if (blk_bias) {
-        score = ggml_add(ctx0, score, inp->bias);
-    }
-
-    // every token of a block gets the block score; the budget is whole blocks, so top-k cuts on a block boundary
-    ggml_tensor * expanded = ggml_get_rows(ctx0,
-            ggml_cont(ctx0, ggml_permute(ctx0, score, 1, 0, 2, 3)), inp->cell_blk);
-    expanded = ggml_cont(ctx0, ggml_permute(ctx0, expanded, 1, 0, 2, 3));
-
-    if (blk_bias) {
-        // flash attention keeps the mask in f16; the scores are f32
-        ggml_tensor * mask = kq_mask->type == GGML_TYPE_F32 ? kq_mask : ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
-        expanded = ggml_add(ctx0, expanded, ggml_reshape_3d(ctx0, mask, n_kv, n_tps, n_stream));
-    } else {
-        expanded = ggml_add(ctx0, expanded, inp->bias);
-    }
-    cb(expanded, "indexer_score_tokens", il);
+    // the token axis of the score chain (mul_mat out -> relu -> head sum -> bias -> expand -> mask
+    // -> top_k) is independent per token, so it may be processed in chunks: the expanded family is
+    // n_kv*n_tps*stream f32, which otherwise pins (ctx*ubatch) bytes of reserve per layer
+    static const int64_t qsa_chunk = [] {
+        const char * e = getenv("LLAMA_QSA_CHUNK");
+        return e ? (int64_t) atoll(e) : (int64_t) 0;
+    }();
+    const int64_t chunk = qsa_chunk > 0 && qsa_chunk < n_tps ? qsa_chunk : n_tps;
 
     // the reference returns indexer_top_k + compress_ratio - 1: whole blocks plus the tail
     const int64_t width = std::min<int64_t>(n_kv, (int64_t) hparams.indexer_top_k + r - 1);
 
-    ggml_tensor * top_k = ggml_cont(ctx0, ggml_top_k(ctx0, expanded, width));
+    ggml_tensor * top_k = nullptr;
+
+    for (int64_t c0 = 0; c0 < n_tps; c0 += chunk) {
+        const int64_t cs = std::min<int64_t>(chunk, n_tps - c0);
+
+        ggml_tensor * qc = ggml_view_4d(ctx0, q, idx_dim, n_idx_h, cs, n_stream,
+                q->nb[1], q->nb[2], q->nb[3], c0*q->nb[2]);
+        qc = ggml_reshape_3d(ctx0, ggml_cont(ctx0, qc), idx_dim, n_idx_h*cs, n_stream);
+
+        ggml_tensor * score = ggml_mul_mat(ctx0, pooled, qc);
+        score = ggml_reshape_4d(ctx0, score, n_blocks, n_idx_h, cs, n_stream);
+        score = ggml_relu(ctx0, score);
+
+        // the heads sit side by side on ne[1] and there are only a few of them
+        ggml_tensor * summed = nullptr;
+        for (int64_t h = 0; h < n_idx_h; ++h) {
+            ggml_tensor * slice = ggml_view_3d(ctx0, score, n_blocks, cs, n_stream,
+                    score->nb[2], score->nb[3], h*score->nb[1]);
+            summed = summed ? ggml_add(ctx0, summed, slice) : ggml_cont(ctx0, slice);
+        }
+
+        score = summed;
+
+        // one value per block, so it is cheaper to bias here than after the cells are expanded
+        if (blk_bias) {
+            ggml_tensor * bias_c = ggml_view_3d(ctx0, inp->bias, n_blocks, cs, n_stream,
+                    inp->bias->nb[1], inp->bias->nb[2], c0*inp->bias->nb[1]);
+            score = ggml_add(ctx0, score, bias_c);
+        }
+
+        // every token of a block gets the block score; the budget is whole blocks, so top-k cuts on a block boundary
+        ggml_tensor * expanded = ggml_get_rows(ctx0,
+                ggml_cont(ctx0, ggml_permute(ctx0, score, 1, 0, 2, 3)), inp->cell_blk);
+        expanded = ggml_cont(ctx0, ggml_permute(ctx0, expanded, 1, 0, 2, 3));
+
+        if (blk_bias) {
+            // flash attention keeps the mask in f16; the scores are f32
+            ggml_tensor * mask = kq_mask->type == GGML_TYPE_F32 ? kq_mask : ggml_cast(ctx0, kq_mask, GGML_TYPE_F32);
+            ggml_tensor * mask_c = ggml_view_3d(ctx0, mask, n_kv, cs, n_stream,
+                    mask->nb[1], mask->nb[2], c0*mask->nb[1]);
+            expanded = ggml_add(ctx0, expanded, mask_c);
+        } else {
+            ggml_tensor * bias_c = ggml_view_3d(ctx0, inp->bias, n_kv, cs, n_stream,
+                    inp->bias->nb[1], inp->bias->nb[2], c0*inp->bias->nb[1]);
+            expanded = ggml_add(ctx0, expanded, bias_c);
+        }
+        cb(expanded, "indexer_score_tokens", il);
+
+        ggml_tensor * tk = ggml_cont(ctx0, ggml_top_k(ctx0, expanded, width));
+        tk = ggml_reshape_4d(ctx0, tk, width, cs, 1, n_stream);
+
+        top_k = top_k ? ggml_concat(ctx0, top_k, tk, 1) : tk;
+    }
 
     // build_attn_qsa reads [n_top_k, n_batch, 1, n_stream], matching the KQ mask.
     top_k = ggml_reshape_4d(ctx0, top_k, width, n_tps, 1, n_stream);
@@ -955,40 +983,64 @@ ggml_tensor * llama_model_qwen4exp::graph::build_attn_qsa(
 
     ggml_tensor * kq_mask = inp->get_kq_mask();
 
-    // prepare new kq mask - starts filled with -INFINITY
-    ggml_tensor * kq_mask_all = ggml_fill(ctx0, kq_mask, -INFINITY);
-
-    // reshape KQ mask into tensor with rows of size 1:
-    // [n_kv, n_batch, 1, n_stream] -> [1, n_kv, n_batch, n_stream]
-    kq_mask_all = ggml_view_4d(ctx0, kq_mask_all, 1, kq_mask_all->ne[0], kq_mask_all->ne[1], kq_mask_all->ne[3], kq_mask_all->nb[0], kq_mask_all->nb[1], kq_mask_all->nb[2], 0);
-
-    // reshape top_k indices: [n_top_k, n_batch, 1, n_stream] -> [n_top_k, n_batch, n_stream, 1]
-    ggml_tensor * top_k_3d = ggml_view_4d(ctx0, top_k, top_k->ne[0], top_k->ne[1], top_k->ne[3], 1, top_k->nb[1], top_k->nb[2], top_k->ne[3]*top_k->nb[3], 0);
-
-    // prepare zero-filled tensor with rows of size 1: [1, n_top_k, n_batch, n_stream]
-    // this will be our source of zero values for unmasking top k mask elements
-    ggml_tensor * zeros = ggml_new_tensor_4d(ctx0, GGML_TYPE_F32, 1, top_k_3d->ne[0], top_k_3d->ne[1], top_k_3d->ne[2]);
-    zeros = ggml_fill(ctx0, zeros, 0.0f);
-
-    // modify KQ mask by unmasking elements that are in top_k indices
-    // ggml_set_rows([1, n_kv, n_batch, n_stream], [1, n_top_k, n_batch, n_stream], [n_top_k, n_batch, n_stream, 1])
-    ggml_tensor * kq_mask_top_k = ggml_set_rows(ctx0, kq_mask_all, zeros, top_k_3d);
-
-    // reshape to restore the original shape of KQ mask:
-    // [1, n_kv, n_batch, n_stream] -> [n_kv, n_batch, 1, n_stream]
-    kq_mask_top_k = ggml_view_4d(ctx0, kq_mask_top_k, kq_mask_top_k->ne[1], kq_mask_top_k->ne[2], 1, kq_mask_top_k->ne[3], kq_mask_top_k->nb[2], kq_mask_top_k->nb[3], kq_mask_top_k->nb[3], 0);
-
-    // combine with the original kq mask
-    kq_mask_top_k = ggml_add(ctx0, kq_mask_top_k, kq_mask);
-
     ggml_tensor * q = q_cur;
     ggml_tensor * k = mctx_cur->get_k(ctx0, il);
     ggml_tensor * v = mctx_cur->get_v(ctx0, il);
 
-    // TODO: enable sparse attention when we are ready
-    // ref: https://github.com/ggml-org/llama.cpp/pull/27970
-    //ggml_tensor * cur = build_attn_mha(q, k, v, nullptr, kq_mask_top_k, nullptr, nullptr, top_k->ne[0], kq_scale, il);
-    ggml_tensor * cur = build_attn_mha(q, k, v, nullptr, kq_mask_top_k, nullptr, nullptr, 0, kq_scale, il);
+    // the token axis of the QSA mask build (fill -> set_rows -> add) and of attention itself is
+    // independent per token; the dense mask is n_kv*n_tps f32 per layer, so chunk it to cap the
+    // reserve at n_kv*chunk instead of n_kv*n_tps
+    static const int64_t qsa_attn_chunk = [] {
+        const char * e = getenv("LLAMA_QSA_CHUNK");
+        return e ? (int64_t) atoll(e) : (int64_t) 0;
+    }();
+    const int64_t n_tps = kq_mask->ne[1];
+    const int64_t chunk = qsa_attn_chunk > 0 && qsa_attn_chunk < n_tps ? qsa_attn_chunk : n_tps;
+
+    ggml_tensor * cur = nullptr;
+
+    for (int64_t c0 = 0; c0 < n_tps; c0 += chunk) {
+        const int64_t cs = std::min<int64_t>(chunk, n_tps - c0);
+
+        ggml_tensor * mask_c = ggml_view_4d(ctx0, kq_mask, kq_mask->ne[0], cs, 1, kq_mask->ne[3],
+                kq_mask->nb[1], kq_mask->nb[2], kq_mask->nb[3], c0*kq_mask->nb[1]);
+
+        // prepare new kq mask - starts filled with -INFINITY
+        ggml_tensor * kq_mask_all = ggml_fill(ctx0, mask_c, -INFINITY);
+
+        // reshape KQ mask into tensor with rows of size 1:
+        // [n_kv, n_batch, 1, n_stream] -> [1, n_kv, n_batch, n_stream]
+        kq_mask_all = ggml_view_4d(ctx0, kq_mask_all, 1, kq_mask_all->ne[0], kq_mask_all->ne[1], kq_mask_all->ne[3], kq_mask_all->nb[0], kq_mask_all->nb[1], kq_mask_all->nb[2], 0);
+
+        // reshape top_k indices: [n_top_k, n_batch, 1, n_stream] -> [n_top_k, n_batch, n_stream, 1]
+        ggml_tensor * top_k_3d = ggml_view_4d(ctx0, top_k, top_k->ne[0], cs, top_k->ne[3], 1, top_k->nb[1], top_k->nb[2], top_k->ne[3]*top_k->nb[3], c0*top_k->nb[1]);
+
+        // prepare zero-filled tensor with rows of size 1: [1, n_top_k, n_batch, n_stream]
+        // this will be our source of zero values for unmasking top k mask elements
+        ggml_tensor * zeros = ggml_new_tensor_4d(ctx0, GGML_TYPE_F32, 1, top_k_3d->ne[0], top_k_3d->ne[1], top_k_3d->ne[2]);
+        zeros = ggml_fill(ctx0, zeros, 0.0f);
+
+        // modify KQ mask by unmasking elements that are in top_k indices
+        // ggml_set_rows([1, n_kv, n_batch, n_stream], [1, n_top_k, n_batch, n_stream], [n_top_k, n_batch, n_stream, 1])
+        ggml_tensor * kq_mask_top_k = ggml_set_rows(ctx0, kq_mask_all, zeros, top_k_3d);
+
+        // reshape to restore the original shape of KQ mask:
+        // [1, n_kv, n_batch, n_stream] -> [n_kv, n_batch, 1, n_stream]
+        kq_mask_top_k = ggml_view_4d(ctx0, kq_mask_top_k, kq_mask_top_k->ne[1], kq_mask_top_k->ne[2], 1, kq_mask_top_k->ne[3], kq_mask_top_k->nb[2], kq_mask_top_k->nb[3], kq_mask_top_k->nb[3], 0);
+
+        // combine with the original kq mask
+        kq_mask_top_k = ggml_add(ctx0, kq_mask_top_k, mask_c);
+
+        ggml_tensor * q_c = ggml_view_3d(ctx0, q, q->ne[0], q->ne[1], cs, q->nb[1], q->nb[2], c0*q->nb[2]);
+
+        // TODO: enable sparse attention when we are ready
+        // ref: https://github.com/ggml-org/llama.cpp/pull/27970
+        //ggml_tensor * cur_c = build_attn_mha(q_c, k, v, nullptr, kq_mask_top_k, nullptr, nullptr, top_k->ne[0], kq_scale, il);
+        ggml_tensor * cur_c = build_attn_mha(q_c, k, v, nullptr, kq_mask_top_k, nullptr, nullptr, 0, kq_scale, il);
+
+        cur = cur ? ggml_concat(ctx0, cur, cur_c, 1) : cur_c;
+    }
+
     cb(cur, "kqv_out", il);
 
     // the rotation is its own inverse, so undo it on the value side of the output

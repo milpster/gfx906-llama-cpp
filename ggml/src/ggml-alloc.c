@@ -856,6 +856,24 @@ static bool ggml_gallocr_reserve_n_impl(
     // allocate in hash table
     ggml_gallocr_alloc_graph_impl(galloc, graph, node_buffer_ids, leaf_buffer_ids);
 
+    // attribute the planned reserve: print every large allocation so buffer growth can be traced
+    // to the tensors that cause it (env-gated, zero cost when off)
+    if (getenv("GGML_GALLOC_DUMP")) {
+        const char * dump_min_env = getenv("GGML_GALLOC_DUMP_MB");
+        const size_t dump_min = dump_min_env ? (size_t) atoll(dump_min_env) * 1024*1024 : (size_t) 64*1024*1024;
+        for (int i = 0; i < graph->n_nodes; i++) {
+            struct ggml_tensor * node = graph->nodes[i];
+            if (!node || node->view_src || node->data) continue;
+            struct hash_node * hn = ggml_gallocr_hash_get(galloc, node);
+            if (hn->buffer_id < 0) continue;
+            size_t size = ggml_backend_buft_get_alloc_size(galloc->bufts[hn->buffer_id], node);
+            if (size >= dump_min) {
+                fprintf(stderr, "galloc-dump buf=%d size=%zu name=%s op=%s\n",
+                        hn->buffer_id, size, node->name[0] ? node->name : "(anon)", ggml_op_name(node->op));
+            }
+        }
+    }
+
     // set the node_allocs from the hash table
     if (galloc->n_nodes < graph->n_nodes) {
         free(galloc->node_allocs);
