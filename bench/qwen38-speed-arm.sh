@@ -15,7 +15,7 @@ BIN=$BUILD_DIR/bin/llama-cli
 MODEL=/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
 DRAFT=/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
 MMPROJ=/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf
-PROMPT_SOURCE=/tmp/opencode/pp16384-prompt.txt
+PROMPT_SOURCE=${PROMPT_SOURCE:-/tmp/opencode/pp16384-prompt.txt}
 OUTDIR=/tmp/opencode/qwen38-speed/$ARM
 PROMPT=$OUTDIR/prompt-2k.txt
 
