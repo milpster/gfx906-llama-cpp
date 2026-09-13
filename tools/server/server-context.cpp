@@ -4373,12 +4373,27 @@ void server_context::set_state_callback(server_state_callback_t callback) {
 // server_routes
 //
 
+static void append_prompt_log_completion(const std::string & file_path, const server_task_result_cmpl_final & final_res) {
+    if (file_path.empty()) {
+        return;
+    }
+    std::ofstream f(file_path, std::ios::app);
+    if (!f) {
+        return;
+    }
+    f << "\n\n===== COMPLETION (" << final_res.tokens.size() << " tokens) =====\n";
+    for (auto id : final_res.tokens) {
+        f << id << " ";
+    }
+    f << "\n" << final_res.content << "\n";
+}
+
 std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
-            const server_http_req & req,
-            server_task_type type,
-            const json & data,
-            const std::vector<raw_buffer> & files,
-            task_response_type res_type) {
+        const server_http_req & req,
+        server_task_type type,
+        const json & data,
+        const std::vector<raw_buffer> & files,
+        task_response_type res_type) {
     GGML_ASSERT(type == SERVER_TASK_TYPE_COMPLETION || type == SERVER_TASK_TYPE_INFILL);
 
     auto res = create_response();
@@ -4390,6 +4405,8 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
 
     int32_t sse_ping_interval = params.sse_ping_interval;
 
+    std::string prompts_log_file;
+
     try {
         std::vector<server_task> tasks;
 
@@ -4398,12 +4415,13 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
         //SRV_DBG("Prompt: %s\n", prompt.is_string() ? prompt.get<std::string>().c_str() : prompt.dump(2).c_str());
 
         if (!params.path_prompts_log_dir.empty()) {
-            const auto file_path = std::filesystem::path(params.path_prompts_log_dir) / string_format("%012" PRId64 ".txt", ggml_time_ms());
-            std::ofstream f(file_path);
+            prompts_log_file = (std::filesystem::path(params.path_prompts_log_dir) / string_format("%012" PRId64 ".txt", ggml_time_ms())).string();
+            std::ofstream f(prompts_log_file);
             if (f) {
                 f << (prompt.is_string() ? prompt.get<std::string>().c_str() : prompt.dump(2).c_str());
             } else {
-                SRV_ERR("failed to create %s\n", file_path.string().c_str());
+                SRV_ERR("failed to create %s\n", prompts_log_file.c_str());
+                prompts_log_file.clear();
             }
         }
 
@@ -4477,7 +4495,9 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
         } else {
             json arr = json::array();
             for (auto & res : all_results.results) {
-                GGML_ASSERT(dynamic_cast<server_task_result_cmpl_final*>(res.get()) != nullptr);
+                auto * final_res = dynamic_cast<server_task_result_cmpl_final*>(res.get());
+                GGML_ASSERT(final_res != nullptr);
+                append_prompt_log_completion(prompts_log_file, *final_res);
                 arr.push_back(res->to_json());
             }
             GGML_ASSERT(!arr.empty() && "empty results");
@@ -4530,7 +4550,7 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
         }
         res->status = 200;
         res->content_type = "text/event-stream";
-        res->set_next([res_this = res.get(), res_type, sse_ping_interval](std::string & output) -> bool {
+        res->set_next([res_this = res.get(), res_type, sse_ping_interval, prompts_log_file](std::string & output) -> bool {
             static auto format_error = [](task_response_type res_type, const json & res_json) {
                 if (res_type == TASK_RESPONSE_TYPE_ANTHROPIC) {
                     return format_anthropic_sse({
@@ -4615,6 +4635,9 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
                         dynamic_cast<server_task_result_cmpl_partial*>(result.get()) != nullptr
                         || dynamic_cast<server_task_result_cmpl_final*>(result.get()) != nullptr
                     );
+                    if (auto * final_res = dynamic_cast<server_task_result_cmpl_final*>(result.get())) {
+                        append_prompt_log_completion(prompts_log_file, *final_res);
+                    }
                     json res_json = result->to_json();
                     if (res_type == TASK_RESPONSE_TYPE_ANTHROPIC) {
                         output = format_anthropic_sse(res_json);

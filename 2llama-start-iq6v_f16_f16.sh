@@ -35,6 +35,12 @@ set -eu
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
 LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
+# Logging (no -v): --log-file tees normal (non-verbose) output to a file while
+# the terminal keeps it; --log-prompts-dir writes one .txt per request with the
+# full prompt (tokens in) and, appended at completion, token ids + text (tokens
+# out) via the fork's append_prompt_log_completion patch.
+LOG_DIR=${LOG_DIR:-$SCRIPT_DIR/log}
+mkdir -p "$LOG_DIR/prompts"
 
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 LLAMA_DFLASH_MIRROR_OUTPUT=1 \
@@ -62,4 +68,6 @@ exec "$BIN" \
   --chat-template-file "$SCRIPT_DIR/froggeric_chat_templ_v23_cache.jinja" \
   --pipeline-parallel on \
   -ts 35,20,45 -sm layer -c 235000 \
-  --no-mmproj-offload
+  --no-mmproj-offload \
+  --log-file "$LOG_DIR/llama-server-iq6v-f16-f16.log" \
+  --log-prompts-dir "$LOG_DIR/prompts"
