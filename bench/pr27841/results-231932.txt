@@ -1,0 +1,6 @@
+### pinned: git=08bb7a790b41ebe6281f3183cd67d44464c09f32  A=build-sync0909  B=build-pr27841-gcn
+### prod shape: -b16384 -ub384 -sm layer -ts 35,20,45 f16 kv rocm0,vulkan1,rocm1
+
+arm=A p=512  NO_MATCH rc=1 [llama_bench: error: failed to load model '/home/srcds/ai/ai/Qwen3.8-27B.i1-Q6_K.gguf']
+arm=A p=8192  NO_MATCH rc=1 [llama_bench: error: failed to load model '/home/srcds/ai/ai/Qwen3.8-27B.i1-Q6_K.gguf']
+arm=A p=16384  NO_MATCH rc=1 [llama_bench: error: failed to load model '/home/srcds/ai/ai/Qwen3.8-27B.i1-Q6_K.gguf']

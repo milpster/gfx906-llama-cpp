@@ -14,6 +14,7 @@ CTX=${CTX:-155000}
 SPEC=${SPEC:-2}
 TS=${TS:-41,20,39}
 UB=${UB:-448}
+SM=${SM:-cost}
 MODEL=${MODEL:-$HOME/ai/ai/Qwen3.8-27B-Q8_0.gguf}
 LOG=logs/$NAME.log
 mkdir -p logs
@@ -64,7 +65,7 @@ fi
 
 "$BIN" \
     -m "$MODEL" \
-    --threads-batch 8 --threads 8 --no-mmap -fa on -ngl 333 \
+    --threads-batch 8 --threads 8 --load-mode none -fa on -ngl 333 \
     -b 16384 -ub "$UB" --poll 100 --ctx-checkpoints 30 \
     --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.0 \
     --presence_penalty 0.0 --repeat-penalty 1.0 \
@@ -74,7 +75,7 @@ fi
     -cram 20000 --reasoning-format deepseek \
     --chat-template-file "$ROOT/qwen38chat_template.jinja" \
     --pipeline-parallel "$PP" \
-    -sm cost -ts "$TS" \
+    -sm "$SM" -ts "$TS" \
     -c "$CTX" \
     "$@" >"$LOG" 2>&1 &
 SRV_PID=$!
