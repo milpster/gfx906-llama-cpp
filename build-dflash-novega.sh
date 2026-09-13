@@ -53,7 +53,7 @@ cmake -B "$BUILD_DIR" -S "$SCRIPT_DIR" \
     -Dhsa-runtime64_DIR=/opt/rocm-6.1.0/lib/cmake/hsa-runtime64 \
     -Damd_comgr_DIR=/opt/rocm-6.1.0/lib/cmake/amd_comgr \
     -DAMDDeviceLibs_DIR=/opt/rocm-6.1.0/lib/cmake/AMDDeviceLibs \
-    -DGGML_CUDA_FA_ALL_QUANTS=ON \
+    -DGGML_CUDA_FA_QUANTS=all \
     -DCMAKE_BUILD_TYPE=Release \
     -DGGML_HIP=ON \
     -DAMDGPU_TARGETS=gfx906 \
