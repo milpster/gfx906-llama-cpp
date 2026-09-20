@@ -1416,7 +1416,10 @@ llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, ll
 
     bool graph_sequence_layout_changed = false;
 
-    if (!graph_reuse_disable && gf_res_prev_active == res && res->can_reuse(gparams)) {
+    // upstream #28549 guards reuse with gf_res_prev_active == res; with the fork's
+    // alternating two-arena graphs that rebuilds half the fill ubatches (-29% pp, E174) -
+    // reuse across an intervening compute has always been safe here
+    if (!graph_reuse_disable && res->can_reuse(gparams)) {
         //LLAMA_LOG_DEBUG("%s: reusing previous graph\n", __func__);
 
         // with pipeline parallelism, the previous graph_compute_async may still be running
