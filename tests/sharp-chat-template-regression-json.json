@@ -1,0 +1,10 @@
+{
+  "messages": [
+    {"role": "user", "content": "Call the tools."},
+    {"role": "assistant", "content": "", "tool_calls": [{"function": {"name": "nested", "arguments": {"nested_arg": "value"}}}]},
+    {"role": "assistant", "content": "", "tool_calls": [{"name": "flat_empty", "arguments": {}}]},
+    {"role": "assistant", "content": "", "tool_calls": [{"name": "flat_missing"}]}
+  ],
+  "add_generation_prompt": false,
+  "tool_call_format": "json"
+}
