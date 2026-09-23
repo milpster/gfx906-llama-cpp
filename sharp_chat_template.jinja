@@ -289,9 +289,18 @@ If a user request is genuinely ambiguous, ask a sharp question, don't guess.
     {%- elif message.role == 'assistant' %}
         {%- set reasoning_content = '' %}
         {%- set _explicit_reasoning = '' %}
-        {%- set _message_reasoning_content = message.reasoning_content | default(none) %}
-        {%- set _message_thinking = message.thinking | default(none) %}
-        {%- set _message_reasoning = message.reasoning | default(none) %}
+        {%- set _message_reasoning_content = none %}
+        {%- if 'reasoning_content' in message %}
+            {%- set _message_reasoning_content = message.reasoning_content %}
+        {%- endif %}
+        {%- set _message_thinking = none %}
+        {%- if 'thinking' in message %}
+            {%- set _message_thinking = message.thinking %}
+        {%- endif %}
+        {%- set _message_reasoning = none %}
+        {%- if 'reasoning' in message %}
+            {%- set _message_reasoning = message.reasoning %}
+        {%- endif %}
         {%- if _message_reasoning_content is not none %}
             {%- if _message_reasoning_content is string %}
                 {%- set _explicit_reasoning = _message_reasoning_content %}
@@ -364,17 +373,20 @@ If a user request is genuinely ambiguous, ask a sharp question, don't guess.
         {%- else %}
             {{- '<|im_start|>assistant\n' + content }}
         {%- endif %}
-        {%- set _tool_calls = message.tool_calls | default([]) %}
+        {%- set _tool_calls = [] %}
+        {%- if 'tool_calls' in message %}
+            {%- set _tool_calls = message.tool_calls %}
+        {%- endif %}
         {%- if _tool_calls and _tool_calls is iterable and _tool_calls is not mapping %}
             {%- for tool_call in _tool_calls %}
-                {%- set _tool_function = tool_call.function | default(none) %}
-                {%- if _tool_function is not none %}
-                    {%- set tc = _tool_function %}
-                {%- else %}
-                    {%- set tc = tool_call %}
+                {%- set tc = tool_call %}
+                {%- if 'function' in tool_call and tool_call.function is not none %}
+                    {%- set tc = tool_call.function %}
                 {%- endif %}
-                {%- set _tc_name = tc.name | default(none) %}
-                {%- set tc_name = _tc_name if _tc_name is not none else '' %}
+                {%- set tc_name = '' %}
+                {%- if 'name' in tc and tc.name is not none %}
+                    {%- set tc_name = tc.name %}
+                {%- endif %}
                 {%- if _tool_format == 'json' %}
                     {%- if loop.first %}
                         {%- if content | trim %}
@@ -384,7 +396,10 @@ If a user request is genuinely ambiguous, ask a sharp question, don't guess.
                         {{- '\n' }}
                     {%- endif %}
                     {%- set _args = '{}' %}
-                    {%- set _tc_arguments = tc.arguments | default(none) %}
+                    {%- set _tc_arguments = none %}
+                    {%- if 'arguments' in tc %}
+                        {%- set _tc_arguments = tc.arguments %}
+                    {%- endif %}
                     {%- if _tc_arguments is not none %}
                         {%- if _tc_arguments is mapping %}
                             {%- set _args = _tc_arguments | tojson %}
@@ -407,7 +422,10 @@ If a user request is genuinely ambiguous, ask a sharp question, don't guess.
                     {%- else %}
                         {{- '\n<tool_call>\n<function=' + tc_name + '>\n' }}
                     {%- endif %}
-                    {%- set _tc_arguments = tc.arguments | default(none) %}
+                    {%- set _tc_arguments = none %}
+                    {%- if 'arguments' in tc %}
+                        {%- set _tc_arguments = tc.arguments %}
+                    {%- endif %}
                     {%- if _tc_arguments is not none %}
                         {%- if _tc_arguments is mapping %}
                             {%- for args_name, args_value in _tc_arguments.items() %}
