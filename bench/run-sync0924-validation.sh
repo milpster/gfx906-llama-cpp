@@ -32,6 +32,9 @@ mkdir -p "$OUT/runtime/prompts"
 git -C "$ROOT" rev-parse HEAD > "$OUT/git-sha.txt"
 uname -a > "$OUT/system.txt"
 rocminfo > "$OUT/rocminfo.txt"
+HSA_OVERRIDE_GFX_VERSION=9.0.6 HIP_VISIBLE_DEVICES=0,1 \
+LD_LIBRARY_PATH="/home/srcds/rocm-gfx906-xnack/lib:$BUILD/bin:/opt/rocm-6.1.0/lib" \
+"$BUILD/bin/llama-server" --version > "$OUT/binary-version.txt" 2>&1
 
 BIN="$BUILD/bin/llama-server" \
 LD_LIB="$BUILD/bin" \
