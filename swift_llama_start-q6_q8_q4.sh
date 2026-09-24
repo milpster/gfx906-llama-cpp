@@ -45,6 +45,7 @@ LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
 # full prompt (tokens in) and, appended at completion, token ids + text (tokens
 # out) via the fork's append_prompt_log_completion patch.
 LOG_DIR=${LOG_DIR:-$SCRIPT_DIR/log}
+PORT=${PORT:-8009}
 mkdir -p "$LOG_DIR/prompts"
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 LLAMA_DFLASH_MIRROR_OUTPUT=1 \
@@ -65,7 +66,7 @@ exec "$BIN" \
   -b 16384 -ub 384 --ctx-checkpoints 30 \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
-  --device rocm0,vulkan1,rocm1 --port 8009 -np 2 -mg 0 \
+  --device rocm0,vulkan1,rocm1 --port "$PORT" -np 2 -mg 0 \
   --reasoning-preserve --reasoning on \
   -ctk q8_0 -ctv q4_0 \
   -cram 28000 --reasoning-format deepseek \

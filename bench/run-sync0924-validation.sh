@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 BUILD=${BUILD:-$ROOT/build-sync0924}
 OUT=${OUT:-$ROOT/bench/logs/sync0924-swift-q6q8q4}
-PORT=8009
+PORT=${PORT:-8013}
 SERVER_PID=
 
 cleanup() {
@@ -15,9 +15,16 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-if pgrep -f '[l]lama-server' >/dev/null; then
-    echo "ERROR: llama-server is running; validation requires exclusive GPU access"
-    pgrep -fa '[l]lama-server'
+while read -r pid command; do
+    if [[ "$command" != *"--embedding"* || "$command" != *"-ngl 0"* ]]; then
+        echo "ERROR: GPU-backed llama-server is running; validation requires exclusive GPU access"
+        echo "$pid $command"
+        exit 1
+    fi
+done < <(pgrep -fa '[l]lama-server' || true)
+
+if ss -ltn "sport = :$PORT" | grep -q LISTEN; then
+    echo "ERROR: port $PORT is already in use"
     exit 1
 fi
 
@@ -29,6 +36,7 @@ rocminfo > "$OUT/rocminfo.txt"
 BIN="$BUILD/bin/llama-server" \
 LD_LIB="$BUILD/bin" \
 LOG_DIR="$OUT/runtime" \
+PORT="$PORT" \
 setsid "$ROOT/swift_llama_start-q6_q8_q4.sh" > "$OUT/launcher.log" 2>&1 < /dev/null &
 SERVER_PID=$!
 
