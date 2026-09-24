@@ -21,15 +21,20 @@
 # force_convert: keeps the FATTN path convert-native as sessions age
 # (selector re-check quirk, E75); costs <=3% on first PP batches.
 # Vision + DFlash2 requires the #27408 M-RoPE port (upstream since #27816).
-# -ts 35,20,45 -c 250000: attn 6/3/7 with 4 extra GDN layers on ROCm1.
-# The old "-0.6 t/s vs 40,19,41" trade claim does not reproduce on this
-# build (E105: 40,19,41 now fits 250k with mmproj on CPU but loses TG
-# and fill; drafter on ROCm0 makes it the decode critical path). No -ts
-# redistribution wins speed; 256k ctx variant pending user validation
-# (2llama-start-iq6v-dflash2-256k.sh, E105).
-# Opt-in +10k ctx (W6, costs ~10% PP / ~8% fill, TG unchanged): add
-#   -ot '^blk\.(37|38)\.ffn_(gate|up|down)\.weight$=ROCm0'
-#   and raise -c to 260000.
+# Fit E171->E173 (2026-09-16, q8_0/q8_0 KV regime): -ts 34,22,44 kept;
+# -c 353200 (n_ctx 353280, slots 2 x 176640) + ot3 (blk.24 from VK1,
+# blk.37+38 from ROCm1 -> ROCm0, ~627 MiB). E171 first shipped 358750
+# (ROCm1 free 108) - REVOKED: the fattn workspace pool alloc
+# (ggml-cuda.cu:507) OOMs nondeterministically when an AMD sits under
+# ~200 MiB free at ready; ~150 MiB context-checkpoint transients race
+# the fill's pool alloc. 353280 (frees ~238/~207 ROCm0/ROCm1) passed
+# the crash gate twice (chk-i1-353k-r1/r2: acc .652, TG 975 clean).
+# -ot graph cost ~1.5% PP (lot335 vs lplain335: 355.2 vs 360.4).
+# TEMP-0 REPRO NOTE: sha before/after deep use can differ (benign KV/
+# batch-state drift, same class as lplain335/lot335/lot358 lanes).
+# --pipeline-parallel off: forced "on" + -ot crashes at startup
+# (1583 MiB pipeline buffer); the server auto-disables pipeline at
+# every fit we run anyway (needs 12+ GiB free estimates).
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
@@ -61,13 +66,14 @@ exec "$BIN" \
   -b 16384 -ub 384 --ctx-checkpoints 30 \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
-  --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
+  --device rocm0,vulkan1,rocm1 --port 8009 -np 2 -mg 0 \
   --reasoning-preserve --reasoning on \
-  -ctk f16 -ctv f16 \
+  -ctk q8_0 -ctv q8_0 \
   -cram 28000 --reasoning-format deepseek \
   --chat-template-file "$SCRIPT_DIR/sharp_chat_template.jinja" \
-  --pipeline-parallel on \
-  -ts 35,20,45 -sm layer -c 235000 \
+  --pipeline-parallel off \
+  -ts 34,22,44 -sm layer -c 353200 \
+  -ot '^blk\.(24|37|38)\.ffn_(gate|up|down)\.weight$=ROCm0' \
   --no-mmproj-offload \
   --log-file "$LOG_DIR/llama-server-iq6v-f16-f16.log" \
   --log-prompts-dir "$LOG_DIR/prompts" \
