@@ -18,10 +18,10 @@ shift 2
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 SRC=${SRC:-$REPO}
-BUILD_DIR=${BUILD_DIR:-build-qwen38-mtp}
+BUILD_DIR=${BUILD_DIR:-build-sync0909}
 BIN=$SRC/$BUILD_DIR/bin/llama-cli
 MODEL=/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
-OUTDIR=/tmp/opencode/nondet/$ARM
+OUTDIR=$REPO/bench/logs/q38nondet/$ARM
 mkdir -p "$OUTDIR"
 
 HIP_GRAPH=${HIP_GRAPH:-1}

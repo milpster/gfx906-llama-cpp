@@ -10,13 +10,13 @@ REPS=${2:?rep count required}
 shift 2
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-BUILD_DIR=${BUILD_DIR:-$REPO/build-qwen38-mtp}
+BUILD_DIR=${BUILD_DIR:-$REPO/build-sync0909}
 BIN=$BUILD_DIR/bin/llama-cli
 MODEL=/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
 DRAFT=/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
 MMPROJ=/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf
-PROMPT_SOURCE=${PROMPT_SOURCE:-/tmp/opencode/pp16384-prompt.txt}
-OUTDIR=/tmp/opencode/qwen38-speed/$ARM
+PROMPT_SOURCE=${PROMPT_SOURCE:-$REPO/bench/logs/q38speed/prompt-16384.txt}
+OUTDIR=$REPO/bench/logs/q38speed/$ARM
 PROMPT=$OUTDIR/prompt-2k.txt
 
 if [ ! -s "$PROMPT_SOURCE" ]; then
@@ -34,16 +34,31 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
+# Knob defaults = E142 prod config; each flag stays single-valued in the cmdline.
+CTX=${CTX:-204800}
+TS=${TS:-66,10,24}
+NCMOE=${NCMOE:-31}
+THREADS=${THREADS:-8}
+B=${B:-512}
+UB=${UB:-128}
+OT=${OT:-}
+LZM=${LZM:-on}
+LM=${LM:-mmap}
+DEVICE=${DEVICE:-rocm0,vulkan1,rocm1}
+
 BASE_ARGS=(
     -m "$MODEL"
-    --threads 16 --threads-batch 16 --poll 0 --poll-batch 0
-    -lm mmap -lzm on -fit off -fa on -ngl all -ncmoe 29
-    -b 16384 -ub 128 -cram 0 --ctx-checkpoints 0
-    --device rocm0,vulkan1,rocm1 -np 1 -mg 0
-    --pipeline-parallel off -sm layer -ts 66,10,24
-    -c 204800 -ctk f16 -ctv f16
+    --threads "$THREADS" --threads-batch "$THREADS" --poll 0 --poll-batch 0
+    -lm "$LM" -lzm "$LZM" -fit off -fa on -ngl all -ncmoe "$NCMOE"
+    -b "$B" -ub "$UB" -cram 0 --ctx-checkpoints 0
+    --device "$DEVICE" -np 1 -mg 0
+    --pipeline-parallel off -sm layer -ts "$TS"
+    -c "$CTX" -ctk f16 -ctv f16
     --temp 0 --seed 42 -n 0 --no-warmup
 )
+if [ -n "$OT" ]; then
+    BASE_ARGS+=(-ot "$OT")
+fi
 
 # FULL_STACK=0 drops the MTP draft + mmproj sidecars for pure-PP probing
 # (E147): the draft bundle wastes 2647 MiB VRAM and never runs at -n 0.

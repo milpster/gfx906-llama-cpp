@@ -89,6 +89,9 @@ def ppfill(n_tokens):
     if not first_batch or not last_prog:
         print(json.dumps({"error": "no progress in PP stream"}))
         sys.exit(1)
+    if last_prog["processed"] < n_tokens:
+        print(json.dumps({"error": f"incomplete fill: {last_prog['processed']} < {n_tokens}"}))
+        sys.exit(1)
     return {"pp_tps": round(first_batch["processed"] / first_batch["time_ms"] * 1000.0, 1),
             "pp_n": first_batch["processed"],
             "fill_tps": round(last_prog["processed"] / last_prog["time_ms"] * 1000.0, 1),
@@ -102,11 +105,11 @@ tg_prompt = all_toks[:FILL1] + ["\n\nContinue:",
                                 "\n\nThe following is a technical essay.\n\n",
                                 "Write a clear technical essay on Rayleigh scattering and why the sky is blue. The essay begins:"]
 tg_last = req("/completion", {"prompt": tg_prompt, "n_predict": TG_N,
-                              "temperature": 0, "top_k": 1,
+                              "temperature": 0, "top_k": 1, "ignore_eos": True,
                               "cache_prompt": True, "id_slot": 0, "stream": False})
 tg = tg_last["timings"]
-if tg.get("predicted_n", 0) < 128:
-    print(json.dumps({"error": f"degenerate TG: {tg.get('predicted_n')} tokens"}))
+if tg.get("predicted_n", 0) != TG_N:
+    print(json.dumps({"error": f"incomplete TG: {tg.get('predicted_n')} != {TG_N}"}))
     sys.exit(1)
 acc = round(tg.get("draft_n_accepted", 0) / max(tg["predicted_n"], 1), 3)
 tg_sha = hashlib.sha256(tg_last["content"].encode()).hexdigest()[:12]
@@ -120,5 +123,7 @@ print(json.dumps({
     "tg_n": tg["predicted_n"], "tg_tps": round(tg["predicted_per_second"], 1),
     "tg_depth_cached": tg.get("cache_n", -1),
     "acc": acc, "tg_sha": tg_sha,
-    "repro_ok": sha_before == sha_after, "sha": sha_before,
+    "repro_ok": sha_before == sha_after,
+    "repro_before_sha": sha_before, "repro_after_sha": sha_after,
+    "sha": sha_before,
 }))
