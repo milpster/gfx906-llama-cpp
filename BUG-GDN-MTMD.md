@@ -35,48 +35,24 @@ KV cache.
    pre-session baseline) at 330.3 pp1.
 4. Binary predates the warnings by 12+ hours of uptime.
 
-## Mechanism (decoded from the position arithmetic)
+## Corrected mechanism (2026-09-24)
 
-- Warned batches end at pos 105954 while the recurrent cell already holds
-  105953/105954 -> ubatches spanning `[105571..105954]` were re-submitted
-  over already-processed ground (~383-token overlap). Two warnings per
-  ubatch = target + draft contexts both run recurrent memory.
-- The following batch starts at 105994 and ends 106377: positions
-  **105955..105993 (39 tokens) are never seen** by the recurrent memory.
-- A 39-token invisible span with text re-crossing the boundary is the
-  signature of an **image chunk decoded through the separate mtmd path**
-  (`server-context.cpp: process_mtmd_chunk`) while the recurrent memory's
-  one-pos-per-sequence cell tracking does not account for the
-  placeholder->image-token expansion.
-- Ruled out: `--cache-reuse 256` (force-disabled at startup by `--mmproj`,
-  see `server-context.cpp:1277`); MTP catch-up seq_rm (single-head chain);
-  checkpoints (pure state snapshots, no re-decode); PP scheduler (off in
-  this config).
+The original overlap diagnosis was incorrect. The numbers are M-RoPE temporal coordinates, not one scalar position per decoded row.
+
+- MTMD image embeddings are decoded through the normal target recurrent graph. A 384-row image ubatch can pin every row to one temporal position while its other M-RoPE coordinates vary, so the recurrent state consumes every image row exactly once.
+- `llama_memory_recurrent::find_slot` stores only the last temporal coordinate in `cell.pos`, then applies the scalar invariant `last_pos == cell.pos + n_seq_tokens`. That invariant is valid for one-dimensional text positions but not for M-RoPE image rows or the following text jump across an image position span.
+- The two copies of each warning come from target and draft recurrent contexts. They do not show duplicate target decoding.
+- The 2026-09-24 trace starts with `154802 after 154801`, which proves the LCP-restored recurrent frontier is aligned before the image. The 384-row and 66-row image ubatches then remain at temporal position 154802, and three text rows end at 154829 after the image advances the M-RoPE frontier by 27 positions.
+- DFlash intentionally skips position-pinned M-RoPE image rows. Its later `zero-filled 25 draft-cache hole rows` message records catch-up for the scalar positions absent from the draft cache; generation continues normally.
 
 ## Impact
 
-- PP speed decay in the same log (319 -> 196 t/s cumulative) is separately
-  explained by KV-fill attention cost on the full-attention layers; that
-  part is normal for deep fill.
-- Quality: each overlap re-folds ~hundreds of text tokens into the GDN
-  running state (double-counted), and image spans are never folded. Bounded
-  drift near image boundaries, no crash. Severity of output degradation
-  unverified.
+- The recurrent and DFlash state transitions observed here are correct. The warning is a false positive and there is no evidence of double-counted text, skipped image state, or output degradation.
+- PP speed decay in the original log is separately explained by KV-fill attention cost on full-attention layers and is normal for deep fill.
+- Partial recurrent rollback beyond `n_rs_seq` remains a separate behavior worth auditing, but it is not implicated by these traces because the first post-reuse position is consecutive with the restored frontier.
 
-## Confirmation (cheap, when convenient)
+## Fix
 
-1. Same conversation with images removed -> warnings should vanish.
-2. Count warning bursts vs number of images crossing a ubatch boundary
-   (expect roughly one burst per boundary-crossing image).
-3. Server-side log lines at the burst timestamps (they carry slot/task
-   context the libllama warning lacks) should show mtmd chunk processing.
+`find_slot` now applies the scalar token-count continuity warning only when `llama_ubatch::is_pos_2d()` is false. State updates are unchanged. Scalar-position models retain the existing warning, while M-RoPE batches no longer emit a diagnostic based on an invalid invariant.
 
-## Fix direction (upstream)
-
-Either `find_slot` in the recurrent memory must tolerate mtmd chunk
-decodes (advance cells through image spans, accept position re-entry), or
-the mtmd path must keep the recurrent cell positions in sync with the
-token-position frontier across image expansion. Related latent bug found
-while auditing: `seq_rm` partial rollback returns false when the rollback
-depth exceeds `n_rs_seq` and callers (e.g. cache-reuse path) ignore the
-return value, leaving a stale `cell.pos`.
+Offline verification: `test-batch-alloc` passed all 327 assertions, including the existing M-RoPE layout and allowed-position-jump cases; `llama-server` rebuilt successfully. Live confirmation remains deferred until the prepared validation run is approved.
