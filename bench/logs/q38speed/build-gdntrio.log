@@ -1,0 +1,995 @@
+[  0%] Performing build step for 'vulkan-shaders-gen'
+[  0%] Provisioning UI assets
+-- UI: HF stamp matches 'ggml-org/llama-ui|b11380', skipping HF fetch
+[  0%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[  1%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[  1%] Built target vendor-hash
+[  0%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[  1%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[  2%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[  2%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[  2%] Built target llama-common-base
+[  2%] Built target cpp-httplib
+[  2%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[  2%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[  2%] Building CXX object ggml/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[100%] Built target vulkan-shaders-gen
+[  2%] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-sync0920/Release/./vulkan-shaders-gen
+[  2%] Completed 'vulkan-shaders-gen'
+-- UI: assets unchanged, skipping embedding
+[  2%] Built target llama-ui-assets
+[  3%] Built target vulkan-shaders-gen
+[  3%] Built target llama-ui
+[  3%] Linking CXX shared library ../../bin/libggml-base.so
+[  3%] Built target ggml-base
+[  3%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/iqp.cpp.o
+[  3%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o
+[  3%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o
+[  5%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o
+[  5%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o
+[  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o
+[  6%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o
+[  6%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/acc.cu.o
+[  6%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/add-id.cu.o
+[  6%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/allreduce.cu.o
+[  6%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/arange.cu.o
+[  6%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan-buffers.cpp.o
+[  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o
+[  6%] Building CXX object ggml/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan-debug.cpp.o
+[  6%] Building C object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/quants.c.o
+[  6%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/argmax.cu.o
+[  6%] Building CXX object ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/x86/repack.cpp.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/argsort.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/binbcast.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/clamp.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/col2im-1d.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/concat.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/conv-transpose-1d.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/conv2d-dw.cu.o
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/conv2d-transpose.cu.o
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-vulkan/ggml-vulkan.cpp:7738:6: warning: no previous declaration for ‘void ggml_vk_flash_attn(ggml_backend_vk_context*, vk_context&, const ggml_tensor*, const ggml_tensor*, const ggml_tensor*, const ggml_tensor*, const ggml_tensor*, const ggml_tensor*, ggml_tensor*)’ [-Wmissing-declarations]
+ 7738 | void ggml_vk_flash_attn(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * q, const ggml_tensor * k, const ggml_tensor * v, const ggml_tensor * mask, const ggml_tensor * sinks, const ggml_tensor * nvis, ggml_tensor * dst) {
+      |      ^~~~~~~~~~~~~~~~~~
+[  7%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/conv2d.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/convert.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/cpy.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/count-equal.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/cross-entropy-loss.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/cumsum.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/diag.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/diagmask.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/dsv4-hc.cu.o
+[  9%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/fattn-tile.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/fattn.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/fill.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/fwht.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/gated_delta_net.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/gated_delta_net_chunk.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/getrows.cu.o
+[ 10%] Linking CXX shared library ../../bin/libggml-cpu.so
+[ 10%] Built target ggml-cpu
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/ggml-cuda.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/gla.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/im2col.cu.o
+[ 10%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/lightning-indexer.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mean.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mmf.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mmid.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mmq.cu.o
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+  244 | static __global__ void lightning_indexer_kernel_vec(
+      |                        ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/lightning-indexer.cu:244:24: warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mmvf.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/mmvq.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/moe-weighted-reduction.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/norm.cu.o
+[ 11%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/opt-step-adamw.cu.o
+8 warnings generated when compiling for gfx906.
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/opt-step-sgd.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/out-prod.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/pad.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/pad_reflect_1d.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/pool1d.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/pool2d.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/quantize.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/roll.cu.o
+[ 13%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/rope.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/scale.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/set-rows.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/set.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/snake.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/softcap.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/softmax.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/solve_tri.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/ssm-conv.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/ssm-scan.cu.o
+[ 14%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/sum.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/sumrows.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/top-k.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/topk-moe.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/tri.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/tsembd.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/unary.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/upscale.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/wkv.cu.o
+[ 15%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq112-dv112.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq128-dv128.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq192-dv128.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq256-dv256.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq320-dv256.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq40-dv40.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq512-dv512.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq128-dv128.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 128, 64, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 128, 128, 64, 128, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<128, 128, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<128, 128, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<128, 128, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<128, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 128, 64, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 128, 128, 64, 128, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<128, 128, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<128, 128, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<128, 128, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<128, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq192-dv128.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 1, 16, 192, 32, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 1, 16, 192, 128, 32, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<192, 128, 1, 16, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<192, 128, 16, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1626:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<192, 128, 16, false>' requested here
+ 1626 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 16, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<192, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 1, 16, 192, 32, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 1, 16, 192, 128, 32, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<192, 128, 1, 16, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<192, 128, 16, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1626:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<192, 128, 16, false>' requested here
+ 1626 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 16, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<192, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq576-dv512.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq256-dv256.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 256, 32, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 256, 256, 32, 128, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<256, 256, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<256, 256, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<256, 256, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<256, 256, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 256, 32, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 256, 256, 32, 128, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<256, 256, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<256, 256, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<256, 256, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<256, 256, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq64-dv64.cu.o
+[ 17%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq72-dv72.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq64-dv64.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 128, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 64, 128, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 64, 64, 128, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 128, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 64, 128, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 64, 64, 128, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 8, 8, 64, 64, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 8, 8, 64, 64, 64, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 8, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1481:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 64>' requested here
+ 1481 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, cols_per_block>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 8, 8, 64, 64, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 8, 8, 64, 64, 64, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 8, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1481:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 64>' requested here
+ 1481 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, cols_per_block>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq80-dv80.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq96-dv96.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_16.cu.o
+4 warnings generated when compiling for gfx906.
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_32.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq192-dv128.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 1, 16, 192, 32, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 1, 16, 192, 128, 32, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<192, 128, 1, 16, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<192, 128, 16, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1626:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<192, 128, 16, false>' requested here
+ 1626 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 16, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<192, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 1, 16, 192, 32, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 1, 16, 192, 128, 32, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<192, 128, 1, 16, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<192, 128, 16, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1626:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<192, 128, 16, false>' requested here
+ 1626 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 16, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<192, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+4 warnings generated when compiling for host.
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_1-ncols2_8.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_1.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_2.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_16-ncols2_4.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_16.cu.o
+[ 18%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_32.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_4.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_2-ncols2_8.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_1.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_32-ncols2_2.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_16.cu.o
+[ 19%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_2.cu.o
+[ 21%] Linking CXX shared library ../../../bin/libggml-vulkan.so
+[ 64%] Built target ggml-vulkan
+[ 64%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_4.cu.o
+[ 64%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_4-ncols2_8.cu.o
+[ 64%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_64-ncols2_1.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_1.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_2.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_4.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-mma-f16-instance-ncols1_8-ncols2_8.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq1_s.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq2_s.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq2_xs.cu.o
+8 warnings generated when compiling for gfx906.
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq2_xxs.cu.o
+[ 65%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq3_s.cu.o
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq3_xxs.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq64-dv64.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 128, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 64, 128, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 64, 64, 128, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 128, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 64, 128, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 64, 64, 128, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq4_nl.cu.o
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 8, 8, 64, 64, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 8, 8, 64, 64, 64, 64, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 8, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1481:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 64>' requested here
+ 1481 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, cols_per_block>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 8, 8, 64, 64, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 8, 8, 64, 64, 64, 64, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<64, 64, 8, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1481:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<64, 64, 8, false, 64>' requested here
+ 1481 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, cols_per_block>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<64, 64, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<64, 64, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq4_xs.cu.o
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-mxfp4.cu.o
+4 warnings generated when compiling for gfx906.
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-nvfp4.cu.o
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q1_0.cu.o
+8 warnings generated when compiling for host.
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q2_0.cu.o
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq256-dv256.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 256, 32, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 256, 256, 32, 128, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<256, 256, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<256, 256, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<256, 256, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<256, 256, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 32, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 256, 32, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 256, 256, 32, 128, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<256, 256, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<256, 256, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<256, 256, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<256, 256, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+4 warnings generated when compiling for host.
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q2_k.cu.o
+[ 67%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q3_k.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_0.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_1.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_k.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_0.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_1.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_k.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q6_k.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q8_0.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_1.cu.o
+[ 68%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_10.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_11.cu.o
+4 warnings generated when compiling for gfx906.
+In file included from /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/fattn-tile-instance-dkq128-dv128.cu:3:
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, false>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 128, 64, 0, false, false, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1199:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 128, 128, 64, 128, false, false, true, true, __half2, __half, __half2>' requested here
+ 1199 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<128, 128, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<128, 128, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<128, 128, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<128, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:503:29: warning: division by zero is undefined [-Wdivision-by-zero]
+  503 |             const int i = b / nb;
+      |                             ^ ~~
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:604:9: note: in instantiation of function template specialization 'flash_attn_tile_load_tile_q8_0<32, 8, 64, 0, 4, true>' requested here
+  604 |         flash_attn_tile_load_tile_q8_0<warp_size, nwarps, nbatch_fa, nbatch_K, cpy_ne, oob_check>
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:811:9: note: in instantiation of function template specialization 'flash_attn_tile_iter_KQ<32, 8, 2, 8, 128, 64, 0, false, true, __half2, true>' requested here
+  811 |         flash_attn_tile_iter_KQ<warp_size, nwarps, ncols1, ncols2, DKQ, nbatch_fa, nbatch_K_last, use_logit_softcap, oob_check, T_vec_dot, k_q8_0>(
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1212:13: note: in instantiation of function template specialization 'flash_attn_tile_iter<32, 8, 2, 8, 128, 128, 64, 128, false, true, true, true, __half2, __half, __half2>' requested here
+ 1212 |             flash_attn_tile_iter<warp_size, nwarps, ncols1, ncols2, DKQ, DV, nbatch_fa, nbatch_K, use_logit_softcap, oob_check, k_q8_0, v_q8_0>
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1432:47: note: in instantiation of function template specialization 'flash_attn_tile<128, 128, 2, 8, false, true, true>' requested here
+ 1432 |                 fattn_kernel_t fattn_kernel = flash_attn_tile<DKQ, DV, cols_per_block/ncols2, ncols2, use_logit_softcap, true, true>;
+      |                                               ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1478:28: note: in instantiation of function template specialization 'launch_fattn_tile_vega_native<128, 128, 8, false, 16>' requested here
+ 1478 |                 launched = launch_fattn_tile_vega_native<DKQ, DV, ncols2, use_logit_softcap, 16>(ctx, dst);
+      |                            ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1638:13: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols1<128, 128, 8, false>' requested here
+ 1638 |             launch_fattn_tile_switch_ncols1<DKQ, DV, 8, use_logit_softcap>(ctx, dst);
+      |             ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:1669:9: note: in instantiation of function template specialization 'launch_fattn_tile_switch_ncols2<128, 128, false>' requested here
+ 1669 |         launch_fattn_tile_switch_ncols2<DKQ, DV, use_logit_softcap>(ctx, dst);
+      |         ^
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/template-instances/../fattn-tile.cuh:504:29: warning: remainder by zero is undefined [-Wdivision-by-zero]
+  504 |             const int j = b % nb;
+      |                             ^ ~~
+4 warnings generated when compiling for host.
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_12.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_13.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_14.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_15.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_16.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_2.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_3.cu.o
+[ 69%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_4.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_5.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_6.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_7.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_8.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmf-instance-ncols_9.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q4_0.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-q4_0.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-q4_0.cu.o
+[ 71%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-q4_0.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q4_0.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-q4_0.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-q4_0.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-q4_1.cu.o
+[ 72%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-q4_1.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-q5_0.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q5_1.cu.o
+[ 73%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-q5_1.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q8_0.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-q8_0.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-q8_0.cu.o
+[ 75%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-q8_0.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q8_0.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-q8_0.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-q8_0.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-bf16.cu.o
+[ 76%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-bf16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_1-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_0-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q5_1-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-bf16-f16.cu.o
+[ 77%] Building HIP object ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-f16.cu.o
+[ 77%] Linking HIP shared library ../../../bin/libggml-hip.so
+[ 77%] Built target ggml-hip
+[ 77%] Building CXX object ggml/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[ 77%] Linking CXX shared library ../../bin/libggml.so
+[ 77%] Built target ggml
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_7_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_5_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_6_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_9_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_8_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_4_cxx.cxx.o
+[ 77%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_2_cxx.cxx.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_3_cxx.cxx.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_1_cxx.cxx.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/Unity/unity_0_cxx.cxx.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama-batch.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama-arch.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama-adapter.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama-chat.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/llama.dir/llama-context.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-cparams.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-grammar.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-graph.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-hparams.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-impl.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-iswa.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsa.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsa-iswa.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-msa.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-kv-cache-dsv4.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-memory.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid-iswa.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-hybrid-idx.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-memory-recurrent.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/llama.dir/llama-mmap.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-model-loader.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-model-saver.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-model.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-quant.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-sampler.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/llama.dir/llama-vocab.cpp.o
+[ 82%] Linking CXX shared library ../bin/libllama.so
+[ 82%] Built target llama
+[ 82%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/cohere2moe.cpp.o
+[ 82%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/functionary-v3-2.cpp.o
+[ 82%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-audio.cpp.o
+[ 82%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/deepseek.cpp.o
+[ 82%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/parsers.cpp.o
+[ 82%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd.cpp.o
+[ 82%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gemma4.cpp.o
+[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-image.cpp.o
+[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-helper.cpp.o
+[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gigachat-v3.cpp.o
+[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gpt-oss.cpp.o
+[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/mtmd-helper-gen.cpp.o
+[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/clip.cpp.o
+[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/kimi-k2.cpp.o
+[ 84%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/kimi-k3.cpp.o
+[ 84%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/cogvlm.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/ling3.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/lfm2.cpp.o
+[ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/conformer.cpp.o
+[ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseek4v.cpp.o
+[ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/dots3note.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/minicpm5.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/minimax-m3.cpp.o
+[ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/dotsocr.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/ministral3.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/muse-glimmer.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/parsers/qwen3-coder.cpp.o
+[ 85%] Building CXX object common/CMakeFiles/llama-common.dir/arg.cpp.o
+[ 85%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/exaone4_5.cpp.o
+[ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4a.cpp.o
+[ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4v.cpp.o
+[ 86%] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-generator.cpp.o
+[ 86%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4ua.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-helpers.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/gemma4uv.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/chat-diff-analyzer.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/glm4v.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/granite-speech.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/chat-peg-parser.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/granite4-vision.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/chat.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/common.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/hunyuanvl.cpp.o
+[ 88%] Building CXX object common/CMakeFiles/llama-common.dir/console.cpp.o
+[ 88%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/internvl.cpp.o
+[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimivl.cpp.o
+[ 89%] Building CXX object common/CMakeFiles/llama-common.dir/debug.cpp.o
+[ 89%] Building CXX object common/CMakeFiles/llama-common.dir/download.cpp.o
+[ 89%] Building CXX object common/CMakeFiles/llama-common.dir/fit.cpp.o
+[ 89%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/kimik25.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/hf-cache.cpp.o
+[ 90%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/nemotron-v2-vl.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/imatrix-loader.cpp.o
+[ 90%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/muse-glimmer.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/json-schema-to-grammar.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/json-schema.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/json.cpp.o
+[ 90%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llama4.cpp.o
+[ 90%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/llava.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/llguidance.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/log.cpp.o
+[ 90%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/minicpmv.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/ngram-cache.cpp.o
+[ 90%] Building CXX object common/CMakeFiles/llama-common.dir/ngram-map.cpp.o
+[ 92%] Building CXX object common/CMakeFiles/llama-common.dir/peg-parser.cpp.o
+[ 92%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/paddleocr.cpp.o
+[ 92%] Building CXX object common/CMakeFiles/llama-common.dir/preset.cpp.o
+[ 92%] Building CXX object common/CMakeFiles/llama-common.dir/reasoning-budget.cpp.o
+[ 92%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pixtral.cpp.o
+[ 92%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen2vl.cpp.o
+[ 92%] Building CXX object common/CMakeFiles/llama-common.dir/sampling.cpp.o
+[ 92%] Building CXX object common/CMakeFiles/llama-common.dir/speculative.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/minimax-m3.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3vl.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mimovl.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3a.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mimo-audio.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3tts-spkenc.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/qwen3tts-gen.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-seanet.cpp.o
+[ 93%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-spkenc.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/pockettts-gen.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/step3vl.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/siglip.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/whisper-enc.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseekocr.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/deepseekocr2.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/mobilenetv5.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/youtuvl.cpp.o
+[ 94%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/yasa2.cpp.o
+[ 96%] Building CXX object tools/mtmd/CMakeFiles/mtmd.dir/models/parakeet.cpp.o
+[ 96%] Linking CXX shared library ../../bin/libmtmd.so
+[ 96%] Built target mtmd
+[ 96%] Linking CXX shared library ../bin/libllama-common.so
+[ 97%] Built target llama-common
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-queue.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-task.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-chat.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-common.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-context.cpp.o
+[ 97%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-stream.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-schema.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-mcp.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/server-context.dir/server-tools.cpp.o
+[ 98%] Linking CXX static library libserver-context.a
+[ 98%] Built target server-context
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-http.cpp.o
+[ 98%] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-models.cpp.o
+[ 98%] Linking CXX shared library ../../bin/libllama-server-impl.so
+[ 98%] Built target llama-server-impl
+[ 98%] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli-context.cpp.o
+[ 98%] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli.cpp.o
+[100%] Linking CXX shared library ../../bin/libllama-cli-impl.so
+[100%] Built target llama-cli-impl
+[100%] Linking CXX executable ../../bin/llama-cli
+[100%] Built target llama-cli
+[  0%] Performing build step for 'vulkan-shaders-gen'
+[  0%] Provisioning UI assets
+[  0%] Built target llama-common-base
+[  1%] Built target vendor-hash
+[  1%] Built target cpp-httplib
+-- UI: HF stamp matches 'ggml-org/llama-ui|b11380', skipping HF fetch
+[  2%] Built target ggml-base
+[100%] Built target vulkan-shaders-gen
+[  2%] Performing install step for 'vulkan-shaders-gen'
+[ 29%] Built target ggml-hip
+-- Up-to-date: /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-sync0920/Release/./vulkan-shaders-gen
+[ 29%] Completed 'vulkan-shaders-gen'
+[ 32%] Built target ggml-cpu
+-- UI: assets unchanged, skipping embedding
+[ 32%] Built target llama-ui-assets
+[ 33%] Built target vulkan-shaders-gen
+[ 33%] Built target llama-ui
+[ 78%] Built target ggml-vulkan
+[ 78%] Built target ggml
+[ 84%] Built target llama
+[ 90%] Built target llama-common
+[ 98%] Built target mtmd
+[100%] Built target server-context
+[100%] Built target llama-server-impl
+[100%] Linking CXX executable ../../bin/llama-server
+[100%] Built target llama-server

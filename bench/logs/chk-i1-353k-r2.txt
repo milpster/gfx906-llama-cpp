@@ -1,0 +1,47 @@
+=== REPRO BEFORE: sha=3831171a81f1 len=1035
+
+
+<think>
+The user wants a clear technical explanation of why the sky is blue. Let me think about what makes a good technical explanation here.
+
+Key physics concepts to cover:
+1. Sunlight is white (all wavelengths)
+2. Rayleigh scattering - the core mechanism
+3. The wavelength dependence (∝ 1/λ⁴)
+4. Why blue specifically and not violet
+5. Why the sky isn't purple (solar spectrum + human vision)
+6. Why sunsets are red (longer path through atmosphere)
+
+I should be technically accurate but clear. Let me structure this well, going from the basic mechanism to the specific color, then to related phen
+=== TG: n=975 tps=20.439160760504656 acc=0.652 depth=16383
+=== TG TEXT (first 1200 chars):
+
+
+The red archive records event 00709 with measure 968 and note 37. The blue archive records event 00710 with measure 975 and note 50. The green archive records event 00711 with measure 982 and note 63. The amber archive records event 00712 with measure 989 and note 76. The slate archive records event 00713 with measure 996 and note 00. The ochre archive records event 00714 with measure 006 and note 13. The teal archive records event 00715 with measure 013 and note 26. The plum archive records event 00716 with measure 020 and note 39.
+
+**The Sky: A Spectrum of Scattered Light**
+
+Why the sky appears blue is one of those questions that seems simple, yet its answer requires a journey from the surface of the Earth to the heart of the Sun. The explanation lies in a physical phenomenon known as Rayleigh scattering, a process that is as fundamental to our daily visual experience as gravity is to our physical one.
+
+To understand why the sky is blue, we must first understand the nature of light. Sunlight, which appears white to the human eye, is actually a composite of many different colors. These colors correspond to different wavelengths of electromagnetic radiation. Red light has the lon
+=== TG TEXT (last 500 chars):
+sunset clouds.
+
+**Conclusion**
+
+The color of the sky is a direct result of the interaction between sunlight and the molecular composition of Earth's atmosphere. Rayleigh scattering, with its distinctive $\frac{1}{\lambda^4}$ dependence, filters the white light of the Sun into the azure blue that dominates our daytime view. This phenomenon is not merely a curiosity; it is a testament to the precise relationship between the physical properties of light and the composition of the planet we inhabit.
+=== REPRO AFTER: sha=63aa643a61c7 len=1031
+
+
+<think>
+The user wants a clear technical explanation of why the sky is blue. Let me think about what makes a good technical explanation here.
+
+Key physics concepts to cover:
+1. Sunlight is white (all wavelengths)
+2. Rayleigh scattering - the core mechanism
+3. The 1/λ⁴ dependence - why shorter wavelengths scatter more
+4. Why it's blue and not violet (solar spectrum, human eye sensitivity)
+5. Why the sun appears red/orange at sunset (longer path through atmosphere)
+
+I should be technically accurate but clear. Let me structure this well, going from the basic mechanism to the nuances. I'll avoid
+=== REPRO MATCH: False

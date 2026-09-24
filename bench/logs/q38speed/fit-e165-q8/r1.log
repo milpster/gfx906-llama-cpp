@@ -1,0 +1,33 @@
+0.00.565.912 W DEPRECATED: argument '--threads' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.917 W DEPRECATED: argument '--threads-batch' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.918 W DEPRECATED: argument '-ncmoe' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.926 W DEPRECATED: argument '-c' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.927 W DEPRECATED: argument '-b' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.928 W DEPRECATED: argument '-ub' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.565.929 W DEPRECATED: argument '-ts' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.569.114 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.569.488 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.570.661 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.01.048.378 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.13.518.026 W resolve_fused_ops: layer 31 is assigned to device ROCm0 but fused DeepSeek V4 HC pre is assigned to device CPU (usually due to missing support)
+0.13.518.029 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.13.526.295 W resolve_fused_ops: layer 31 is assigned to device ROCm0 but fused DeepSeek V4 HC post is assigned to device CPU (usually due to missing support)
+0.13.526.299 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.13.732.990 I cmn          init: llama threadpool init, n_threads = 8
+0.13.733.102 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.15.267.114 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.15.267.117 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.15.268.477 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.15.268.480 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.15.422.357 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.15.422.359 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.15.422.360 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.16.354.804 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.16.354.836 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 20480, kv_unified = 'false'
+0.16.872.155 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.16.875.736 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.16.875.781 I srv  llama_server: model loaded
+0.16.875.782 I srv  llama_server: listening on http://127.0.0.1:38109
+0.17.004.406 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.17.004.465 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0

@@ -1,0 +1,18 @@
+0.00.263.288 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.263.755 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.264.973 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.861.257 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+
+
+Loading model... ggml_vulkan: Device memory allocation of size 467927040 failed.
+ggml_vulkan: vk::Device::allocateMemory: ErrorOutOfDeviceMemory
+0.47.978.658 E ggml_gallocr_reserve_n_impl: failed to allocate Vulkan1 buffer of size 3494188672
+0.47.978.662 E graph_reserve: failed to allocate compute buffers
+0.47.985.861 E llama_init_from_model: failed to initialize the context: failed to allocate compute pp buffers
+0.47.985.867 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.47.985.871 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.47.985.876 E srv    load_model: failed to create_context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.47.985.878 I srv    operator(): operator(): cleaning up before exit...
+0.47.986.168 E srv  llama_server: exiting due to model loading error
+llama_server exited with code 1
+Error: the server exited before becoming ready

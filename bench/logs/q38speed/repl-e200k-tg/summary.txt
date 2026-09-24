@@ -1,0 +1,1 @@
+run=1 exit=0 wall_s=161 sha=122d271642da9670dac52c596730db4c884693a6e852d33d5a9bf3163e1b3362 | Let's inspect content: It claims +37% prefill, +12.39.488.856 I slot print_timing: id  0 | task 0 | prompt eval time =   87701.84 ms /   850 tokens (  103.18 ms per token,     9.69 tokens per second)

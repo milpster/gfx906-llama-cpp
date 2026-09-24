@@ -1,0 +1,11 @@
+0.00.346.033 W DEPRECATED: argument '--threads' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.036 W DEPRECATED: argument '--threads-batch' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.037 W DEPRECATED: argument '-ncmoe' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.044 W DEPRECATED: argument '-c' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.045 W DEPRECATED: argument '-b' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.046 W DEPRECATED: argument '-ub' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.047 W DEPRECATED: argument '-ts' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.346.417 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.346.855 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.348.031 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.746.285 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance

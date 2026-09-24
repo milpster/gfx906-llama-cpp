@@ -1,0 +1,164 @@
+== arm sp-direct-ab reps=2 extra:  ==
+0.00.254.820 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.255.308 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.256.491 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.667.290 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.20.238.432 I cmn          init: llama threadpool init, n_threads = 16
+0.20.238.556 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.23.711.317 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.23.711.322 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.23.712.993 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.23.712.995 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.23.786.864 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.23.786.867 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.23.786.867 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.24.824.950 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.24.824.971 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 20480, kv_unified = 'false'
+0.25.194.795 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.25.199.577 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.25.199.612 I srv  llama_server: model loaded
+0.25.199.613 I srv  llama_server: listening on http://127.0.0.1:37171
+0.25.222.141 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.25.222.203 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+1.28.278.862 I slot print_timing: id  0 | task 0 | prompt eval time =   63056.62 ms /  5596 tokens (   11.27 ms per token,    88.75 tokens per second)
+1.28.278.865 I slot print_timing: id  0 | task 0 |        eval time =       0.00 ms /     1 tokens (    0.00 ms per token,     0.00 tokens per second)
+1.28.278.865 I slot print_timing: id  0 | task 0 |       total time =   63056.62 ms /  5597 tokens
+1.28.278.868 I slot print_timing: id  0 | task 0 |    graphs reused =          0
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+
+[Start thinking]
+
+We1.28.279.144 I slot      release: id  0 | task 0 | stop processing: n_tokens = 5596, truncated = 0
+
+1.28.279.443 I srv    operator(): operator(): cleaning up before exit...
+1.28.294.025 W ~llama_context:      ROCm1 compute buffer size of 825.2759 MiB, does not match expectation of 781.0457 MiB
+1.28.294.030 W ~llama_context:  ROCm_Host compute buffer size of 333.5476 MiB, does not match expectation of 279.1242 MiB
+1.28.402.264 W ~llama_context:      ROCm0 compute buffer size of 3083.7184 MiB, does not match expectation of 2921.6332 MiB
+1.28.402.268 W ~llama_context:    Vulkan1 compute buffer size of 1843.3810 MiB, does not match expectation of 3096.4152 MiB
+
+[ Prompt: 88.7 t/s | Generation: 0.0 t/s ]
+
+
+Exiting...
+run=1 exit=0 wall_s=90 sha=3297ed6beac4782c6bc1789536eb2d0626f7ea3ef3848b67ae60b5e3d3aef135 | 1.28.278.862 I slot print_timing: id  0 | task 0 | prompt eval time =   63056.62 ms /  5596 tokens (   11.27 ms per token,    88.75 tokens per second)
+0.00.328.655 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.329.133 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.330.344 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.839.007 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.38.596.872 I cmn          init: llama threadpool init, n_threads = 16
+0.38.597.024 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.41.754.948 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.41.754.951 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.41.755.582 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.41.755.583 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.41.834.754 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.41.834.758 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.41.834.758 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.42.870.891 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.42.870.914 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 20480, kv_unified = 'false'
+0.43.236.317 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.43.240.007 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.43.240.068 I srv  llama_server: model loaded
+0.43.240.071 I srv  llama_server: listening on http://127.0.0.1:35063
+0.43.290.331 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.43.290.421 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+1.50.733.938 I slot print_timing: id  0 | task 0 | prompt eval time =   67443.47 ms /  5596 tokens (   12.05 ms per token,    82.97 tokens per second)
+1.50.733.942 I slot print_timing: id  0 | task 0 |        eval time =       0.00 ms /     1 tokens (    0.00 ms per token,     0.00 tokens per second)
+1.50.733.943 I slot print_timing: id  0 | task 0 |       total time =   67443.47 ms /  5597 tokens
+1.50.733.947 I slot print_timing: id  0 | task 0 |    graphs reused =          0
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+
+[Start thinking]
+
+We1.50.734.230 I slot      release: id  0 | task 0 | stop processing: n_tokens = 5596, truncated = 0
+
+1.50.735.012 I srv    operator(): operator(): cleaning up before exit...
+1.50.759.844 W ~llama_context:      ROCm1 compute buffer size of 825.2759 MiB, does not match expectation of 781.0457 MiB
+1.50.759.848 W ~llama_context:  ROCm_Host compute buffer size of 333.5476 MiB, does not match expectation of 279.1242 MiB
+1.50.897.063 W ~llama_context:      ROCm0 compute buffer size of 3083.7184 MiB, does not match expectation of 2921.6332 MiB
+1.50.897.067 W ~llama_context:    Vulkan1 compute buffer size of 1843.3810 MiB, does not match expectation of 3096.4152 MiB
+
+[ Prompt: 83.0 t/s | Generation: 0.0 t/s ]
+
+
+Exiting...
+run=2 exit=0 wall_s=113 sha=3297ed6beac4782c6bc1789536eb2d0626f7ea3ef3848b67ae60b5e3d3aef135 | 1.50.733.938 I slot print_timing: id  0 | task 0 | prompt eval time =   67443.47 ms /  5596 tokens (   12.05 ms per token,    82.97 tokens per second)
+== summary sp-direct-ab ==
+run=1 exit=0 wall_s=90 sha=3297ed6beac4782c6bc1789536eb2d0626f7ea3ef3848b67ae60b5e3d3aef135 | 1.28.278.862 I slot print_timing: id  0 | task 0 | prompt eval time =   63056.62 ms /  5596 tokens (   11.27 ms per token,    88.75 tokens per second)
+run=2 exit=0 wall_s=113 sha=3297ed6beac4782c6bc1789536eb2d0626f7ea3ef3848b67ae60b5e3d3aef135 | 1.50.733.938 I slot print_timing: id  0 | task 0 | prompt eval time =   67443.47 ms /  5596 tokens (   12.05 ms per token,    82.97 tokens per second)

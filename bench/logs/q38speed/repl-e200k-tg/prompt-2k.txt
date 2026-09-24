@@ -1,0 +1,40 @@
+> ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
+> (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
+> no gfx906 tuning and no controllable pipeline parallelism for
+> heterogeneous tight-VRAM fits. Reference deployment: Qwen3.8-27B
+> (i1-Q6_K) + DFlash2 speculative decoding at **250k context on 40 GB
+> VRAM** (2x Radeon VII + GTX 3080), deterministic lane outputs.
+>
+> ### How much it helps (vs upstream master 2026-09-09, same-config A/B)
+>
+> Direct naked pair (identical common-subset args, -c 130000 -sm layer
+> -ts 35,20,45, f16-K/f16-V, NO speculative decoding on either side;
+> bench/ab-mainline-0909.sh, E140): isolates pure fork kernels/tunes.
+> Prod pair = fork's full DFlash2 deployment vs mainline naked (mainline
+> has no DFlash; also cannot fit 250k on this rig at all).
+>
+> | metric | mainline t/s | fork t/s | gain |
+> |---|---|---|---|
+> | prefill PP16384 (naked pair) | 320.0 | 439.6 | **+37%** |
+> | 120k deep fill (naked pair) | 241.1 | 280.7 | **+16%** |
+> | TG @120k depth (naked pair) | 9.8 | 9.5 | parity (fork's TG edge is spec-decode) |
+> | TG @120k (prod configs) | 9.8 (no spec available) | 14.0 (DFlash2 n4) | **+43%** |
+> | context | cannot fit 250k | 250k on 40 GB | tight-fit machinery |
+> | outputs | - | - | KLD ~5e-4 mean, same-top 99.14% (E140) |
+>
+> ### Output identity and quality vs upstream
+>
+> 2026-09-09 refresh (E140, both builds on the same upstream base
+> 434ddbbc0: fork build-sync0909 vs mainline ~/dev/llama.cpp build-0909;
+> wikitext-2 10k ctx, bench/ab-mainline-0909.sh):
+>
+> 

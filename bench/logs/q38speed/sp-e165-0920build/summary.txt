@@ -1,0 +1,1 @@
+run=1 exit=0 wall_s=259 sha=895c447bd01b9e1607a626c198b3100506db566211e9ada14127876fd18296cd | 4.16.855.665 I slot print_timing: id  0 | task 0 | prompt eval time =  229504.95 ms / 17235 tokens (   13.32 ms per token,    75.10 tokens per second)

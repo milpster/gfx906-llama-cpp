@@ -1,0 +1,46 @@
+=== REPRO BEFORE: sha=0b823a7afe67 len=1152
+
+
+<think>
+The user wants a clear technical explanation of why the sky is blue. Let me think about what makes a good technical explanation here.
+
+Key physics concepts to cover:
+- Sunlight is white (all wavelengths)
+- Rayleigh scattering: scattering intensity ∝ 1/λ⁴
+- Why shorter wavelengths (blue/violet) scatter more
+- Why we see blue and not violet (solar spectrum peaks, human eye sensitivity, some violet absorbed by upper atmosphere)
+- The role of the atmosphere as a medium
+- Why the sun appears yellow/orange (direct light has lost some blue)
+- Why sunsets are red (longer path through atmosph
+=== TG: n=1024 tps=22.626703234486122 acc=0.686 depth=16383
+=== TG TEXT (first 1200 chars):
+
+
+The red archive records event 00709 with measure 968 and note 37. The ochre archive records event 00710 with measure 975 and note 50. The teal archive records event 00711 with measure 982 and note 63. The plum archive records event 00712 with measure 989 and note 76. The red archive records event 00713 with
+
+The provided text contains a repetitive sequence of event records that appears to be unrelated to the requested technical essay on Rayleigh scattering. To fulfill the request, I will proceed with the technical essay.
+
+## Rayleigh Scattering and the Blue Sky
+
+### Introduction
+
+The phenomenon of the blue sky is one of the most common and yet most fascinating natural occurrences observed in the atmosphere. This coloration is not due to reflection of the sea or the presence of dust, as historically suggested by Aristotle, but rather due to a specific type of light scattering known as Rayleigh scattering. This effect is named after the British physicist Lord Rayleigh (John William Strutt, 3rd Baron Rayleigh), who provided the quantitative explanation in 1871. Understanding Rayleigh scattering requires an examination of the interaction between electromagnetic radiation and matter, 
+=== TG TEXT (last 500 chars):
+ely short. Blue light is scattered in all directions, illuminating the entire sky. The light reaching the observer's eyes from the zenith has lost a significant portion of its blue component due to forward scattering, but the ambient light from the scattered blue dominates the perception, resulting in a deep blue sky.
+
+2.  **Sunrise and Sunset:** When the Sun is near the horizon, the path length of sunlight through the atmosphere is significantly longer (up to 10–15 times longer than at zenith).
+=== REPRO AFTER: sha=0b823a7afe67 len=1152
+
+
+<think>
+The user wants a clear technical explanation of why the sky is blue. Let me think about what makes a good technical explanation here.
+
+Key physics concepts to cover:
+- Sunlight is white (all wavelengths)
+- Rayleigh scattering: scattering intensity ∝ 1/λ⁴
+- Why shorter wavelengths (blue/violet) scatter more
+- Why we see blue and not violet (solar spectrum peaks, human eye sensitivity, some violet absorbed by upper atmosphere)
+- The role of the atmosphere as a medium
+- Why the sun appears yellow/orange (direct light has lost some blue)
+- Why sunsets are red (longer path through atmosph
+=== REPRO MATCH: True

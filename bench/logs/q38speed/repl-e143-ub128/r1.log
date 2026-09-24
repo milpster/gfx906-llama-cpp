@@ -1,0 +1,76 @@
+0.00.529.890 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.530.357 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.531.550 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.964.913 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.26.751.922 I cmn          init: llama threadpool init, n_threads = 16
+0.26.752.191 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.28.274.447 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.28.274.451 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.28.274.616 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.28.274.618 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.28.292.347 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.28.292.349 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.28.292.349 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.29.333.874 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.29.333.900 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 204800, kv_unified = 'false'
+0.29.485.601 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.29.489.365 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.29.489.430 I srv  llama_server: model loaded
+0.29.489.431 I srv  llama_server: listening on http://127.0.0.1:56505
+0.29.603.037 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.29.603.091 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+3.10.300.203 I slot print_timing: id  0 | task 0 | prompt eval time =  160697.07 ms /  2684 tokens (   59.87 ms per token,    16.70 tokens per second)
+3.10.300.205 I slot print_timing: id  0 | task 0 |        eval time =       0.00 ms /     1 tokens (    0.00 ms per token,     0.00 tokens per second)
+3.10.300.206 I slot print_timing: id  0 | task 0 |       total time =  160697.07 ms /  2685 tokens
+3.10.300.209 I slot print_timing: id  0 | task 0 |    graphs reused =          9
+3.10.300.367 I slot      release: id  0 | task 0 | stop processing: n_tokens = 2684, truncated = 0
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+
+[Start thinking]
+
+We
+3.10.302.720 I srv    operator(): operator(): cleaning up before exit...
+3.10.409.680 W ~llama_context:      ROCm0 compute buffer size of 923.8248 MiB, does not match expectation of 625.2308 MiB
+
+[ Prompt: 16.7 t/s | Generation: 0.0 t/s ]
+
+
+Exiting...

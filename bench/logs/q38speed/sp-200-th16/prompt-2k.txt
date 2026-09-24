@@ -1,0 +1,264 @@
+> ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
+> (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
+> no gfx906 tuning and no controllable pipeline parallelism for
+> heterogeneous tight-VRAM fits. Reference deployment: Qwen3.8-27B
+> (i1-Q6_K) + DFlash2 speculative decoding at **250k context on 40 GB
+> VRAM** (2x Radeon VII + GTX 3080), deterministic lane outputs.
+>
+> ### How much it helps (vs upstream master 2026-09-09, same-config A/B)
+>
+> Direct naked pair (identical common-subset args, -c 130000 -sm layer
+> -ts 35,20,45, f16-K/f16-V, NO speculative decoding on either side;
+> bench/ab-mainline-0909.sh, E140): isolates pure fork kernels/tunes.
+> Prod pair = fork's full DFlash2 deployment vs mainline naked (mainline
+> has no DFlash; also cannot fit 250k on this rig at all).
+>
+> | metric | mainline t/s | fork t/s | gain |
+> |---|---|---|---|
+> | prefill PP16384 (naked pair) | 320.0 | 439.6 | **+37%** |
+> | 120k deep fill (naked pair) | 241.1 | 280.7 | **+16%** |
+> | TG @120k depth (naked pair) | 9.8 | 9.5 | parity (fork's TG edge is spec-decode) |
+> | TG @120k (prod configs) | 9.8 (no spec available) | 14.0 (DFlash2 n4) | **+43%** |
+> | context | cannot fit 250k | 250k on 40 GB | tight-fit machinery |
+> | outputs | - | - | KLD ~5e-4 mean, same-top 99.14% (E140) |
+>
+> ### Output identity and quality vs upstream
+>
+> 2026-09-09 refresh (E140, both builds on the same upstream base
+> 434ddbbc0: fork build-sync0909 vs mainline ~/dev/llama.cpp build-0909;
+> wikitext-2 10k ctx, bench/ab-mainline-0909.sh):
+>
+> | metric | mainline | fork | verdict |
+> |---|---|---|---|
+> | perplexity (29 chunks, c=10000) | 6.2785 +/- 0.04076 | 6.2777 +/- 0.04074 | tie (fork epsilon better, in-noise) |
+> | KLD mean / same-top (cross, 6 chunks) | - | ~0.0005 / 99.140% | 50x tighter than the 2026-09-06 pair |
+> | temp-1.0 lane reproducibility | repro_ok | repro_ok | both deterministic |
+>
+> Historical 2026-09-06 pair (E122-E124, fork build-dflash-novega vs
+> mainline-cmp c5a5535e6, BEFORE the shared 2026-09-09 numerics base;
+> full PPL 65-chunk lane + logit KLD tables in journal/JOURNAL-2026-09-06.md):
+>
+> | metric | upstream | fork | verdict |
+> |---|---|---|---|
+> | perplexity (65 chunks) | 1.3033 +/- 0.0056 | 1.3043 +/- 0.0056 | identical within noise |
+> | PPL pass speed (c=4096) | 19.6 s | 14.7 s | fork +25% (note: at c=10000 on 2026-09-09 builds mainline passes are 13% faster - batch-shape specific, under investigation) |
+> | KL divergence, mean / median | 0 | 0.0248 / 1.6e-6 | tail-driven |
+> | KL divergence, p95 / p99 / max | 0 | 0.010 / 0.31 / ~16 | near-tie tail only |
+> | top-1 agreement | 100% | 98.65% | flips on near-ties only |
+> | upstream top-1 in fork top-5 | 100% | 99.81% | sampling-relevant |
+> | logit RMSE, full vocab / top-100 | 0 | 0.067 / 0.50 | quant-floor + rare flips |
+>
+> Attribution (E123, archive-build probe series): build flags and
+> toolchain exonerated (exact zero); divergence is the vega MMQ tune
+> set's accumulation order (E82 restoration, signature stable and
+> unchanged since 2026-09-02); upstream sync, q6k64 tile, draft mirror,
+> GDN and q8_1 ports are numerics-neutral. Sampled outputs (temp 1.0
+> prod config) unaffected; rare token flips possible only on long
+> temp-0 runs over flat distributions.
+>
+>
+> ### Who benefits
+>
+> | You run... | You get... |
+> |---|---|
+> | gfx906 / MI50 / Radeon VII | wave64-correct kernel tables, sha-gated |
+> | mixed ROCm + Vulkan | controllable pipeline parallelism + safe fallback |
+> | heterogeneous GPU setups | unlike GPUs in one pipeline: weighted layer splits, cross-backend scheduling, per-device fits |
+> | Qwen3.8 / qwen4exp | DFlash2 drafter, adaptive depth, GDN prefill |
+> | anyone reproducibility-minded | every change gated on unchanged temp-0 sha |
+>
+> ### What we changed, and why
+>
+> - **wave64 kernel tables** (fork + upstream #27841's GCN row): MMQ
+>   tiles (Q6_K I=64), top-k, fattn dispatch. Occupancy 1 -> 2 waves
+>   hides latency -> +20% PP.
+> - **Draft head mirror** (LLAMA_DFLASH_MIRROR_OUTPUT=1 +
+>   --spec-draft-device): device-local copy of the borrowed vocab head,
+>   single-device draft graph -> draft rounds -42%, TG +11% @120k depth.
+> - **Pipeline parallelism**: fork-only on/off switch, safe fallback,
+>   draft-ctx exclusion (controls + per-device fit refinements from the
+>   eaman patch store, store.piffa.net/lm/bug; A/B-adopted 2026-08-24).
+>   Benefit: no startup aborts or capture corruption on tight fits,
+>   honest fit tables.
+> - **Tight fits**: f16-K/q8_0-V KV, fattn path selector, frugal
+>   buffers (compute 4.7x smaller than stock), HIP graph robustness.
+>   Benefit: the 250k-on-40GB fit itself - stock cannot load it.
+> - **Robustness ports, bit-exact** (mx-llama.cpp survey): fattn-vec
+>   stride fix, pipeline drain before seq-layout reset, HIP graph exec
+>   reinstantiation. Benefit: stability on tight-fit + HIP-graph
+>   regimes. (GDN chunked prefill and q8_1 activation cache also
+>   carried, env-gated; measured perf-neutral here.)
+> - **Checkpoint rewind** (#26004 + upstream #28302, adopted 2026-09-09):
+>   slot save/restore with context-checkpoint persistence and eviction
+>   fixes - prompt rewind after save/restore drops ~455 s re-prefill to
+>   <1 s (T2 probe: 23 tokens reprocessed vs 868, bit-exact output).
+> - **MoE MMQ OOB fix** (host-side padding, 2026-09-09): fixes
+>   out-of-bounds reads in expert-routed MMQ at flattened sizing; PPL
+>   tie, perf-neutral.
+> - **Upstream syncs**: full merges, each lane-gated on sha + perf.
+>   Benefit: current fixes ride along at zero measured cost.
+>
+> ### What did not work (measured)
+>
+> | idea | why out |
+> |---|---|
+> | MMQ inner-loop restructures, 5 variants (fork probes) | ~41% issue ceiling is structural on gfx906 |
+> | fattn scheduling/geometry probes (fork lanes) | compiler schedule is a local optimum (-0.5 to -5.8%) |
+> | deeper draft n_max=5 (fork lane) | 6-row verify hits a kernel-shape cliff (-28% TG) |
+> | K quantization beyond q8_0-V (fork measurement, E54) | native tile -2.6 t/s, depth effect only ~5% |
+> | ts rebalance / drafter relocation (fork lanes, E105 + 08-15 sweeps) | decode is overhead-bound, not bandwidth-bound |
+> | checkpoint sparsify / off (fork lanes, AB6 + E119.4) | neutral / breaks prompt restore |
+> | WY-chunked GDN prefill, software tiles (upstream #26001 port, E137) | x0.5 vs recurrent - gfx906 has no matrix units; op is latency-bound at 2.6% FP32 peak |
+> | GDN chain-shortening family (micro-chunk CS=5, pair-pipelining, E138) | GDN wall shares too small: 7.6% of fill, 2% of TG round - ceilings under campaign threshold |
+> | full survey (adopted/rejected per PR) | table below + journal/ + bench/FINDINGS.md |
+>
+> ### Upstream PRs and projects evaluated
+>
+> | name | what was tested | why not adopted |
+> |---|---|---|
+> | upstream #27173 (PatrickWalther) draft-chain perf | full triage + our graphs-off lane | launch overhead TG-neutral here; dflash already one-decode; output-head mirror taken instead |
+> | upstream #21698 (iacopPBK) q8_0 loader remap | ported + A/B, Q8LDR build | +1.0% = noise; PR gains measured under upstream's RDNA2-fallback tiles, not our vega table |
+> | upstream #23685 (ravel7524) packed Q8_1 MMVQ | trial merge + confound screen | no gain on the target path; parked as reference for the Q4_K drafter |
+> | upstream #24546 (ravel7524) MoE expert-width N-tiles | triage vs PMU attribution | 96.9% of MMQ cycles already run J=64 fb=0 - no headroom |
+> | upstream #28313 (pwilkin) ROCm top-k resolve | triage vs E53 gate | top-k worth <= 0.4 t/s in TG |
+> | upstream #28178 (GiuseppeCapaldo93) small-D2D copy kernel | live-graph copy probe | no per-layer-per-token small copies on our path |
+> | upstream #25635 (ynankani) fattn XOR swizzle | fork probes of the same schedule | -0.5 to -5.8%; compiler schedule already a local optimum |
+> | upstream #28102 (pwilkin) fattn tuning (gfx1201) | geometry probes | wrong target arch; same local-optimum result |
+> | upstream #27694 (praneshgo) probabilistic drafter | triage | rejection-sampling verify = sha-breaking; no dflash support |
+> | upstream #28305 (ynankani) static sampling subgraph | triage | dflash2 walks the lattice on CPU; no backend sampling |
+> | upstream #28390 (am17an) drafter meta-backend | triage | VRAM saving only under -sm tensor; we run -sm layer |
+> | upstream #28391 (ggerganov) default spec config | triage | perf-neutral; re-verify additive flag semantics at next sync |
+> | upstream #28333 (mxxm-t) zero MTP carrier | triage | MTP-family fix; dflash carrier is separate - check at sync |
+> | upstream #27692 (kilofox) speculative prefill | triage | lossy prefill; watch |
+> | upstream #21170 (uaruss) ROCm multi-GPU IMA fix | hand-applied for crash tests | fixes recurrent-state restore; our crash class was device-context D2D |
+> | upstream #21849 (avialallon) per-arch MMQ tiles | triage | converges with our vega table; drop our gate only after it merges |
+> | upstream #26592 (Geramy) hipCUB top-k | triage | no hot sort on our path |
+> | mx-llama.cpp (mxxm-t) | full survey | 3 robustness ports adopted (bit-exact); GDN chunk + q8_1 cache perf-neutral; TP/AllReduce, layout cache, replay coupling not our topology |
+> | eaman patch store (store.piffa.net/lm/bug) | full survey | pipeline-parallel controls + fit refinements adopted 2026-08-24; rs sync line wedges on abort |
+>
+> ### Evidence and build
+>
+> Every claim has a lane row: journal/ (experiment log), bench/
+> (A/B harness, FINDINGS.md, vram-test, rocprof stack). Build:
+> ./build-dflash-novega.sh (Vulkan + ROCm 6.1 - pinned, the measured
+> optimum for gfx906 here; launchers also pin its userspace). Current
+> prod build: build-sync0909/bin (0.4.0-dev b11053, master 2026-09-09);
+> launchers 2llama-start-*.sh point there (rollback: build-dflash-novega).
+>
+# llama.cpp
+
+![llama](https://raw.githubusercontent.com/ggml-org/llama.brand/refs/heads/master/cover/llama-cpp/cover-llama-cpp-dark.svg)
+
+<div align="center">
+
+<b>LLM inference in C/C++</b>
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/v/release/ggml-org/llama.cpp?filter=v*&color=brightgreen)](https://github.com/ggml-org/llama.cpp/releases?q=tag:v0)
+[![Nightly](https://img.shields.io/github/v/release/ggml-org/llama.cpp?label=nightly&filter=b*&color=orange)](https://github.com/ggml-org/llama.cpp/releases?q=b)
+[![Server](https://img.shields.io/github/actions/workflow/status/ggml-org/llama.cpp/server.yml?label=Server)](https://github.com/ggml-org/llama.cpp/actions/workflows/server.yml)
+[![Docker](https://img.shields.io/github/actions/workflow/status/ggml-org/llama.cpp/docker.yml?label=Docker)](https://github.com/ggml-org/llama.cpp/actions/workflows/docker.yml)
+[![Winget](https://img.shields.io/github/actions/workflow/status/ggml-org/llama.cpp/winget.yml?label=Winget)](https://github.com/ggml-org/llama.cpp/actions/workflows/winget.yml)
+
+[ggml](https://github.com/ggml-org/ggml) / [ops](https://github.com/ggml-org/llama.cpp/blob/master/docs/ops.md) / [maintainer PRs](https://github.com/ggml-org/llama.cpp/issues?q=is%3Apr%20is%3Aopen%20draft%3AFalse%20(author%3Argerganov%20OR%20author%3AKitaitiMakoto%20OR%20author%3Adanbev%20OR%20author%3Aaldehir%20OR%20author%3Amax-krasnyansky%20OR%20author%3ACISC%20OR%20author%3Aggerganov%20OR%20author%3Aam17an%20OR%20author%3Ajhen0409%20OR%20author%3Abartowski1182%20OR%20author%3Anikwen%20OR%20author%3Ahipudding%20OR%20author%3Aravi9%20OR%20author%3AServeurpersoCom%20OR%20author%3Apwilkin%20OR%20author%3Areeselevine%20OR%20author%3Angxson%20OR%20author%3Ajeffbolznv%20OR%20author%3Amarty1885%20OR%20author%3A0cc4m%20OR%20author%3ATitaniumtown%20OR%20author%3Aangt%20OR%20author%3AIMbackK%20OR%20author%3Aarthw%20OR%20author%3AJohannesGaessler%20OR%20author%3AORippler%20OR%20author%3Aruixiang63%20OR%20author%3Axctan%20OR%20author%3Aallozaur%20OR%20author%3Ayomaytk%20OR%20author%3Aaendk%20OR%20author%3Awine99%20OR%20author%3Agaugarg-nv%20OR%20author%3Ataronaeo%20OR%20author%3Aforforever73%20OR%20author%3Alhez%20OR%20author%3Anetrunnereve%20OR%20author%3Afairydreaming)%20sort%3Aupdated-desc) / [dev stats](https://github.com/ggml-org/llama.cpp-dev) / [lib llama API](https://github.com/ggml-org/llama.cpp/issues/9289) / [llama-server REST API](https://github.com/ggml-org/llama.cpp/issues/9291)
+
+</div>
+
+## Quick start
+
+A few options to get `llama.cpp` installed on your machine:
+
+- Visit https://llama.app and follow the instructions
+- Run with Docker - see our [Docker documentation](docs/docker.md)
+- Download pre-built binaries from the [releases page](https://github.com/ggml-org/llama.cpp/releases)
+- Build from source by cloning this repository - check out [our build guide](docs/build.md)
+
+Once installed:
+
+```sh
+# Download and run a model directly from Hugging Face
+llama cli -hf ggml-org/Qwen3.5-0.8B-GGUF
+
+# Launch OpenAI-compatible API server
+llama serve -hf ggml-org/Qwen3.5-0.8B-GGUF
+```
+
+<table align="center">
+    <tr>
+        <td align="center" width=50%>
+            <img width="1310" height="888" alt="VLM session with `llama cli`" src="https://github.com/user-attachments/assets/88726b48-1713-48aa-a525-95a02e78afc4" />
+            <i>VLM session with <b>llama cli</b></i>
+        </td>
+        <td align="center">
+            <img width="1392" height="958" alt="Built-in web UI against `llama serve` running Qwen 3.6" src="https://github.com/user-attachments/assets/b402f972-2e32-4def-8771-8d849f08cf2e" />
+            <i>Built-in web UI against <b>llama serve</b></i>
+        </td>
+    </tr>
+<table>
+
+## Description
+
+The main goal of `llama.cpp` is to enable LLM (and VLM) inference with minimal setup and state-of-the-art performance on
+a wide range of hardware - locally and in the cloud.
+
+- Plain C/C++ implementation without any dependencies
+- Apple silicon is a first-class citizen - optimized via ARM NEON, Accelerate and Metal frameworks
+- AVX, AVX2, AVX512 and AMX support for x86 architectures
+- RVV, ZVFH, ZFH, ZICBOP and ZIHINTPAUSE support for RISC-V architectures
+- 1.5-bit, 2-bit, 3-bit, 4-bit, 5-bit, 6-bit, and 8-bit integer quantization for faster inference and reduced memory use
+- Custom CUDA kernels for running LLMs on NVIDIA GPUs (support for AMD GPUs via HIP and Moore Threads GPUs via MUSA)
+- Vulkan and SYCL backend support
+- CPU+GPU hybrid inference to partially accelerate models larger than the total VRAM capacity
+
+The `llama.cpp` project is build on top of the [ggml](https://github.com/ggml-org/ggml) library.
+
+## Supported backends
+
+| Backend | Target devices |
+| --- | --- |
+| [BLAS](docs/build.md#blas-build) | All |
+| [BLIS](docs/backend/BLIS.md) | All |
+| [CANN](docs/build.md#cann) | Ascend NPU |
+| [CUDA](docs/build.md#cuda) | Nvidia GPU |
+| [HIP](docs/build.md#hip) | AMD GPU |
+| [Hexagon](docs/backend/snapdragon/README.md) | Snapdragon |
+| [IBM zDNN](docs/backend/zDNN.md) | IBM Z & LinuxONE |
+| [MUSA](docs/build.md#musa) | Moore Threads GPU |
+| [Metal](docs/build.md#metal-build) | Apple Silicon |
+| [OpenCL](docs/backend/OPENCL.md) | Adreno GPU |
+| [OpenVINO [In Progress]](docs/backend/OPENVINO.md) | Intel CPUs, GPUs, and NPUs |
+| [RPC](https://github.com/ggml-org/llama.cpp/tree/master/tools/rpc) | All |
+| [SYCL](docs/backend/SYCL.md) | Intel GPU |
+| [VirtGPU](docs/backend/VirtGPU.md) | VirtGPU APIR |
+| [Vulkan](docs/build.md#vulkan) | GPU |
+| [WebGPU](docs/build.md#webgpu) | All |
+| [ZenDNN](docs/build.md#zendnn) | AMD CPU |
+
+## Documentation
+
+#### Tools
+
+- [cli](tools/cli/README.md)
+- [completion](tools/completion/README.md)
+- [server](tools/server/README.md)
+- [GBNF grammars](grammars/README.md)
+
+#### Development
+
+- [How to build](docs/build.md)
+- [Running on Docker](docs/docker.md)
+- [Build on Android](docs/android.md)
+- [Multi-GPU usage](docs/multi-gpu.md)
+- [Performance troubleshooting](docs/development/token_generation_performance_tips.md)
+- [GGML tips & tricks](https://github.com/ggml-org/llama.cpp/wiki/GGML-Tips-&-Tricks)
+- [XCFramework](docs/xcframework.md)
+- [Compl

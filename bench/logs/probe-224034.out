@@ -1,0 +1,22 @@
+0.00.327.999 I cmn  common_param: common_params_print_info: build 11099 (08bb7a790) with GNU 14.2.0 for Linux x86_64
+0.00.328.001 I cmn  common_param: common_params_print_info: verbosity = 4 (adjust with the `-lv N` CLI arg)
+0.00.328.002 I cmn  common_param: device_info:
+0.00.328.022 I cmn  common_param:   - ROCm0   : AMD Radeon VII (16368 MiB, 0 MiB free)
+0.00.328.027 I cmn  common_param:   - ROCm1   : AMD Radeon VII (16368 MiB, 40 MiB free)
+0.00.328.313 I cmn  common_param:   - Vulkan0 : AMD Radeon Graphics (RADV RENOIR) (32334 MiB, 30273 MiB free)
+0.00.328.523 I cmn  common_param:   - Vulkan1 : NVIDIA GeForce RTX 3080 Laptop GPU (8192 MiB, 187 MiB free)
+0.00.328.724 I cmn  common_param:   - Vulkan2 : AMD Radeon VII (RADV VEGA20) (16368 MiB, 57 MiB free)
+0.00.328.908 I cmn  common_param:   - Vulkan3 : AMD Radeon VII (RADV VEGA20) (16368 MiB, 6 MiB free)
+0.00.328.920 I cmn  common_param:   - CPU     : AMD Ryzen 9 5900HX with Radeon Graphics (63645 MiB, 63645 MiB free)
+0.00.328.973 I cmn  common_param: system_info: n_threads = 9 (n_threads_batch = 10) / 16 | ROCm : NO_VMM = 1 | FA_QUANTS = all | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | OPENMP = 1 | REPACK = 1 | 
+0.00.329.002 I srv          init: running without SSL
+0.00.329.051 I srv          init: using 15 threads for HTTP server
+0.00.329.247 W srv  llama_server: -----------------
+0.00.329.248 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+0.00.329.248 W srv  llama_server: this can be a security risk (cross-origin attacks)
+0.00.329.248 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+0.00.329.248 W srv  llama_server: -----------------
+0.00.329.268 I srv         start: binding port with default address family
+0.00.329.311 E srv         start: couldn't bind HTTP server socket, hostname: 127.0.0.1, port: 8019
+0.00.329.312 I srv    operator(): operator(): cleaning up before exit...
+0.00.329.367 E srv  llama_server: exiting due to HTTP server error

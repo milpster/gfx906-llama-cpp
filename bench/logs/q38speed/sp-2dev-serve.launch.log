@@ -1,0 +1,294 @@
+== arm sp-2dev-serve reps=2 extra:  ==
+0.00.398.282 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.398.770 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.399.977 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.854.878 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.31.940.917 I cmn          init: llama threadpool init, n_threads = 16
+0.31.941.039 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.35.769.486 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.35.769.491 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.35.770.516 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.35.770.520 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.35.889.929 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.35.889.934 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.35.889.934 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.36.978.260 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.36.978.280 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 20480, kv_unified = 'false'
+0.37.341.615 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.37.346.075 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.37.346.141 I srv  llama_server: model loaded
+0.37.346.145 I srv  llama_server: listening on http://127.0.0.1:57265
+0.37.442.449 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.37.442.511 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+1.14.823.034 E /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/ggml-cuda.cu:108: ROCm error
+ROCm error: out of memory
+1.14.823.038 E   current device: 0, in function alloc at /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/ggml-cuda.cu:507
+1.14.823.039 E   err
+[New LWP 3475118]
+[New LWP 3466091]
+[New LWP 3466090]
+[New LWP 3466089]
+[New LWP 3466088]
+[New LWP 3466087]
+[New LWP 3466086]
+[New LWP 3466085]
+[New LWP 3466084]
+[New LWP 3466083]
+[New LWP 3466082]
+[New LWP 3466081]
+[New LWP 3466080]
+[New LWP 3466079]
+[New LWP 3466078]
+[New LWP 3466077]
+[New LWP 3466076]
+[New LWP 3466075]
+[New LWP 3466074]
+[New LWP 3466071]
+[New LWP 3466070]
+[New LWP 3466069]
+[New LWP 3466067]
+[New LWP 3466063]
+[New LWP 3466062]
+[New LWP 3466061]
+[New LWP 3466060]
+[New LWP 3466059]
+[New LWP 3466058]
+[New LWP 3465997]
+[New LWP 3465976]
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+Function(s) ^std::(move|forward|as_const|(__)?addressof) will be skipped when stepping.
+Function(s) ^std::(shared|unique)_ptr<.*>::(get|operator) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|(forward_)?list|(unordered_|flat_)?(multi)?(map|set)|span)<.*>::(c?r?(begin|end)|front|back|data|size|empty) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|span)<.*>::operator.] will be skipped when stepping.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+__syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+warning: 56	../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S: No such file or directory
+#0  __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+56	in ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S
+#1  0x00007fc147e9eb63 in __internal_syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=0, a5=0, a6=0, nr=7) at ./nptl/cancellation.c:49
+warning: 49	./nptl/cancellation.c: No such file or directory
+#2  __syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=a4@entry=0, a5=a5@entry=0, a6=a6@entry=0, nr=7) at ./nptl/cancellation.c:75
+75	in ./nptl/cancellation.c
+#3  0x00007fc147f25b2e in __GI___poll (fds=<optimized out>, nfds=<optimized out>, timeout=<optimized out>) at ../sysdeps/unix/sysv/linux/poll.c:29
+warning: 29	../sysdeps/unix/sysv/linux/poll.c: No such file or directory
+#4  0x0000560d6f5af1dd in httplib::detail::select_impl(int, short, long, long) ()
+#5  0x0000560d6f5c0cd8 in httplib::detail::SocketStream::wait_readable() const ()
+#6  0x0000560d6f5c0fa8 in httplib::detail::SocketStream::read(char*, unsigned long) ()
+#7  0x0000560d6f5aecd8 in httplib::detail::stream_line_reader::getline() ()
+#8  0x0000560d6f5c5939 in httplib::detail::ChunkedDecoder::read_payload(char*, unsigned long, unsigned long&, unsigned long&) ()
+#9  0x0000560d6f61a28b in httplib::detail::ReadContentResult httplib::detail::read_content_chunked<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>) ()
+#10 0x0000560d6f61a3a3 in httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}::operator()(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&) const ()
+#11 0x0000560d6f61a802 in bool httplib::detail::prepare_content_receiver<httplib::Response, httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}>(httplib::Response&, int&, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool, unsigned long, bool&, httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}) ()
+#12 0x0000560d6f604cfd in httplib::ClientImpl::process_request(httplib::Stream&, httplib::Request&, httplib::Response&, bool, httplib::Error&) ()
+#13 0x0000560d6f605218 in httplib::ClientImpl::handle_request(httplib::Stream&, httplib::Request&, httplib::Response&, bool, httplib::Error&) ()
+#14 0x0000560d6f5c0dfc in httplib::detail::process_client_socket(int, long, long, long, long, long, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::function<bool (httplib::Stream&)>) ()
+#15 0x0000560d6f5c0ebb in httplib::ClientImpl::process_socket(httplib::ClientImpl::Socket const&, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::function<bool (httplib::Stream&)>) ()
+#16 0x0000560d6f5e17aa in httplib::ClientImpl::send_(httplib::Request&, httplib::Response&, httplib::Error&) ()
+#17 0x0000560d6f5e1963 in httplib::ClientImpl::send(httplib::Request&, httplib::Response&, httplib::Error&) ()
+#18 0x0000560d6f5e1a8f in httplib::ClientImpl::send_(httplib::Request&&) ()
+#19 0x0000560d6f5f2d3a in httplib::ClientImpl::Post(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, httplib::detail::insertion_ordered_multimap<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, httplib::detail::case_ignore::equal_to> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool (char const*, unsigned long)>, std::function<bool (unsigned long, unsigned long)>) ()
+#20 0x0000560d6f5f2ea7 in httplib::Client::Post(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, httplib::detail::insertion_ordered_multimap<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, httplib::detail::case_ignore::equal_to> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool (char const*, unsigned long)>, std::function<bool (unsigned long, unsigned long)>) ()
+#21 0x00007fc148dbf639 in cli_client::post_sse(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool ()> const&, std::function<void (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)> const&) () from build-sync0920/bin/libllama-cli-impl.so
+#22 0x00007fc148dc5cef in cli_context::generate_completion(cli_context::generated_content&, cli_timings&) () from build-sync0920/bin/libllama-cli-impl.so
+#23 0x00007fc148dc8883 in cli_context::run() () from build-sync0920/bin/libllama-cli-impl.so
+#24 0x00007fc148db8312 in llama_cli(int, char**) () from build-sync0920/bin/libllama-cli-impl.so
+#25 0x00007fc147e2a578 in __libc_start_call_main (main=main@entry=0x560d6f59f970 <main>, argc=argc@entry=87, argv=argv@entry=0x7ffff7dabcb8) at ../sysdeps/nptl/libc_start_call_main.h:58
+warning: 58	../sysdeps/nptl/libc_start_call_main.h: No such file or directory
+#26 0x00007fc147e2a63b in __libc_start_main_impl (main=0x560d6f59f970 <main>, argc=87, argv=0x7ffff7dabcb8, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7ffff7dabca8) at ../csu/libc-start.c:360
+warning: 360	../csu/libc-start.c: No such file or directory
+#27 0x0000560d6f59f9a5 in _start ()
+[Inferior 1 (process 3465897) detached]
+timeout: the monitored command dumped core
+bench/qwen38-speed-arm.sh: line 80: 3465895 Aborted                 env -u USE_MLOCK HIP_GRAPH=1 AMD_LOG_LEVEL=0 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 HSA_OVERRIDE_GFX_VERSION=9.0.6 HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 GPU_SINGLE_ALLOC_PERCENT=100 HSA_ENABLE_SDMA=1 HSA_DISABLE_FRAGMENT_ALLOCATOR=0 GPU_MAX_ALLOC_PERCENT=100 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:$BUILD_DIR/bin:/opt/rocm-6.1.0/lib timeout 30m "$BIN" "${BASE_ARGS[@]}" "$@" -o "$OUT" < /dev/null 2>&1
+     3465896 Done                    | tee "$LOG"
+run=1 exit=134 wall_s=79 sha=89b4d819bc9c52729320853443c3f7dab0556e93e19a43ab0b6462d43fe4496c | 
+0.00.404.027 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.404.411 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.405.588 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.817.032 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.30.336.924 I cmn          init: llama threadpool init, n_threads = 16
+0.30.337.053 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.33.547.008 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.33.547.011 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.33.547.647 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.33.547.648 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.33.672.731 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.33.672.735 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.33.672.735 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.34.775.477 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.34.775.503 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 20480, kv_unified = 'false'
+0.35.129.465 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.35.133.005 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.35.133.055 I srv  llama_server: model loaded
+0.35.133.057 I srv  llama_server: listening on http://127.0.0.1:35007
+0.35.284.431 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.35.284.605 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+1.13.765.227 E ROCm error: out of memory
+1.13.765.230 E   current device: 0, in function alloc at /home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/ggml-cuda.cu:507
+1.13.765.231 E   err
+/home/srcds/dev/uf3_rocm6.1_llama.cpp/ggml/src/ggml-cuda/ggml-cuda.cu:108: ROCm error
+[New LWP 3493692]
+[New LWP 3485593]
+[New LWP 3485592]
+[New LWP 3485591]
+[New LWP 3485590]
+[New LWP 3485589]
+[New LWP 3485588]
+[New LWP 3485587]
+[New LWP 3485586]
+[New LWP 3485585]
+[New LWP 3485584]
+[New LWP 3485583]
+[New LWP 3485582]
+[New LWP 3485581]
+[New LWP 3485580]
+[New LWP 3485579]
+[New LWP 3485578]
+[New LWP 3485577]
+[New LWP 3485576]
+[New LWP 3485573]
+[New LWP 3485572]
+[New LWP 3485571]
+[New LWP 3485566]
+[New LWP 3485501]
+[New LWP 3485500]
+[New LWP 3485497]
+[New LWP 3485496]
+[New LWP 3485493]
+[New LWP 3485492]
+[New LWP 3485331]
+[New LWP 3485330]
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+Function(s) ^std::(move|forward|as_const|(__)?addressof) will be skipped when stepping.
+Function(s) ^std::(shared|unique)_ptr<.*>::(get|operator) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|(forward_)?list|(unordered_|flat_)?(multi)?(map|set)|span)<.*>::(c?r?(begin|end)|front|back|data|size|empty) will be skipped when stepping.
+Function(s) ^std::(basic_string|vector|array|deque|span)<.*>::operator.] will be skipped when stepping.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+__syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+warning: 56	../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S: No such file or directory
+#0  __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+56	in ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S
+#1  0x00007ffbe209eb63 in __internal_syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=0, a5=0, a6=0, nr=7) at ./nptl/cancellation.c:49
+warning: 49	./nptl/cancellation.c: No such file or directory
+#2  __syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=a4@entry=0, a5=a5@entry=0, a6=a6@entry=0, nr=7) at ./nptl/cancellation.c:75
+75	in ./nptl/cancellation.c
+#3  0x00007ffbe2125b2e in __GI___poll (fds=<optimized out>, nfds=<optimized out>, timeout=<optimized out>) at ../sysdeps/unix/sysv/linux/poll.c:29
+warning: 29	../sysdeps/unix/sysv/linux/poll.c: No such file or directory
+#4  0x00005616c0b631dd in httplib::detail::select_impl(int, short, long, long) ()
+#5  0x00005616c0b74cd8 in httplib::detail::SocketStream::wait_readable() const ()
+#6  0x00005616c0b74fa8 in httplib::detail::SocketStream::read(char*, unsigned long) ()
+#7  0x00005616c0b62cd8 in httplib::detail::stream_line_reader::getline() ()
+#8  0x00005616c0b79939 in httplib::detail::ChunkedDecoder::read_payload(char*, unsigned long, unsigned long&, unsigned long&) ()
+#9  0x00005616c0bce28b in httplib::detail::ReadContentResult httplib::detail::read_content_chunked<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>) ()
+#10 0x00005616c0bce3a3 in httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}::operator()(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&) const ()
+#11 0x00005616c0bce802 in bool httplib::detail::prepare_content_receiver<httplib::Response, httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}>(httplib::Response&, int&, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool, unsigned long, bool&, httplib::detail::read_content<httplib::Response>(httplib::Stream&, httplib::Response&, unsigned long, int&, std::function<bool (unsigned long, unsigned long)>, std::function<bool (char const*, unsigned long, unsigned long, unsigned long)>, bool)::{lambda(std::function<bool (char const*, unsigned long, unsigned long, unsigned long)> const&)#1}) ()
+#12 0x00005616c0bb8cfd in httplib::ClientImpl::process_request(httplib::Stream&, httplib::Request&, httplib::Response&, bool, httplib::Error&) ()
+#13 0x00005616c0bb9218 in httplib::ClientImpl::handle_request(httplib::Stream&, httplib::Request&, httplib::Response&, bool, httplib::Error&) ()
+#14 0x00005616c0b74dfc in httplib::detail::process_client_socket(int, long, long, long, long, long, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::function<bool (httplib::Stream&)>) ()
+#15 0x00005616c0b74ebb in httplib::ClientImpl::process_socket(httplib::ClientImpl::Socket const&, std::chrono::time_point<std::chrono::_V2::steady_clock, std::chrono::duration<long, std::ratio<1l, 1000000000l> > >, std::function<bool (httplib::Stream&)>) ()
+#16 0x00005616c0b957aa in httplib::ClientImpl::send_(httplib::Request&, httplib::Response&, httplib::Error&) ()
+#17 0x00005616c0b95963 in httplib::ClientImpl::send(httplib::Request&, httplib::Response&, httplib::Error&) ()
+#18 0x00005616c0b95a8f in httplib::ClientImpl::send_(httplib::Request&&) ()
+#19 0x00005616c0ba6d3a in httplib::ClientImpl::Post(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, httplib::detail::insertion_ordered_multimap<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, httplib::detail::case_ignore::equal_to> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool (char const*, unsigned long)>, std::function<bool (unsigned long, unsigned long)>) ()
+#20 0x00005616c0ba6ea7 in httplib::Client::Post(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, httplib::detail::insertion_ordered_multimap<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, httplib::detail::case_ignore::equal_to> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool (char const*, unsigned long)>, std::function<bool (unsigned long, unsigned long)>) ()
+#21 0x00007ffbe3099639 in cli_client::post_sse(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<bool ()> const&, std::function<void (std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)> const&) () from build-sync0920/bin/libllama-cli-impl.so
+#22 0x00007ffbe309fcef in cli_context::generate_completion(cli_context::generated_content&, cli_timings&) () from build-sync0920/bin/libllama-cli-impl.so
+#23 0x00007ffbe30a2883 in cli_context::run() () from build-sync0920/bin/libllama-cli-impl.so
+#24 0x00007ffbe3092312 in llama_cli(int, char**) () from build-sync0920/bin/libllama-cli-impl.so
+#25 0x00007ffbe202a578 in __libc_start_call_main (main=main@entry=0x5616c0b53970 <main>, argc=argc@entry=87, argv=argv@entry=0x7ffcc55edff8) at ../sysdeps/nptl/libc_start_call_main.h:58
+warning: 58	../sysdeps/nptl/libc_start_call_main.h: No such file or directory
+#26 0x00007ffbe202a63b in __libc_start_main_impl (main=0x5616c0b53970 <main>, argc=87, argv=0x7ffcc55edff8, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7ffcc55edfe8) at ../csu/libc-start.c:360
+warning: 360	../csu/libc-start.c: No such file or directory
+#27 0x00005616c0b539a5 in _start ()
+[Inferior 1 (process 3485328) detached]
+timeout: the monitored command dumped core

@@ -1,0 +1,34 @@
+== arm sp-200-th16-1ub reps=2 extra:  ==
+0.00.344.366 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.344.818 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.346.065 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.801.437 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.22.491.549 W resolve_fused_ops: layer 31 is assigned to device ROCm0 but fused DeepSeek V4 HC pre is assigned to device CPU (usually due to missing support)
+0.22.491.552 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.22.502.574 W resolve_fused_ops: layer 31 is assigned to device ROCm0 but fused DeepSeek V4 HC post is assigned to device CPU (usually due to missing support)
+0.22.502.576 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+
+
+Loading model... ggml_vulkan: Device memory allocation of size 713084928 failed.
+ggml_vulkan: vk::Device::allocateMemory: ErrorOutOfDeviceMemory
+0.22.859.086 E ggml_gallocr_reserve_n_impl: failed to allocate Vulkan1 buffer of size 8281168896
+0.22.859.089 E graph_reserve: failed to allocate compute buffers
+0.22.882.675 E llama_init_from_model: failed to initialize the context: failed to allocate compute pp buffers
+0.22.882.682 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.22.882.687 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.22.882.691 E srv    load_model: failed to create_context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.22.882.693 I srv    operator(): operator(): cleaning up before exit...
+0.22.882.990 E srv  llama_server: exiting due to model loading error
+llama_server exited with code 1
+Error: the server exited before becoming ready
+run=1 exit=1 wall_s=24 sha=NA | 
+0.00.260.283 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.260.847 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.262.061 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.701.810 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+bench/qwen38-speed-arm.sh: line 78: 2244085 Killed                  env -u USE_MLOCK HIP_GRAPH=1 AMD_LOG_LEVEL=0 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 HSA_OVERRIDE_GFX_VERSION=9.0.6 HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 GPU_SINGLE_ALLOC_PERCENT=100 HSA_ENABLE_SDMA=1 HSA_DISABLE_FRAGMENT_ALLOCATOR=0 GPU_MAX_ALLOC_PERCENT=100 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:$BUILD_DIR/bin:/opt/rocm-6.1.0/lib timeout 30m "$BIN" "${BASE_ARGS[@]}" "$@" -o "$OUT" < /dev/null 2>&1
+     2244086 Done                    | tee "$LOG"
+run=2 exit=137 wall_s=12 sha=NA | 
+== summary sp-200-th16-1ub ==
+run=1 exit=1 wall_s=24 sha=NA | 
+run=2 exit=137 wall_s=12 sha=NA | 

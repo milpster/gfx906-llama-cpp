@@ -1,0 +1,22 @@
+0.00.343.031 W DEPRECATED: argument '--threads' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.034 W DEPRECATED: argument '--threads-batch' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.035 W DEPRECATED: argument '-ncmoe' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.042 W DEPRECATED: argument '-c' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.043 W DEPRECATED: argument '-b' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.044 W DEPRECATED: argument '-ub' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.343.398 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.343.797 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.344.963 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.776.038 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+
+
+Loading model... ggml_vulkan: Device memory allocation of size 1023590400 failed.
+ggml_vulkan: vk::Device::allocateMemory: ErrorOutOfDeviceMemory
+0.52.971.719 E ggml_gallocr_reserve_n_impl: failed to allocate Vulkan1 buffer of size 5816367184
+0.52.971.722 E graph_reserve: failed to allocate compute buffers
+0.52.980.674 E llama_init_from_model: failed to initialize the context: failed to allocate compute pp buffers
+0.52.980.680 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.52.980.684 E cmn  common_init_: failed to create context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.52.980.689 E srv    load_model: failed to create_context with model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.52.980.692 I srv    operator(): operator(): cleaning up before exit...
+0.52.981.020 E srv  llama_server: exiting due to model loading error

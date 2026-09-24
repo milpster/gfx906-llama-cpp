@@ -1,0 +1,23 @@
+Write a clear technical explanation of why the sky is blue.
+
+===== COMPLETION (0 tokens) =====
+
+
+
+<think>
+The user wants a clear technical explanation of why the sky is blue. Let me think about what makes a good technical explanation here.
+
+Key physics concepts to cover:
+1. Sunlight is white (all wavelengths)
+2. Rayleigh scattering - the core mechanism
+3. The wavelength dependence (∝ 1/λ⁴)
+4. Why blue specifically and not violet
+5. Why the sky isn't purple (solar spectrum + human vision)
+6. Why sunsets are red (longer path through atmosphere)
+
+I should be technically accurate but clear. Let me structure this well, going from the basic mechanism to the specific color, then to related phenomena. I'll aim for a thorough but accessible explanation that a scientifically literate person would find satisfying.
+
+Let me make sure I get the physics right:
+- Rayleigh scattering: scattering intensity ∝ 1/λ⁴. This means shorter wavelengths scatter much more strongly.
+- The scattering is by molecules (N₂, O₂) that are much smaller than the wavelength of visible light.
+- Blue light (~450 nm) scatters about (700/450)⁴ ≈ 5.6× more

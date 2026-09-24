@@ -1,0 +1,25 @@
+0.00.506.735 W DEPRECATED: argument '--threads' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.506.743 W DEPRECATED: argument '--threads-batch' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.506.744 W DEPRECATED: argument '-ncmoe' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.507.215 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.507.841 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.509.046 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.01.043.502 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.35.461.304 I cmn          init: llama threadpool init, n_threads = 8
+0.35.461.413 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.37.041.919 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.37.041.922 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.37.042.057 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.37.042.058 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.37.065.314 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.37.065.318 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.37.065.318 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.38.083.190 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.38.083.215 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 204800, kv_unified = 'false'
+0.38.253.510 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.38.258.237 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.38.258.309 I srv  llama_server: model loaded
+0.38.258.322 I srv  llama_server: listening on http://127.0.0.1:51201
+0.38.416.210 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.38.416.287 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0

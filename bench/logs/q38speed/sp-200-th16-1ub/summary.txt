@@ -1,0 +1,2 @@
+run=1 exit=1 wall_s=24 sha=NA | 
+run=2 exit=137 wall_s=12 sha=NA | 

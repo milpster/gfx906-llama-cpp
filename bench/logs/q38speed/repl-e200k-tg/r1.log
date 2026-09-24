@@ -1,0 +1,97 @@
+0.00.257.794 W DEPRECATED: argument '--threads' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.798 W DEPRECATED: argument '--threads-batch' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.799 W DEPRECATED: argument '-ncmoe' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.806 W DEPRECATED: argument '-c' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.807 W DEPRECATED: argument '-b' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.808 W DEPRECATED: argument '-ub' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.257.808 W DEPRECATED: argument '-n' specified multiple times, use comma-separated values instead (only last value will be used)
+0.00.258.169 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.258.627 W srv  llama_server: security: no API key is set and CORS allows all origins (see https://github.com/ggml-org/llama.cpp/pull/25655)
+0.00.259.805 I srv    load_model: loading model '/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf'
+0.00.636.972 W llama_model_loader: tensor overrides to CPU are used with mmap enabled - consider using --load-mode none for better performance
+0.22.476.645 I cmn          init: llama threadpool init, n_threads = 8
+0.22.476.727 I common_speculative_init_result: loading draft model '/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf'
+0.24.000.800 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC pre is assigned to device ROCm0 (usually due to missing support)
+0.24.000.803 W resolve_fused_ops: fused DeepSeek V4 HC pre not supported, set to disabled
+0.24.000.936 W resolve_fused_ops: layer 48 is assigned to device ROCm1 but fused DeepSeek V4 HC post is assigned to device ROCm0 (usually due to missing support)
+0.24.000.937 W resolve_fused_ops: fused DeepSeek V4 HC post not supported, set to disabled
+0.24.018.892 W load_hparams: Qwen-VL models require at minimum 1024 image tokens to function correctly on grounding tasks
+0.24.018.895 W load_hparams: if you encounter problems with accuracy, try adding --image-min-tokens 1024
+0.24.018.895 W load_hparams: more info: https://github.com/ggml-org/llama.cpp/issues/16842
+
+0.25.038.038 I srv    load_model: loaded multimodal model, '/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf'
+0.25.038.059 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 204800, kv_unified = 'false'
+0.25.161.827 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.25.165.722 W srv          init: chat template supports preserving reasoning, it is enabled by default (may use more tokens, disable via --no-reasoning-preserve)
+0.25.165.765 I srv  llama_server: model loaded
+0.25.165.765 I srv  llama_server: listening on http://127.0.0.1:33571
+0.25.304.563 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+0.25.304.621 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+1.17.727.421 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =    512, progress = 0.60, t =  51.96 s / 9.85 tokens per second
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b11380-969bce4d2
+model      : /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+ftype      : IQ2_S - 2.5 bpw
+modalities : text, vision, video
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+  /image <file>       add an image file
+  /video <file>       add a video file
+
+
+
+> > ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPU ... (truncated)
+
+[Start thinking]
+
+We need respond to user. User pasted a README-like text? They didn't ask explicit question. Need infer maybe they want something? The content is a quote block with markdown. Could be asking to review? Need produce helpful response. Need analyze in English (same language). Need likely summarize, critique, or rewrite? The user just provided text. We need respond maybe ask what they want? But final should be useful. Could be they expect us to continue? The text ends with colon2.14.151.197 I slot print_timing: id  0 | task 0 | n_gen =    100, tg =   4.68 t/s, tg_3s =   4.73 t/s
+ after "wikitext-2 10k ctx, bench2.17.827.248 I slot print_timing: id  0 | task 0 | n_gen =    117, tg =   4.67 t/s, tg_3s =   4.62 t/s
+/ab-mainline-0909.sh):" maybe incomplete. Maybe they want us to complete the section? Need decide2.21.004.262 I slot print_timing: id  0 | task 0 | n_gen =    143, tg =   5.07 t/s, tg_3s =   8.18 t/s
+.
+
+We need satisfy likely request: They pasted a TLDR and sections, maybe want proofread? There is no explicit ask. We2.24.276.956 I slot print_timing: id  0 | task 0 | n_gen =    170, tg =   5.40 t/s, tg_3s =   8.25 t/s
+ can offer a polished version, point out issues, or ask for desired action. But final2.27.374.800 I slot print_timing: id  0 | task 0 | n_gen =    188, tg =   5.44 t/s, tg_3s =   5.81 t/s
+ should not be just question? Could provide a concise review and suggested2.30.578.505 I slot print_timing: id  0 | task 0 | n_gen =    200, tg =   5.30 t/s, tg_3s =   3.75 t/s
+ edits. Need maybe mention missing table after colon. Since text ends with colon, likely they2.33.810.727 I slot print_timing: id  0 | task 0 | n_gen =    220, tg =   5.37 t/s, tg_3s =   6.19 t/s
+ want continuation: "Output identity and quality vs upstream" section should have table. We can draft completion2.37.287.204 I slot print_timing: id  0 | task 0 | n_gen =    239, tg =   5.37 t/s, tg_3s =   5.47 t/s
+.
+
+Let's inspect content: It claims +37% prefill, +12.39.488.856 I slot print_timing: id  0 | task 0 | prompt eval time =   87701.84 ms /   850 tokens (  103.18 ms per token,     9.69 tokens per second)
+2.39.488.858 I slot print_timing: id  0 | task 0 |        eval time =   46482.36 ms /   256 tokens (  182.28 ms per token,     5.49 tokens per second)
+2.39.488.859 I slot print_timing: id  0 | task 0 |       total time =  134184.20 ms /  1106 tokens
+2.39.488.864 I slot print_timing: id  0 | task 0 |    graphs reused =        102
+2.39.488.868 I slot print_timing: id  0 | task 0 | draft acceptance = 0.49673 (  152 accepted /   306 generated), mean len =  2.49
+2.39.488.961 I slot      release: id  0 | task 0 | stop processing: n_tokens = 1105, truncated = 0
+6
+2.39.489.334 I srv    operator(): operator(): cleaning up before exit...
+2.39.584.725 W ~llama_context:      ROCm0 compute buffer size of 918.0631 MiB, does not match expectation of 625.2308 MiB
+
+[ Prompt: 9.7 t/s | Generation: 5.5 t/s ]
+
+
+Exiting...

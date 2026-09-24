@@ -1,0 +1,28 @@
+User:
+> ## gfx906 fork (this repository)
+>
+> **TLDR:** +37% prefill, +16% 120k-deep fill (direct same-config A/B),
+> 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
+> decoding (+43% TG vs what mainline can do here), near-identical
+> outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
+> 93 commits, lane-gated E139; master carries it all).
+>
+> **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
+> (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
+> no gfx906 tuning and no controllable pipeline parallelism for
+> heterogeneous tight-VRAM fits. Reference deployment: Qwen3.8-27B
+> (i1-Q6_K) + DFlash2 speculative decoding at **250k context on 40 GB
+> VRAM** (2x Radeon VII + GTX 3080), deterministic lane outputs.
+>
+> ### How much it helps (vs upstream master 2026-09-09, same-config A/B)
+>
+> Direct naked pair (identical common-subset args, -c 130000 -sm layer
+> -ts 35,20,
+
+Assistant:
+[Start thinking]
+
+We[End thinking]
+
+
