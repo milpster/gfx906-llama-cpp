@@ -292,7 +292,7 @@ void llama_model_qwen4exp::load_arch_tensors(llama_model_loader & ml) {
         layer.nextn.hnorm   = create_tensor(tn(LLM_TENSOR_NEXTN_HNORM,   "weight", il), { hc_dim }, flags);
         layer.nextn.eh_proj = create_tensor(tn(LLM_TENSOR_NEXTN_EH_PROJ, "weight", il), { 2 * n_embd, n_embd }, flags);
 
-        layer.nextn.hc_head_norm = create_tensor(tn(LLM_TENSOR_NEXTN_HC_HEAD_NORM, "weight", il), { hc_dim }, flags);
+        layer.nextn.hc_head_norm = create_tensor(tn(LLM_TENSOR_NEXTN_HC_HEAD_NORM, "weight", il), { n_embd, hc }, TENSOR_ALLOW_RESHAPE | flags);
         layer.nextn.hc_head_down = create_tensor(tn(LLM_TENSOR_NEXTN_HC_HEAD_DOWN, "weight", il), { hc_dim, hc_lr }, flags);
         layer.nextn.hc_head_up   = create_tensor(tn(LLM_TENSOR_NEXTN_HC_HEAD_UP,   "weight", il), { hc_lr, hc_dim }, flags);
 
@@ -1245,14 +1245,21 @@ ggml_tensor * llama_model_qwen4exp::graph::build_layer_attn_linear(
     // the channels must match how load_arch_tensors sizes wqkv, not ssm_d_inner
     const int64_t conv_channels    = head_k_dim * num_k_heads * 2 + head_v_dim * num_v_heads;
 
+    // LLAMA_QWEN4EXP_SSM_CONV_CM=1 skips the per-layer transpose before ssm_conv.
+    // the CPU and CUDA kernels are bit-equal either way; other backends only
+    // take the time-major layout, so the scheduler moves those ops elsewhere
+    static const bool ssm_conv_cm = getenv("LLAMA_QWEN4EXP_SSM_CONV_CM") != nullptr;
+
     ggml_tensor * conv_input = build_conv_state_at(inp, conv_states_all, qkv_mixed,
-            conv_kernel_size - 1, conv_channels, il);
+            conv_kernel_size - 1, conv_channels, ssm_conv_cm, il);
 
     ggml_tensor * state = build_rs(inp, ssm_states_all, hparams.n_embd_s(), n_seqs);
     state = ggml_reshape_4d(ctx0, state, head_v_dim, head_v_dim, num_v_heads, n_seqs);
     cb(state, "state_predelta", il);
 
-    ggml_tensor * conv_output_proper = ggml_ssm_conv(ctx0, conv_input, conv_kernel);
+    ggml_tensor * conv_output_proper = ssm_conv_cm
+        ? ggml_ssm_conv_channels_major(ctx0, conv_input, conv_kernel)
+        : ggml_ssm_conv(ctx0, conv_input, conv_kernel);
     cb(conv_output_proper, "conv_output_raw", il);
 
     ggml_tensor * conv_output_silu = ggml_silu(ctx0, conv_output_proper);
@@ -1478,6 +1485,7 @@ ggml_tensor * llama_model_qwen4exp::graph::build_conv_state_at(
         ggml_tensor *        x,
         int64_t              state_cols,
         int64_t              channels,
+        bool                 channels_major,
         int                  il) {
     const auto * mctx_cur = inp->mctx;
 
@@ -1495,10 +1503,15 @@ ggml_tensor * llama_model_qwen4exp::graph::build_conv_state_at(
     }
     ggml_tensor * rows = it->second;
 
-    ggml_tensor * state = ggml_reshape_3d(ctx0, rows, state_cols, channels, n_seqs);
+    ggml_tensor * state = channels_major
+        ? ggml_reshape_3d(ctx0, rows, channels, state_cols, n_seqs)
+        : ggml_reshape_3d(ctx0, rows, state_cols, channels, n_seqs);
     cb(state, "conv_state_at", il);
 
-    ggml_tensor * conv_input = ggml_concat(ctx0, state, ggml_transpose(ctx0, x), 0);
+    // channels-major: x is already [channels, tokens], so the time-major transpose drops out
+    ggml_tensor * conv_input = channels_major
+        ? ggml_concat(ctx0, state, x, 1)
+        : ggml_concat(ctx0, state, ggml_transpose(ctx0, x), 0);
 
     // [TAG_RECURRENT_ROLLBACK_SPLITS] keep the last state_cols columns once per rollback slot,
     // slot s ending s tokens earlier so a rollback of s tokens reads a history that never saw them
@@ -1508,12 +1521,19 @@ ggml_tensor * llama_model_qwen4exp::graph::build_conv_state_at(
     const int64_t n_slots = (int64_t) cparams.n_rs_seq + 1;
 
     for (int64_t slot = 0; slot < n_slots; ++slot) {
-        const int64_t s_idx = std::max<int64_t>(0, conv_input->ne[0] - state_cols - slot);
+        const int64_t s_idx = channels_major
+            ? std::max<int64_t>(0, conv_input->ne[1] - state_cols - slot)
+            : std::max<int64_t>(0, conv_input->ne[0] - state_cols - slot);
 
-        ggml_tensor * tail = ggml_view_3d(ctx0, conv_input,
-                state_cols, channels, n_seqs,
-                conv_input->nb[1], conv_input->nb[2],
-                ggml_row_size(conv_input->type, s_idx));
+        ggml_tensor * tail = channels_major
+            ? ggml_view_3d(ctx0, conv_input,
+                    channels, state_cols, n_seqs,
+                    conv_input->nb[1], conv_input->nb[2],
+                    s_idx * conv_input->nb[1])
+            : ggml_view_3d(ctx0, conv_input,
+                    state_cols, channels, n_seqs,
+                    conv_input->nb[1], conv_input->nb[2],
+                    ggml_row_size(conv_input->type, s_idx));
 
         ggml_tensor * dst = ggml_view_2d(ctx0, conv_states_all,
                 state_cols * channels, n_seqs,
@@ -1619,7 +1639,7 @@ ggml_tensor * llama_model_qwen4exp::graph::build_ple(
     // [hist + n_seq_tokens, hc_dim, n_seqs], tokens on ne[0]
     ggml_tensor * padded = build_conv_state_at(inp, inp->mctx->get_p_l(il),
             ggml_reshape_3d(ctx0, normalized, hc_dim, n_seq_tokens, n_seqs),
-            hist, hc_dim, il);
+            hist, hc_dim, false, il);
 
     ggml_tensor * conv_out = nullptr;
     for (int64_t k = 0; k < kern; ++k) {
