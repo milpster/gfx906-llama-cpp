@@ -1199,6 +1199,19 @@ static ggml_backend_buffer_t ggml_backend_alloc_ctx_tensors_from_buft_impl(
     size_t alignment = ggml_backend_buft_get_alignment(buft);
     size_t max_size = ggml_backend_buft_get_max_size(buft);
 
+    // large contiguous device allocations fail under VRAM fragmentation even when
+    // the total fits; optionally cap the range size so ranges split into chunks
+    const char * range_split_env = getenv("GGML_RANGE_SPLIT_MB");
+    if (range_split_env) {
+        const long range_split_mb = atol(range_split_env);
+        if (range_split_mb > 0) {
+            const size_t range_split = (size_t) range_split_mb * 1024 * 1024;
+            if (range_split < max_size) {
+                max_size = range_split;
+            }
+        }
+    }
+
     ggml_backend_buffer_t * buffers = NULL;
     size_t n_buffers = 0;
     *nbytes_total = 0;
