@@ -73,6 +73,9 @@ struct llama_mlock {
     void lock_ranges(std::vector<std::pair<size_t, size_t>> ranges);
     void grow_to(size_t target_size);
 
+    // merged, page-aligned offsets of successfully locked ranges, relative to init() ptr
+    const std::vector<std::pair<size_t, size_t>> & locked_ranges() const;
+
     static const bool SUPPORTED;
 
 private:

@@ -1798,7 +1798,32 @@ bool llama_model_loader::load_all_data(
             for (auto & [idx, ranges] : mlock_pending) {
                 LLAMA_LOG_INFO("%s: selective mlock: mapping %u, %zu ranges\n", __func__, idx, ranges.size());
                 lmlocks->at(idx)->lock_ranges(std::move(ranges));
-                LLAMA_LOG_INFO("%s: selective mlock: mapping %u done\n", __func__, idx);
+
+                // mainline #26659 registers whole mappings and fails when they rival RAM;
+                // only the locked ranges are registered, so no extra pages get pinned
+                if (getenv("GGML_CUDA_REGISTER_HOST")) {
+                    static const auto register_host_buffer = []() -> bool (*)(void *, size_t) {
+                        auto * dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
+                        if (!dev) {
+                            return nullptr;
+                        }
+                        auto * reg = ggml_backend_dev_backend_reg(dev);
+                        return (bool (*)(void *, size_t)) ggml_backend_reg_get_proc_address(reg, "ggml_backend_register_host_buffer");
+                    }();
+                    if (register_host_buffer) {
+                        const auto & locked = lmlocks->at(idx)->locked_ranges();
+                        uint8_t * base = (uint8_t *) mappings.at(idx)->addr();
+                        size_t registered = 0;
+                        const int64_t t_reg0 = ggml_time_us();
+                        for (const auto & [first, last] : locked) {
+                            if (register_host_buffer(base + first, last - first)) {
+                                registered += last - first;
+                            }
+                        }
+                        LLAMA_LOG_INFO("%s: registered %.2f GiB of locked weights for DMA in %.2f s\n", __func__,
+                                registered / (1024.0 * 1024.0 * 1024.0), (ggml_time_us() - t_reg0) / 1e6);
+                    }
+                }
             }
             mlock_pending.clear();
         }
