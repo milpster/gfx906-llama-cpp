@@ -11,6 +11,14 @@
 #include <cerrno>
 #include <algorithm>
 
+#ifdef __linux__
+#include <sys/syscall.h>
+#include <linux/mman.h>
+#ifndef MLOCK_ONFAULT
+#define MLOCK_ONFAULT 0x01
+#endif
+#endif
+
 #ifdef __has_include
     #if __has_include(<unistd.h>)
         #include <unistd.h>
@@ -691,6 +699,16 @@ struct llama_mlock::impl {
     }
 
     bool raw_lock(const void * addr, size_t size) const {
+#if defined(__linux__) && defined(MLOCK_ONFAULT)
+        // populate-now triggers a page-migration storm on large mapped ranges;
+        // lock pages on first fault instead
+        if (syscall(SYS_mlock2, addr, size, MLOCK_ONFAULT) == 0) {
+            return true;
+        }
+        if (errno != ENOSYS) {
+            return false;
+        }
+#endif
         if (!mlock(addr, size)) {
             return true;
         }
@@ -791,24 +809,125 @@ struct llama_mlock::impl {
         addr = ptr;
     }
 
-    void grow_to(size_t target_size) {
+    void insert_range(size_t first, size_t last) {
+        auto it = ranges.begin();
+        while (it != ranges.end() && it->second < first) {
+            ++it;
+        }
+
+        while (it != ranges.end() && it->first <= last) {
+            first = std::min(first, it->first);
+            last  = std::max(last,  it->second);
+            it = ranges.erase(it);
+        }
+
+        ranges.insert(it, { first, last });
+    }
+
+    void lock_range(size_t offset, size_t length) {
         GGML_ASSERT(addr);
-        if (failed_already) {
+        if (failed_already || length == 0) {
             return;
         }
+
         size_t granularity = lock_granularity();
-        target_size = (target_size + granularity - 1) & ~(granularity - 1);
-        if (target_size > size) {
-            if (raw_lock((uint8_t *) addr + size, target_size - size)) {
-                size = target_size;
+        size_t first = offset & ~(granularity - 1);
+        size_t last  = (offset + length + granularity - 1) & ~(granularity - 1);
+
+        std::vector<std::pair<size_t, size_t>> gaps;
+        size_t cursor = first;
+        for (const auto & range : ranges) {
+            if (range.second <= cursor) {
+                continue;
+            }
+            if (range.first >= last) {
+                break;
+            }
+            if (range.first > cursor) {
+                gaps.emplace_back(cursor, std::min(range.first, last));
+            }
+            cursor = std::max(cursor, range.second);
+            if (cursor >= last) {
+                break;
+            }
+        }
+        if (cursor < last) {
+            gaps.emplace_back(cursor, last);
+        }
+
+        for (const auto & gap : gaps) {
+            const size_t gap_size = gap.second - gap.first;
+            if (raw_lock((uint8_t *) addr + gap.first, gap_size)) {
+                size += gap_size;
+                insert_range(gap.first, gap.second);
             } else {
                 failed_already = true;
+                return;
             }
+        }
+    }
+
+    void grow_to(size_t target_size) {
+        lock_range(0, target_size);
+    }
+
+    void lock_ranges(std::vector<std::pair<size_t, size_t>> ranges) {
+        GGML_ASSERT(addr);
+        if (failed_already || ranges.empty()) {
+            return;
+        }
+
+        size_t granularity = lock_granularity();
+        for (auto & range : ranges) {
+            range.first  &= ~(granularity - 1);
+            range.second  = (range.second + granularity - 1) & ~(granularity - 1);
+        }
+
+        // ascending order keeps cold reads sequential
+        std::sort(ranges.begin(), ranges.end());
+
+        // readahead each interval so mlock faults hit warm pages instead of 4k reads
+        auto advise = [this](size_t first, size_t last) {
+#if defined(POSIX_MADV_WILLNEED)
+            if (last > first) {
+                posix_madvise((uint8_t *) addr + first, last - first, POSIX_MADV_WILLNEED);
+            }
+#else
+            GGML_UNUSED(first);
+            GGML_UNUSED(last);
+#endif
+        };
+
+        bool   open  = false;
+        size_t first = 0;
+        size_t last  = 0;
+        for (const auto & range : ranges) {
+            if (range.second <= range.first) {
+                continue;
+            }
+            if (open && range.first > last) {
+                advise(first, last);
+                lock_range(first, last - first);
+                if (failed_already) {
+                    return;
+                }
+                open = false;
+            }
+            if (!open) {
+                first = range.first;
+                open  = true;
+            }
+            last = std::max(last, range.second);
+        }
+        if (open) {
+            advise(first, last);
+            lock_range(first, last - first);
         }
     }
 
     void * addr;
     size_t size;
+    std::vector<std::pair<size_t, size_t>> ranges;
 
     bool failed_already;
 };
@@ -817,6 +936,7 @@ llama_mlock::llama_mlock() : pimpl(std::make_unique<impl>()) {}
 llama_mlock::~llama_mlock() = default;
 
 void llama_mlock::init(void * ptr) { pimpl->init(ptr); }
+void llama_mlock::lock_ranges(std::vector<std::pair<size_t, size_t>> ranges) { pimpl->lock_ranges(std::move(ranges)); }
 void llama_mlock::grow_to(size_t target_size) { pimpl->grow_to(target_size); }
 
 #if defined(_POSIX_MEMLOCK_RANGE) || defined(_WIN32)

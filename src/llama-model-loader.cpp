@@ -14,6 +14,10 @@
 #include <future>
 #include <regex>
 
+#ifdef __linux__
+#include <fcntl.h>
+#endif
+
 static const size_t kiB = 1024;
 static const size_t MiB = 1024*kiB;
 static const size_t GiB = 1024*MiB;
@@ -1441,7 +1445,8 @@ void llama_model_loader::init_mappings(bool prefetch, llama_mlocks * mlock_mmaps
                 }
             }
 
-            const size_t prefetch_size = prefetch && use_mmap ? -1 : 0;
+            // full-file WILLNEED pollutes the cache ahead of the mlock pass and makes it thrash
+            const size_t prefetch_size = prefetch && use_mmap && !mlock_mmaps ? -1 : 0;
 
             std::unique_ptr<llama_mmap> mapping = std::make_unique<llama_mmap>(file.get(), prefetch_size, is_numa,
                     lazy.for_file(idx));
@@ -1674,8 +1679,7 @@ bool llama_model_loader::load_all_data(
 
                 // locking a lazy tensor would fault all of it in, which is what lazy avoids
                 if (lmlocks && !lazy.has(cur)) {
-                    const auto & lmlock = lmlocks->at(weight->idx);
-                    lmlock->grow_to(weight->offs + n_size);
+                    mlock_pending[weight->idx].emplace_back(weight->offs, weight->offs + n_size);
                 }
 
                 auto & mmap_used = mmaps_used[weight->idx];
@@ -1790,6 +1794,15 @@ bool llama_model_loader::load_all_data(
 
     // check if this is the last call and do final cleanup
     if (size_done >= size_data) {
+        if (lmlocks && !mlock_pending.empty()) {
+            for (auto & [idx, ranges] : mlock_pending) {
+                LLAMA_LOG_INFO("%s: selective mlock: mapping %u, %zu ranges\n", __func__, idx, ranges.size());
+                lmlocks->at(idx)->lock_ranges(std::move(ranges));
+                LLAMA_LOG_INFO("%s: selective mlock: mapping %u done\n", __func__, idx);
+            }
+            mlock_pending.clear();
+        }
+
         // unmap offloaded tensors and metadata
         if (use_mmap) {
             for (uint32_t idx = 0; idx < mappings.size(); idx++) {

@@ -70,6 +70,7 @@ struct llama_mlock {
     ~llama_mlock();
 
     void init(void * ptr);
+    void lock_ranges(std::vector<std::pair<size_t, size_t>> ranges);
     void grow_to(size_t target_size);
 
     static const bool SUPPORTED;
