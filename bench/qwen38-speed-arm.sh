@@ -12,7 +12,7 @@ shift 2
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 BUILD_DIR=${BUILD_DIR:-$REPO/build-sync0909}
 BIN=$BUILD_DIR/bin/llama-cli
-MODEL=/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf
+MODEL=${MODEL:-/home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf}
 DRAFT=/home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf
 MMPROJ=/home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf
 PROMPT_SOURCE=${PROMPT_SOURCE:-$REPO/bench/logs/q38speed/prompt-16384.txt}
@@ -45,6 +45,8 @@ OT=${OT:-}
 LZM=${LZM:-on}
 LM=${LM:-mmap}
 DEVICE=${DEVICE:-rocm0,vulkan1,rocm1}
+PIPELINE=${PIPELINE:-off}
+SM=${SM:-layer}
 
 BASE_ARGS=(
     -m "$MODEL"
@@ -52,7 +54,7 @@ BASE_ARGS=(
     -lm "$LM" -lzm "$LZM" -fit off -fa on -ngl all -ncmoe "$NCMOE"
     -b "$B" -ub "$UB" -cram 0 --ctx-checkpoints 0
     --device "$DEVICE" -np 1 -mg 0
-    --pipeline-parallel off -sm layer -ts "$TS"
+    --pipeline-parallel "$PIPELINE" -sm "$SM" -ts "$TS"
     -c "$CTX" -ctk f16 -ctv f16
     --temp 0 --seed 42 -n 0 --no-warmup
 )

@@ -7,15 +7,15 @@ set -eu
 #
 # GATE PENDING (do NOT treat as production until passed):
 #   bench/qwen38-nondet-arm.sh x3 + TG/acceptance lane at THIS geometry.
-#   New geometry vs E142 (ts 70,10,20 + L42 -ot + ub5712): determinism NOT
+#   New geometry vs E142 (ts 70,10,20 + projection -ot + ub5712): determinism NOT
 #   yet proven; E158's sibling geometry was 3/3 unique on the pre-sync build.
 #
 # Load-bearing (see journal/JOURNAL-2026-09-21.md E175):
 #   - GGML_RANGE_SPLIT_MB=2048 REQUIRED with -lzm on-direct on the 0920 sync
 #     (contiguous ROCm1 range regression); harmless without it.
-#   - -ot 'blk\.(3[1-9]|4[01])=CPU' hosts expert layers 31-41: required for
-#     the ub5712 fit; deeper hosting (L43+) hits the E166b RAM wall.
-#   - threads MUST stay <= 8 (E141); ncmoe 31; mmproj CPU; -otd '.*=ROCm0'.
+#   - Projection-level CPU hosting keeps 602/361/476 MiB free on
+#     ROCm0/Vulkan1/ROCm1 (bench/logs/q38speed/tenancy-recovery-n27-vk2p2-r1p2).
+#   - threads MUST stay <= 8 (E141); ncmoe 27; mmproj CPU; -otd '.*=ROCm0'.
 
 AMD_LOG_LEVEL=0 \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 \
@@ -32,12 +32,12 @@ LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_ll
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads 8 --threads-batch 8 --poll 0 --poll-batch 0 \
-  -lm mmap -lzm on -fit off -fa on -ngl all -ncmoe 31 \
+  -lm mmap -lzm on -fit off -fa on -ngl all -ncmoe 27 \
   -b 5712 -ub 5712 -cram 0 --ctx-checkpoints 0 \
   --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
   --pipeline-parallel off -sm layer -ts 70,10,20 \
   -c 20480 -ctk f16 -ctv f16 \
-  -ot 'blk\.(3[1-9]|4[01])=CPU' \
+  -ot '(blk\.(3[1-4]|3[89])\.ffn_(up|gate|down)_exps\.|blk\.37\.ffn_down_exps\.|blk\.41\.ffn_down_exps\.)=CPU' \
   -md /home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf \
   --spec-type draft-mtp-adaptive --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3 \
   -ngld all -ctkd f16 -ctvd f16 -otd '.*=ROCm0' \
