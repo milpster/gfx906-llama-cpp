@@ -399,6 +399,11 @@ bool ggml_cuda_should_use_topk_moe(const ggml_tensor * gating_op,
                                    const ggml_tensor * weights,
                                    const ggml_tensor * logits,
                                    const ggml_tensor * ids) {
+#if !GGML_CUDA_VEGA_TUNE_TOPK_MOE_FUSION
+    // off by default: the fused kernel is much slower than the unfused sequence
+    // (with the tuned top-k kernels) at prefill batch sizes on Vega 20
+    return false;
+#endif
     // must match an instantiation of launch_topk_moe_cuda: a power of 2 up to 512,
     // or one of the non-power-of-2 expert counts of supported models
     const int n_expert = ids->nb[1] / ids->nb[0];

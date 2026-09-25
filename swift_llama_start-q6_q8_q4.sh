@@ -9,10 +9,10 @@
 # ngram-mod chained ahead of the drafter (F5, 24/28/64): no fill tax,
 # idle on novel content, drafts for real on replayed spans (54 gen /
 # 45 acc, mean len 46) - insurance for replay-heavy sessions.
-# bin/LD_LIB = build-dflash-novega with the vega MMQ/TOPK/GRAPHS tunes
+# bin/LD_LIB = build-rcfix with the vega MMQ/TOPK/GRAPHS tunes + 0924 sync fixes
 # (E82/E83: tuned release lane pp 369 / fill 327 / tg 13.3, canonical
 # sha, repro gate passes; ~395+ client-scale PP16384).
-# LD_LIBRARY_PATH must carry build-sync0909/bin: RUNPATH lets a
+# LD_LIBRARY_PATH must carry build-rcfix/bin: RUNPATH lets a
 # stale lib path shadow the entire build (E70).
 # LLAMA_DFLASH_MIRROR_OUTPUT=1 + --spec-draft-device ROCm0: local copy
 # of the borrowed vocab head on the drafter's device -> single-device
@@ -38,8 +38,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-rcfix/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-rcfix/bin}
 # Logging (no -v): --log-file tees normal (non-verbose) output to a file while
 # the terminal keeps it; --log-prompts-dir writes one .txt per request with the
 # full prompt (tokens in) and, appended at completion, token ids + text (tokens
@@ -47,9 +47,12 @@ LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
 LOG_DIR=${LOG_DIR:-$SCRIPT_DIR/log}
 PORT=${PORT:-8009}
 mkdir -p "$LOG_DIR/prompts"
+# A/B knobs (defaults = shipped config): FATTN_PATH, SPEC_N_MAX, PIPELINE, SSM_CM, GRAPHS
+[ -n "${SSM_CM:-}" ] && export LLAMA_QWEN4EXP_SSM_CONV_CM=1
+[ "${GRAPHS:-1}" = "0" ] && export GGML_CUDA_DISABLE_GRAPHS=1
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 LLAMA_DFLASH_MIRROR_OUTPUT=1 \
-GGML_CUDA_FATTN_PATH=force_convert \
+GGML_CUDA_FATTN_PATH="${FATTN_PATH:-force_convert}" \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 HSA_OVERRIDE_GFX_VERSION=9.0.6 \
 HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 HIP_FORCE_P2P=1 \
 GPU_SINGLE_ALLOC_PERCENT=100 HSA_ENABLE_SDMA=1 \
@@ -59,7 +62,7 @@ exec "$BIN" \
   -m /home/srcds/ai/ai/Swift-Qwen3.8-27B-Q6_K.gguf \
   --mmproj /home/srcds/ai/ai/mmproj-F16.gguf \
   -md /home/srcds/ai/ai/Qwen3.8-27B-DFlash2-Q4_K_M.gguf \
-  --spec-type ngram-mod,draft-dflash --spec-draft-n-max 3 \
+  --spec-type ngram-mod,draft-dflash --spec-draft-n-max "${SPEC_N_MAX:-3}" \
   --spec-ngram-mod-n-match 24 --spec-ngram-mod-n-min 28 --spec-ngram-mod-n-max 64 \
   --spec-draft-override-tensor '.*=ROCm0' --spec-draft-device ROCm0 -ngld 99 \
   --threads-batch 10 --threads 9 --load-mode none -fa on -ngl 333 \
@@ -71,7 +74,7 @@ exec "$BIN" \
   -ctk q8_0 -ctv q4_0 \
   -cram 28000 --reasoning-format deepseek \
   --chat-template-file "$SCRIPT_DIR/sharp_chat_template.jinja" \
-  --pipeline-parallel off \
+  --pipeline-parallel "${PIPELINE:-off}" \
   -ts 34,23,43 -sm layer -c 393500 \
   --no-mmproj-offload \
   --log-file "$LOG_DIR/llama-server-iq6v-f16-f16.log" \

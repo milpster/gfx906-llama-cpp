@@ -1,0 +1,1 @@
+{"load_s": 0.0, "n_ctx": 196864, "pp_n": 15999, "pp_tps": 310.7, "fill1": {"processed": 16387, "tps": 301.1}, "tg_n": 1024, "tg_tps": 24.1, "tg_depth_cached": 16383, "acc": 0.702, "tg_sha": "88e1d75cbceb", "repro_ok": false, "repro_before_sha": "7819c15fee0d", "repro_after_sha": "797bd4357ff2", "sha": "7819c15fee0d"}

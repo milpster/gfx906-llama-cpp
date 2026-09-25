@@ -4,8 +4,8 @@
 > 250k context for a 27B Q6_K on 40 GB VRAM, DFlash2 speculative
 > decoding (+43% TG vs what mainline can do here), near-identical
 > outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
-> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-09 (434ddbbc0,
-> 93 commits, lane-gated E139; master carries it all).
+> mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-24 (merge
+> 7887b8887, lane-gated; master carries it all).
 >
 > **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
 > (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
@@ -115,6 +115,7 @@
 > | fattn scheduling/geometry probes (fork lanes) | compiler schedule is a local optimum (-0.5 to -5.8%) |
 > | deeper draft n_max=5 (fork lane) | 6-row verify hits a kernel-shape cliff (-28% TG) |
 > | K quantization beyond q8_0-V (fork measurement, E54) | native tile -2.6 t/s, depth effect only ~5% |
+> | native q8_0-K/q4_0-V fattn tile as default (E184-E190) | bit-canonical after geometry mirror, but slower than convert at every depth (16k -3%, 160k fill -15%, 160k TG -9%); stays a certified fallback |
 > | ts rebalance / drafter relocation (fork lanes, E105 + 08-15 sweeps) | decode is overhead-bound, not bandwidth-bound |
 > | checkpoint sparsify / off (fork lanes, AB6 + E119.4) | neutral / breaks prompt restore |
 > | WY-chunked GDN prefill, software tiles (upstream #26001 port, E137) | x0.5 vs recurrent - gfx906 has no matrix units; op is latency-bound at 2.6% FP32 peak |
@@ -151,8 +152,9 @@
 > (A/B harness, FINDINGS.md, vram-test, rocprof stack). Build:
 > ./build-dflash-novega.sh (Vulkan + ROCm 6.1 - pinned, the measured
 > optimum for gfx906 here; launchers also pin its userspace). Current
-> prod build: build-sync0909/bin (0.4.0-dev b11053, master 2026-09-09);
-> launchers 2llama-start-*.sh point there (rollback: build-dflash-novega).
+> prod build: build-rcfix/bin (0.5.0-dev, 0924 sync + q4v tile fixes,
+> promoted 2026-09-25); launchers 2llama-start-*.sh point there
+> (rollback: build-sync0909).
 >
 # llama.cpp
 

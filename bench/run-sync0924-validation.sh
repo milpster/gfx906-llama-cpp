@@ -57,4 +57,4 @@ for _ in $(seq 1 450); do
 done
 [ -n "$ready" ] || { echo "ERROR: validation server did not listen within 15 minutes"; exit 1; }
 
-FILL1=16384 TG_N=1024 python3 "$ROOT/bench/cmp-client.py" "$PORT" | tee "$OUT/result.json"
+FILL1=${FILL1:-16384} TG_N=${TG_N:-1024} python3 "$ROOT/bench/cmp-client.py" "$PORT" | tee "$OUT/result.json"

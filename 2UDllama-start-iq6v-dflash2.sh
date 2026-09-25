@@ -11,8 +11,8 @@
 # --spec-draft-n-max 4: beats 7 at depth (TG 9.0 vs 8.6, X2); acceptance
 # rate drops .708 -> .646 but t/s is the metric (journal K3). ngram-mod
 # measured a no-op (X1).
-# bin/LD_LIB = build-dflash-novega with the vega MMQ/TOPK/GRAPHS tunes
-# (E82/E83). LD_LIBRARY_PATH must carry build-dflash-novega/bin: RUNPATH
+# bin/LD_LIB = build-rcfix with the vega MMQ/TOPK/GRAPHS tunes + 0924 sync fixes
+# (E82/E83). LD_LIBRARY_PATH must carry build-rcfix/bin: RUNPATH
 # lets a stale lib path shadow the entire build (E70).
 # force_convert: keeps the FATTN path convert-native as sessions age
 # (selector re-check quirk, E75); costs <=3% on first PP batches.
@@ -34,8 +34,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-dflash-novega/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-dflash-novega/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-rcfix/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-rcfix/bin}
 
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 GGML_CUDA_FATTN_PATH=force_convert \

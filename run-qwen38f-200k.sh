@@ -31,7 +31,7 @@ HSA_DISABLE_FRAGMENT_ALLOCATOR=0 \
 GPU_MAX_ALLOC_PERCENT=100 \
 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-qwen38-mtp/bin:/opt/rocm-6.1.0/lib \
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-qwen38-mtp/bin/llama-server \
-  -m /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf \
+  -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads 8 --threads-batch 8 --poll 0 --poll-batch 0 \
   -lm mmap -lzm on -fit off -fa on -ngl all -ncmoe 31 \
   -b 512 -ub 128 -cram 0 --ctx-checkpoints 0 \

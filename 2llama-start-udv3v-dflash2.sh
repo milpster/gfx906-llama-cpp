@@ -27,8 +27,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-rcfix/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-rcfix/bin}
 
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 LLAMA_DFLASH_MIRROR_OUTPUT=1 \

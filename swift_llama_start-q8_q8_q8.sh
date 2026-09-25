@@ -9,10 +9,10 @@
 # ngram-mod chained ahead of the drafter (F5, 24/28/64): no fill tax,
 # idle on novel content, drafts for real on replayed spans (54 gen /
 # 45 acc, mean len 46) - insurance for replay-heavy sessions.
-# bin/LD_LIB = build-dflash-novega with the vega MMQ/TOPK/GRAPHS tunes
+# bin/LD_LIB = build-rcfix with the vega MMQ/TOPK/GRAPHS tunes + 0924 sync fixes
 # (E82/E83: tuned release lane pp 369 / fill 327 / tg 13.3, canonical
 # sha, repro gate passes; ~395+ client-scale PP16384).
-# LD_LIBRARY_PATH must carry build-sync0909/bin: RUNPATH lets a
+# LD_LIBRARY_PATH must carry build-rcfix/bin: RUNPATH lets a
 # stale lib path shadow the entire build (E70).
 # LLAMA_DFLASH_MIRROR_OUTPUT=1 + --spec-draft-device ROCm0: local copy
 # of the borrowed vocab head on the drafter's device -> single-device
@@ -40,8 +40,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-rcfix/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-rcfix/bin}
 # Logging (no -v): --log-file tees normal (non-verbose) output to a file while
 # the terminal keeps it; --log-prompts-dir writes one .txt per request with the
 # full prompt (tokens in) and, appended at completion, token ids + text (tokens

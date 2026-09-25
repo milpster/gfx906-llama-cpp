@@ -554,6 +554,23 @@ static bool ggml_cuda_fattn_tile_v_q8_0_native(const int device, const ggml_tens
     const uint32_t cfg = ggml_cuda_fattn_tile_get_config_amd(K->ne[0], V->ne[0], K->ne[0] <= 128 ? 64 : 32);
     return cfg != 0;
 }
+
+// Mixed q8_0 K + q4_0 V on GCN: both dequantize in-kernel, no F16 shadow for either.
+// The 18-byte q4_0 blocks need the V row stride to stay a whole number of blocks.
+static bool ggml_cuda_fattn_tile_q8_0_q4_0_native(const int device, const ggml_tensor * dst) {
+    const ggml_tensor * Q = dst->src[0];
+    const ggml_tensor * K = dst->src[1];
+    const ggml_tensor * V = dst->src[2];
+    const int cc = ggml_cuda_info().devices[device].cc;
+    if (!(K->type == GGML_TYPE_Q8_0 && V->type == GGML_TYPE_Q4_0 && GGML_CUDA_CC_IS_GCN(cc) &&
+            K->ne[0] == V->ne[0] && V->ne[0] <= 256 && V->ne[0] % 32 == 0 && Q->ne[1] > 2 &&
+            V->nb[1] % sizeof(block_q4_0) == 0)) {
+        return false;
+    }
+    const uint32_t cfg = ggml_cuda_fattn_tile_get_config_amd(K->ne[0], V->ne[0], K->ne[0] <= 128 ? 64 : 32);
+    const int nbatch_K = (cfg >> 23) & ((1 << 9) - 1);
+    return cfg != 0 && nbatch_K % 32 == 0 && K->ne[0] % nbatch_K == 0;
+}
 #endif
 
 // K/V types for which there is a vector kernel template instance, other kernels convert these to f16:
@@ -677,7 +694,8 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
         // GCN: q8_0 K/V take the native tile kernel when the path decision selects it.
         if (ggml_cuda_fattn_use_native_tile(device, dst) &&
                 (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
-                 ggml_cuda_fattn_tile_v_q8_0_native(device, dst))) {
+                 ggml_cuda_fattn_tile_v_q8_0_native(device, dst) ||
+                 ggml_cuda_fattn_tile_q8_0_q4_0_native(device, dst))) {
             return BEST_FATTN_KERNEL_TILE;
         }
         if (!(GGML_CUDA_CC_IS_GCN(cc) && Q->ne[1] > 2)) {
@@ -791,8 +809,9 @@ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * d
 #if GGML_CUDA_VEGA_TUNE_FATTN
             if (ggml_cuda_fattn_use_native_tile(device, dst) &&
                     (ggml_cuda_fattn_tile_q8_0_native(device, dst) ||
-                     ggml_cuda_fattn_tile_v_q8_0_native(device, dst))) {
-                break; // q8_0 is dequantized in-kernel, no F16 shadow needed
+                     ggml_cuda_fattn_tile_v_q8_0_native(device, dst) ||
+                     ggml_cuda_fattn_tile_q8_0_q4_0_native(device, dst))) {
+                break; // K/V are dequantized in-kernel, no F16 shadow needed
             }
 #endif
             need_f16_K = true;

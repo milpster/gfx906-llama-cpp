@@ -1259,9 +1259,13 @@ void llama_batch_compat::init(llama_batch_ext & dst, const llama_batch & batch_i
     static const int32_t      default_n_seq_id  = 1;
 
     // auto-generates positions locally when batch_inp.pos is null, continuing from memory
-    std::vector<llama_pos> pos_next(batch_ext->n_seq_max);
-    for (llama_seq_id s = 0; s < (llama_seq_id) batch_ext->n_seq_max; ++s) {
-        pos_next[s] = llama_memory_seq_pos_max(batch_ext->mem, s) + 1; // assume next pos
+    // note: seq_pos_max is a linear scan over the recurrent cells, skip it when pos is given
+    std::vector<llama_pos> pos_next;
+    if (!batch_inp.pos) {
+        pos_next.resize(batch_ext->n_seq_max);
+        for (llama_seq_id s = 0; s < (llama_seq_id) batch_ext->n_seq_max; ++s) {
+            pos_next[s] = llama_memory_seq_pos_max(batch_ext->mem, s) + 1; // assume next pos
+        }
     }
 
     for (int32_t i = 0; i < batch_inp.n_tokens; ++i) {

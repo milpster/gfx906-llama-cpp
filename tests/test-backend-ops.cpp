@@ -7874,6 +7874,7 @@ struct test_flash_attn_ext : public test_case {
     const bool kv_view; // create K/V as views of a larger buffer (like a KV cache)
     const bool v_is_view_of_k;
     const int64_t n_kv_max;
+    const bool kv_interleaved; // mimic the unified KV cache: heads interleaved per row
 
     std::string vars() override {
         return VARS_TO_STR17(hsk, hsv, nh, nr23, kv, nb, mask, sinks, max_bias, logit_softcap, prec, type_K, type_V, permute, kv_view, v_is_view_of_k, n_kv_max);
@@ -7893,9 +7894,9 @@ struct test_flash_attn_ext : public test_case {
     test_flash_attn_ext(int64_t hsk = 128, int64_t hsv = 128, int64_t nh = 32, std::array<int64_t, 2> nr23 = {1, 1}, int64_t kv = 96, int64_t nb = 8,
                         bool mask = true, bool sinks = false, float max_bias = 0.0f, float logit_softcap = 0.0f, ggml_prec prec = GGML_PREC_F32,
                         ggml_type type_K = GGML_TYPE_F16, ggml_type type_V = GGML_TYPE_F16, std::array<int32_t, 4> permute = {0, 1, 2, 3},
-                        bool kv_view = true, bool v_is_view_of_k = false, int64_t n_kv_max = 0)
+                        bool kv_view = true, bool v_is_view_of_k = false, int64_t n_kv_max = 0, bool kv_interleaved = false)
         : hsk(hsk), hsv(hsv), nh(nh), nr23(nr23), kv(kv), nb(nb), mask(mask), sinks(sinks), max_bias(max_bias), logit_softcap(logit_softcap), prec(prec),
-          type_K(type_K), type_V(type_V), permute(permute), kv_view(kv_view), v_is_view_of_k(v_is_view_of_k), n_kv_max(n_kv_max) {}
+        type_K(type_K), type_V(type_V), permute(permute), kv_view(kv_view), v_is_view_of_k(v_is_view_of_k), n_kv_max(n_kv_max), kv_interleaved(kv_interleaved) {}
 
     ggml_tensor * build_graph(ggml_context * ctx) override {
         const int64_t hsk_padded = GGML_PAD(hsk, ggml_blck_size(type_K));
@@ -7923,10 +7924,21 @@ struct test_flash_attn_ext : public test_case {
         ggml_tensor * q = create_permuted(GGML_TYPE_F32, hsk_padded, nb, nh*nr23[0], nr23[1], false);
         ggml_set_name(q, "q");
 
-        ggml_tensor * k = create_permuted(type_K,        hsk_padded, kv, nh,         nr23[1], kv_view); // the K tensor is usually a view of the K cache
+        ggml_tensor * k = nullptr;
+        ggml_tensor * v = nullptr;
+        if (kv_interleaved) {
+            const int64_t hs_k = hsk_padded*ggml_type_size(type_K)/ggml_blck_size(type_K);
+            ggml_tensor * pk = ggml_new_tensor_4d(ctx, type_K, hsk_padded*nh, 2*kv, 1, nr23[1]);
+            k = ggml_view_4d(ctx, pk, hsk_padded, kv, nh, nr23[1], pk->nb[1], hs_k, pk->nb[3], 0);
+            const int64_t hs_v = hsv_padded*ggml_type_size(type_V)/ggml_blck_size(type_V);
+            ggml_tensor * pv = ggml_new_tensor_4d(ctx, type_V, hsv_padded*nh, 2*kv, 1, nr23[1]);
+            v = ggml_view_4d(ctx, pv, hsv_padded, kv, nh, nr23[1], pv->nb[1], hs_v, pv->nb[3], 0);
+            ggml_set_name(k, "k");
+            ggml_set_name(v, "v");
+        } else {
+        k = create_permuted(type_K,        hsk_padded, kv, nh,         nr23[1], kv_view); // the K tensor is usually a view of the K cache
         ggml_set_name(k, "k");
 
-        ggml_tensor * v = nullptr;
         if (v_is_view_of_k) {
             // the V cache is a sub-view of the K cache. this is used by some MLA-based models
             // for more info:
@@ -7940,6 +7952,7 @@ struct test_flash_attn_ext : public test_case {
             v = create_permuted(type_V,        hsv_padded, kv, nh,         nr23[1], kv_view); // the V tensor is usually a view of the V cache
         }
         ggml_set_name(v, "v");
+        }
 
         ggml_tensor * m = nullptr;
         if (mask) {
@@ -10874,9 +10887,22 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
                 for (ggml_type type_KV : { GGML_TYPE_F16, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, }) {
                     test_cases.emplace_back(new test_flash_attn_ext(hs, hs, 8, {4, 1}, kv, nb, true, false, 0, 0, GGML_PREC_F32, type_KV, type_KV));
                 }
+                // mixed K/V types cover the gfx906 native tile path
+                test_cases.emplace_back(new test_flash_attn_ext(hs, hs, 8, {4, 1}, kv, nb, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0));
             }
         }
     }
+    // mixed K/V types cover the gfx906 native tile path
+    test_cases.emplace_back(new test_flash_attn_ext(64, 64, 8, {4, 1}, 1024, 32, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0));
+    // ragged KV tail and Swift-like geometry (hd 256, GQA 6, unified-cache rows)
+    test_cases.emplace_back(new test_flash_attn_ext(128, 128, 4, {8, 1}, 1030, 384, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, {0, 1, 2, 3}, true, false, 0, true));
+    test_cases.emplace_back(new test_flash_attn_ext(256, 256, 4, {6, 1}, 16388, 384, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, {0, 1, 2, 3}, true, false, 0, true));
+    // DIAGNOSTIC (revert me): lane TG/spec verify shapes - few query rows, deep KV
+    for (int nq : { 3, 4, 5, 33, }) {
+        test_cases.emplace_back(new test_flash_attn_ext(256, 256, 4, {6, 1}, 16388, nq, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, {0, 1, 2, 3}, true, false, 0, true));
+    }
+    // DIAGNOSTIC (revert me): repro-prompt shape - shallow causal batch
+    test_cases.emplace_back(new test_flash_attn_ext(256, 256, 4, {6, 1}, 33, 33, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0, {0, 1, 2, 3}, true, false, 0, true));
 
     for (int hsk : { 40, 64, 72, 80, 96, 128, 192, 256, 320, 512, 576 }) {
         for (int hsv : { 40, 64, 72, 80, 96, 128, 192, 256, 512 }) {

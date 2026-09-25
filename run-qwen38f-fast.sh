@@ -29,8 +29,8 @@ GPU_MAX_ALLOC_PERCENT=100 \
 GGML_RANGE_SPLIT_MB=2048 \
 GGML_EXPS_RING=1 \
 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-sync0920/bin:/opt/rocm-6.1.0/lib \
-exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-sync0920/bin/llama-server \
-  -m /home/srcds/ai/ai/Qwen3.8-Flash-Next-AD-4.27bpw-Q4_K_M-M64.gguf \
+exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
+  -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads 8 --threads-batch 8 --poll 0 --poll-batch 0 \
   -lm mmap -lzm on -fit off -fa on -ngl all -ncmoe 31 \
   -b 5712 -ub 5712 -cram 0 --ctx-checkpoints 0 \

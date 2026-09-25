@@ -9,10 +9,10 @@
 # ngram-mod chained ahead of the drafter (F5, 24/28/64): no fill tax,
 # idle on novel content, drafts for real on replayed spans (54 gen /
 # 45 acc, mean len 46) - insurance for replay-heavy sessions.
-# bin/LD_LIB = build-dflash-novega with the vega MMQ/TOPK/GRAPHS tunes
+# bin/LD_LIB = build-rcfix with the vega MMQ/TOPK/GRAPHS tunes + 0924 sync fixes
 # (E82/E83: tuned release lane pp 369 / fill 327 / tg 13.3, canonical
 # sha, repro gate passes; ~395+ client-scale PP16384).
-# LD_LIBRARY_PATH must carry build-sync0909/bin: RUNPATH lets a
+# LD_LIBRARY_PATH must carry build-rcfix/bin: RUNPATH lets a
 # stale lib path shadow the entire build (E70).
 # LLAMA_DFLASH_MIRROR_OUTPUT=1 + --spec-draft-device ROCm0: local copy
 # of the borrowed vocab head on the drafter's device -> single-device
@@ -40,8 +40,8 @@
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-sync0909/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-sync0909/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-rcfix/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-rcfix/bin}
 # Logging (no -v): --log-file tees normal (non-verbose) output to a file while
 # the terminal keeps it; --log-prompts-dir writes one .txt per request with the
 # full prompt (tokens in) and, appended at completion, token ids + text (tokens
@@ -51,7 +51,7 @@ mkdir -p "$LOG_DIR/prompts"
 
 HIP_GRAPH=1 AMD_LOG_LEVEL=0 \
 LLAMA_DFLASH_MIRROR_OUTPUT=1 \
-GGML_CUDA_FATTN_PATH=force_convert \
+GGML_CUDA_FATTN_PATH="${FATTN_PATH:-force_convert}" \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 HSA_OVERRIDE_GFX_VERSION=9.0.6 \
 HIP_VISIBLE_DEVICES=0,1 HSA_XNACK=0 HIP_FORCE_P2P=1 \
 GPU_SINGLE_ALLOC_PERCENT=100 HSA_ENABLE_SDMA=1 \
@@ -68,7 +68,7 @@ exec "$BIN" \
   -b 16384 -ub 384 --ctx-checkpoints 30 \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
-  --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
+  --device rocm0,vulkan1,rocm1 --port "${PORT:-8009}" -np 1 -mg 0 \
   --reasoning-preserve --reasoning on \
   -ctk q8_0 -ctv q8_0 \
   -cram 28000 --reasoning-format deepseek \
