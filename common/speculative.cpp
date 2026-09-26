@@ -1678,34 +1678,10 @@ struct common_speculative_impl_draft_mtp : public common_speculative_impl {
 
         // if kv is shared with target (e.g Gemma4), then we can skip this catch-up decode
         if (!is_mem_shared) {
-            common_batch_clear(batch);
-
-            for (int k = 0; k < n_tokens; ++k) {
-                common_batch_add(batch, batch_in.token[k], batch_in.pos[k], { batch_in.seq_id[k][0] }, 0);
-            }
-
-            // shift the tgt embeddings to the right by one position
-            // assumes that the tokens in the batch are sequential for each sequence
-            // i.e. we cannot have seq_id like this: [0, 0, 0, 1, 1, 0, 1, 1]
-            //                                                       ^--- this is a problem
-            // TODO:this is generally true, but would be nice to assert it
-            {
-                const float * h_tgt = llama_get_embeddings_nextn(ctx_tgt);
-                std::memcpy(batch.embd + (size_t) 1 * n_embd, h_tgt, row_bytes * (n_tokens-1));
-            }
-
-            // fill the pending embeddings from a previous run
-            auto set_h = [&](int idx, const float * h_row) {
-                std::memcpy(batch.embd + (size_t) idx * n_embd, h_row, row_bytes);
-            };
-
-            for (llama_seq_id seq_id = 0; seq_id < (llama_seq_id) n_seq; ++seq_id) {
-                if (i_batch_beg[seq_id] < 0) {
-                    continue;
-                }
-
-                set_h(i_batch_beg[seq_id], pending_h[seq_id].data());
-            }
+            // the draft context batch is capped at the drafting width, but the target
+            // hands us whole prefill ubatches: catch up in draft-sized chunks
+            const int32_t n_cap = (int32_t) llama_n_batch(ctx_dft);
+            const float * h_tgt = llama_get_embeddings_nextn(ctx_tgt);
 
             auto * mem_dft = llama_get_memory(ctx_dft);
 
@@ -1722,12 +1698,38 @@ struct common_speculative_impl_draft_mtp : public common_speculative_impl {
                     llama_set_nextn_layer_offset(ctx_dft, head);
                 }
 
-                const int32_t rc = llama_decode(ctx_dft, batch);
-                if (rc != 0) {
-                    SPC_ERR("llama_decode(ctx_dft) head=%d failed rc=%d (pos=%d)\n",
-                            head, (int) rc, (int) batch_in.pos[0]);
-                    ok = false;
-                    break;
+                for (int32_t beg = 0; beg < n_tokens && ok; beg += n_cap) {
+                    const int32_t end = std::min(n_tokens, beg + n_cap);
+
+                    common_batch_clear(batch);
+
+                    for (int k = beg; k < end; ++k) {
+                        common_batch_add(batch, batch_in.token[k], batch_in.pos[k], { batch_in.seq_id[k][0] }, 0);
+                    }
+
+                    // shift the tgt embeddings to the right by one position
+                    // assumes that the tokens in the batch are sequential for each sequence
+                    // i.e. we cannot have seq_id like this: [0, 0, 0, 1, 1, 0, 1, 1]
+                    //                                                       ^--- this is a problem
+                    // TODO:this is generally true, but would be nice to assert it
+                    std::memcpy(batch.embd + (size_t) 1 * n_embd, h_tgt + (size_t) beg * n_embd, row_bytes * (end - beg - 1));
+
+                    // row 0 continues from the previous chunk, or the pending
+                    // embedding where a sequence starts
+                    {
+                        const llama_seq_id seq_id = batch_in.seq_id[beg][0];
+                        const float * h0 = beg == i_batch_beg[seq_id]
+                            ? pending_h[seq_id].data()
+                            : h_tgt + (size_t) (beg - 1) * n_embd;
+                        std::memcpy(batch.embd, h0, row_bytes);
+                    }
+
+                    const int32_t rc = llama_decode(ctx_dft, batch);
+                    if (rc != 0) {
+                        SPC_ERR("llama_decode(ctx_dft) head=%d failed rc=%d (pos=%d)\n",
+                                head, (int) rc, (int) batch_in.pos[beg]);
+                        ok = false;
+                    }
                 }
             }
 
@@ -2700,6 +2702,23 @@ common_params common_base_params_to_speculative(const common_params & params) {
         if (params_spec.backend_sampling) {
             result.n_outputs_max_per_seq = per_seq;
         }
+    }
+
+    // MTP drafting never submits more than n_seq*(n_max + 1) tokens, so the draft
+    // context never needs the target's batch width: capping keeps its compute
+    // buffers and fattn pool at the drafting width instead of the prefill width.
+    // process() catches the target's prefill ubatches up in chunks. Block and
+    // EAGLE3 drafters keep the inherited batch until their paths are verified.
+    const bool has_mtp_draft = std::any_of(
+        params.speculative.types.begin(), params.speculative.types.end(),
+        [](common_speculative_type t) {
+            return t == COMMON_SPECULATIVE_TYPE_DRAFT_MTP ||
+                   t == COMMON_SPECULATIVE_TYPE_DRAFT_MTP_ADAPTIVE;
+        });
+    if (has_mtp_draft) {
+        const int32_t draft_batch = std::max(1, params_spec.n_max + 1);
+        result.n_batch  = std::min(result.n_batch,  draft_batch);
+        result.n_ubatch = std::min(result.n_ubatch, draft_batch);
     }
 
     return result;
