@@ -38,19 +38,24 @@
 
 constexpr int HTTP_POLLING_SECONDS = 1;
 
-// Upstream #28118: keep per-round speculative recurrent-state checkpoints on-device
-// instead of a host round-trip per draft round. GGML_SPEC_CKPT_ON_DEVICE:
-// 0 = host (default, upstream stock), "draft" = draft context only, 1 = both.
-// The target-side on-device checkpoint costs VRAM on the target devices and was
-// measured slowing later big prefills by ~19% on the tight fast-lane fit.
-static llama_state_seq_flags spec_ckpt_flags(bool draft) {
+// 0 = host (default), 1 = draft context only, 2 = both
+static int spec_ckpt_mode() {
     static const int mode = []{
         const char * env = getenv("GGML_SPEC_CKPT_ON_DEVICE");
         if (env == nullptr) return 0;
         if (strcmp(env, "draft") == 0) return 1;
         return atoi(env) != 0 ? 2 : 0;
     }();
-    const bool on_device = mode == 2 || (mode == 1 && draft);
+    return mode;
+}
+
+// Upstream #28118: keep per-round speculative recurrent-state checkpoints on-device
+// instead of a host round-trip per draft round. GGML_SPEC_CKPT_ON_DEVICE:
+// 0 = host (default, upstream stock), "draft" = draft context only, 1 = both.
+// The target-side on-device checkpoint costs VRAM on the target devices and was
+// measured slowing later big prefills by ~19% on the tight fast-lane fit.
+static llama_state_seq_flags spec_ckpt_flags(bool draft) {
+    const bool on_device = spec_ckpt_mode() == 2 || (spec_ckpt_mode() == 1 && draft);
     return llama_state_seq_flags(LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY |
                                  (on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0));
 }
@@ -1838,6 +1843,22 @@ private:
         slot.n_predict_max = task.params.n_predict != -1 ? task.params.n_predict : params_base.n_predict;
 
         slot.task = std::make_unique<const server_task>(std::move(task));
+
+        // drop stale on-device spec checkpoints before a prompt big enough to stress the
+        // device fit: they hold VRAM on the target devices until the next save; small
+        // tasks keep them to avoid device alloc churn per round. The round loop rebuilds
+        // the checkpoint at prompt end
+        static const int64_t evict_tokens = []{
+            const char * env = getenv("GGML_SPEC_CKPT_EVICT_TOKENS");
+            return env != nullptr ? atoll(env) : 1024;
+        }();
+        if (spec_ckpt_mode() != 0 && (int64_t) task.tokens.size() >= evict_tokens) {
+            llama_state_seq_evict(ctx_tgt, slot.id);
+            if (ctx_dft != nullptr) {
+                llama_state_seq_evict(ctx_dft, slot.id);
+            }
+            slot.spec_ckpt.clear();
+        }
 
         slot.state = slot.task->is_child()
             ? SLOT_STATE_WAIT_OTHER // wait for the parent to process prompt

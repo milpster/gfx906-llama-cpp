@@ -6,6 +6,9 @@ set -eu
 # staging (no ids round-trip) on top of -lzm on-direct. -> PP5132 248.4 t/s,
 # PP16384 204.7/201.3, TG 9.5 @5k / 11.07 @16k (bench/logs/q38speed/
 # draft-r1-complete/server-ringlane+chunk, pp16384/results-ringchunk).
+# 2026-09-26 (evict fix): GGML_SPEC_CKPT_ON_DEVICE=1 - spec recurrent ckpts
+# stay on-device (steady TG 10.2 -> ~12); llama_state_seq_evict at big-prompt
+# start frees them so PP-after-TG stays clean (237/257/250 vs 199-217 before).
 # Staged baseline: 17-21 PP. Arc today: 137 -> 185.5 (PLE on-direct) ->
 # 212.5 (ring) -> 248.4 (chunked staging).
 #
@@ -38,6 +41,7 @@ GGML_RANGE_SPLIT_MB=2048 \
 GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 \
 GGML_SPEC_DRAFT_UBATCH=128 \
 GGML_MOE_FULLCOPY_CHUNK=33554432 \
+GGML_SPEC_CKPT_ON_DEVICE=1 \
 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin:/opt/rocm-6.1.0/lib \
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \

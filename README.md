@@ -148,7 +148,7 @@
 | upstream #29191 (streaming load-mode) | evaluated | UMA-only design + 24G swap requirement; not applicable to dGPU rigs |
 | upstream #28414 (prefetch-experts-slots) | evaluated vs our staging ring | ring already frees the host timeline; in-order queue caps device overlap (transfer-queue probe: 222 vs 248.4 t/s) |
 | upstream #27851 (tiled k-quant CPU mulmat) | cherry-picked, GGML_CPU_TILED_MM=0 | not bit-exact; Q6_K GEMV regression; true-CPU mode still loses to vk streaming (74 vs 248 t/s, no VNNI here) |
-| upstream #28118 (spec ckpts on-device) | ported, GGML_SPEC_CKPT_ON_DEVICE 0/draft/1 | steady TG +1.4 in full mode but resident target ckpt slows later prefills ~19% on tight fits; opt-in |
+| upstream #28118 (spec ckpts on-device) | ported + llama_state_seq_evict fix, GGML_SPEC_CKPT_ON_DEVICE 0/draft/1 | steady TG 10.2 -> ~12 in full mode; eviction at big-prompt start keeps PP-after-TG clean (257 vs 199); promoted to fast lane |
 | upstream #29274 (NVIDIA 4-row rm_id) | ported, GGML_VK_NV_RMID_ROWS | TG within noise-to-positive, PP clean; opt-in |
 | upstream #29353 (GDN chunked kernel, hip) | triage | GDN share too small on the flash lane; gfx906 matrix-unit limits; watch |
 >

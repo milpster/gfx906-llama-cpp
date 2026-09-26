@@ -967,6 +967,11 @@ extern "C" {
                     llama_seq_id   dest_seq_id,
            llama_state_seq_flags   flags);
 
+    // Free the device-resident buffers kept by saves with LLAMA_STATE_SEQ_FLAGS_ON_DEVICE for this seq_id
+    LLAMA_API void llama_state_seq_evict(
+            struct llama_context * ctx,
+                    llama_seq_id   seq_id);
+
     //
     // Decoding
     //

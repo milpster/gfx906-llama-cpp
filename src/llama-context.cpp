@@ -3381,6 +3381,10 @@ size_t llama_context::state_seq_get_size(llama_seq_id seq_id, llama_state_seq_fl
     }
 }
 
+void llama_context::state_seq_evict(llama_seq_id seq_id) {
+    mem_storage.erase(seq_id);
+}
+
 size_t llama_context::state_seq_get_data(llama_seq_id seq_id, uint8_t * dst, size_t size, llama_state_seq_flags flags) {
     std::unique_ptr<llama_io_write_i> io;
     if (flags & LLAMA_STATE_SEQ_FLAGS_ON_DEVICE) {
@@ -4521,6 +4525,10 @@ size_t llama_state_seq_set_data_ext(llama_context * ctx, const uint8_t * src, si
     ctx->synchronize();
 
     return ctx->state_seq_set_data(seq_id, src, size, flags);
+}
+
+void llama_state_seq_evict(llama_context * ctx, llama_seq_id seq_id) {
+    ctx->state_seq_evict(seq_id);
 }
 
 size_t llama_state_seq_save_file(llama_context * ctx, const char * filepath, llama_seq_id seq_id, const llama_token * tokens, size_t n_token_count) {
