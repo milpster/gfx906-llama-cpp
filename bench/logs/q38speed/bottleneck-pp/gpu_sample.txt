@@ -1,0 +1,75 @@
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 4
+GPU[0]		: GPU Memory Allocated (VRAM%): 96
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 97
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 91
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 5
+GPU[0]		: GPU Memory Allocated (VRAM%): 96
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 97
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 91
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 99
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 5
+GPU[0]		: GPU Memory Allocated (VRAM%): 96
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 97
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 91
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 5
+GPU[0]		: GPU Memory Allocated (VRAM%): 96
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 97
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 91
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 6
+GPU[0]		: GPU Memory Allocated (VRAM%): 96
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 97
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 91
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---

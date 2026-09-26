@@ -1,0 +1,225 @@
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 17
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 17
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 17
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 20
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 25
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 18
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 20
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 20
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 21
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 23
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 23
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 21
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 100
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 20
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 22
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
+GPU[0]		: GPU use (%): 0
+GPU[1]		: GPU use (%): 0
+GPU[2]		: GPU use (%): 26
+GPU[0]		: GPU Memory Allocated (VRAM%): 69
+GPU[0]		: GPU Memory Read/Write Activity (%): 0
+GPU[0]		: Memory Activity: N/A
+GPU[0]		: Not supported on the given system
+GPU[1]		: GPU Memory Allocated (VRAM%): 92
+GPU[1]		: GPU Memory Read/Write Activity (%): 0
+GPU[1]		: Memory Activity: N/A
+GPU[1]		: Not supported on the given system
+GPU[2]		: GPU Memory Allocated (VRAM%): 89
+GPU[2]		: Memory Activity: N/A
+GPU[2]		: Not supported on the given system
+---
