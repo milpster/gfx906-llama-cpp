@@ -2004,13 +2004,25 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
         }
 
         if (split_timing) {
-            fprintf(stderr, "SPLIT id=%d backend=%s n_in=%d n_nodes=%d presync=%.2f inputs=%.2f graph=%.2f ev=%.2f total=%.2f ms\n",
+            // list ops only for small splits, to attribute short CPU stumps without line noise
+            char split_ops[512] = {0};
+            if (split->graph.n_nodes <= 8) {
+                size_t off = 0;
+                for (int k = 0; k < (int) split->graph.n_nodes && off + 48 < sizeof(split_ops); k++) {
+                    struct ggml_tensor * n = split->graph.nodes[k];
+                    off += snprintf(split_ops + off, sizeof(split_ops) - off, "%s%s(%lldx%lldx%lldx%lld)",
+                                    k ? "," : "", ggml_op_desc(n),
+                                    (long long) n->ne[0], (long long) n->ne[1], (long long) n->ne[2], (long long) n->ne[3]);
+                }
+            }
+            fprintf(stderr, "SPLIT id=%d backend=%s n_in=%d n_nodes=%d presync=%.2f inputs=%.2f graph=%.2f ev=%.2f total=%.2f ms%s%s\n",
                     split_id, ggml_backend_name(split_backend), split->n_inputs, (int) split->graph.n_nodes,
                     (t_presync - t_split0) / 1000.0,
                     (t_inputs - t_presync) / 1000.0,
                     (t_graph - t_inputs) / 1000.0,
                     (ggml_time_us() - t_graph) / 1000.0,
-                    (ggml_time_us() - t_split0) / 1000.0);
+                    (ggml_time_us() - t_split0) / 1000.0,
+                    split_ops[0] ? " ops=" : "", split_ops);
         }
 
         prev_backend_id = split_backend_id;

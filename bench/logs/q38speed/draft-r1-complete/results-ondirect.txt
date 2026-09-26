@@ -1,0 +1,5 @@
+{"ondirect_pp1":69.22262719887051}
+{"ondirect_pp2":183.2536056360982}
+{"ondirect_pp3":185.48934090490317}
+major faults total across 3 passes: 562
+{"tg":9.096087166503876}
