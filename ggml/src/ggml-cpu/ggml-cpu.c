@@ -1649,6 +1649,17 @@ static void ggml_compute_forward_mul_mat_id(
         // initialize matrix_row_counts
         memset(matrix_row_counts, 0, n_as*sizeof(int64_t));
 
+        // llama MoE expert cache: when src[3] is set it is an I32 table mapping
+        // expert id -> device cache slot, with op_params[0] holding the "not
+        // cached" dummy value. Cached ids are served by the device-side cache
+        // chain, so this op skips them and zeroes their dst rows instead.
+        const int32_t * moe_tbl   = NULL;
+        int32_t         moe_dummy = 0;
+        if (dst->src[3]) {
+            moe_tbl   = (const int32_t *) dst->src[3]->data;
+            moe_dummy = ggml_get_op_params_i32(dst, 0);
+        }
+
         // group rows by src0 matrix
         for (int64_t iid1 = 0; iid1 < ids->ne[1]; ++iid1) {
             for (int id = 0; id < n_ids; ++id) {
@@ -1656,8 +1667,22 @@ static void ggml_compute_forward_mul_mat_id(
 
                 assert(i02 >= 0 && i02 < n_as);
 
+                if (moe_tbl && moe_tbl[i02] != moe_dummy) {
+                    memset((char *) dst->data + id*nb1 + iid1*nb2, 0, ne0*sizeof(float));
+                    continue;
+                }
+
                 MMID_MATRIX_ROW(i02, matrix_row_counts[i02]) = (struct mmid_row_mapping) {id, iid1};
                 matrix_row_counts[i02] += 1;
+            }
+        }
+
+        // MoE routing observation for the llama expert cache
+        {
+            void * moe_obs_ud = NULL;
+            ggml_moe_obs_cb_t moe_obs_cb = ggml_get_moe_obs_callback(&moe_obs_ud);
+            if (moe_obs_cb && strstr(src0->name, "ffn_gate_exps")) {
+                moe_obs_cb(src0->name, ids, moe_obs_ud);
             }
         }
     }

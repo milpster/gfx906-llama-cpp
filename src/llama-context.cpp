@@ -1,5 +1,7 @@
 #include "llama-context.h"
 
+#include "llama-moecache.h"
+
 #include "ggml.h"
 #include "llama-arch.h"
 #include "llama-graph.h"
@@ -110,6 +112,11 @@ llama_context::llama_context(
     }
 
     cparams.n_threads               = params.n_threads;
+    cparams.n_moe_cache_slots   = params.n_moe_cache_slots;
+    cparams.n_moe_cache_inserts = params.n_moe_cache_inserts;
+    if (params.moe_cache_device) {
+        cparams.moe_cache_device = params.moe_cache_device;
+    }
     cparams.n_threads_batch         = params.n_threads_batch;
     cparams.yarn_ext_factor         = params.yarn_ext_factor  >= 0.0f ? params.yarn_ext_factor  : hparams.yarn_ext_factor;
     cparams.yarn_attn_factor        = params.yarn_attn_factor >= 0.0f ? params.yarn_attn_factor : hparams.yarn_attn_factor;
@@ -1803,6 +1810,10 @@ static bool needs_raw_logits(const llama_ubatch & ubatch, const std::map<llama_s
 }
 
 int llama_context::decode(const llama_batch_ext & batch_inp) {
+    // the cache allocates lazily here, after the constructor's graph reserve,
+    // so its buffers cannot fragment the big contiguous reserve allocations
+    llama_moe_cache_init(model, cparams.n_moe_cache_slots, cparams.n_moe_cache_inserts, cparams.moe_cache_device.c_str());
+
     if (!memory) {
         LLAMA_LOG_DEBUG("%s: cannot decode batches with this context (calling encode() instead)\n", __func__);
         return encode(batch_inp);
@@ -2188,6 +2199,9 @@ int llama_context::decode(const llama_batch_ext & batch_inp) {
 
     // wait for the computation to finish (automatically done when obtaining the model output)
     //synchronize();
+
+    // apply throttled MoE expert-cache updates between graph executions
+    llama_moe_cache_step();
 
     return 0;
 }
@@ -3934,6 +3948,9 @@ llama_context_params llama_context_default_params() {
         /*.yarn_beta_slow              =*/ -1.0f,
         /*.yarn_orig_ctx               =*/ 0,
         /*.defrag_thold                =*/ -1.0f,
+        /*.n_moe_cache_slots           =*/ 0,
+        /*.n_moe_cache_inserts         =*/ 2,
+        /*.moe_cache_device            =*/ nullptr,
         /*.cb_eval                     =*/ nullptr,
         /*.cb_eval_user_data           =*/ nullptr,
         /*.type_k                      =*/ GGML_TYPE_F16,

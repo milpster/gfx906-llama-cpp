@@ -3,6 +3,7 @@
 #include "llama.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #define LLAMA_MAX_SEQ 256
@@ -18,6 +19,11 @@ struct llama_cparams {
     uint32_t n_outputs_max_per_seq;
     int32_t  n_threads;       // number of threads to use for generation
     int32_t  n_threads_batch; // number of threads to use for batch processing
+
+    int32_t  n_moe_cache_slots   = 0;
+    int32_t  n_moe_cache_inserts = 2;
+    // device name override for the MoE expert cache placement ("" = router-local)
+    std::string moe_cache_device;
 
     int32_t  nextn_layer_offset = 0;
 

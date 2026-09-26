@@ -1727,6 +1727,9 @@ struct llama_context_params common_context_params_to_llama(const common_params &
     cparams.n_outputs_max_per_seq = std::max(params.n_outputs_max_per_seq, 0);
     cparams.n_batch           = params.n_batch;
     cparams.n_ubatch          = params.n_ubatch;
+    cparams.n_moe_cache_slots   = params.n_moe_cache_slots;
+    cparams.n_moe_cache_inserts = params.n_moe_cache_inserts;
+    cparams.moe_cache_device    = params.moe_cache_device.c_str();
     cparams.n_threads         = params.cpuparams.n_threads;
     cparams.n_threads_batch   = params.cpuparams_batch.n_threads == -1 ?
                                 params.cpuparams.n_threads : params.cpuparams_batch.n_threads;
