@@ -2716,7 +2716,11 @@ common_params common_base_params_to_speculative(const common_params & params) {
                    t == COMMON_SPECULATIVE_TYPE_DRAFT_MTP_ADAPTIVE;
         });
     if (has_mtp_draft) {
-        const int32_t draft_batch = std::max(1, params_spec.n_max + 1);
+        // GGML_SPEC_DRAFT_UBATCH widens the draft batch above the drafting
+        // minimum (n_max + 1) to cut prompt catch-up overhead; the pool still
+        // sizes far below the target's prefill width
+        const char * du = getenv("GGML_SPEC_DRAFT_UBATCH");
+        const int32_t draft_batch = du ? std::max(1, atoi(du)) : std::max(1, params_spec.n_max + 1);
         result.n_batch  = std::min(result.n_batch,  draft_batch);
         result.n_ubatch = std::min(result.n_ubatch, draft_batch);
     }

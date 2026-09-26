@@ -445,7 +445,14 @@ bool ggml_vk_buffer_write_2d_async(vk_context subctx, vk_buffer& dst, size_t off
             }
         }
 
-        ggml_vk_sync_buffers(nullptr, subctx);
+        // GGML_VK_STREAM_NO_PRESYNC: skip the pre-copy pipeline sync. For the
+        // MoE expert ring the caller already event-orders slot reuse and the
+        // destination is exclusively owned by this split, so the per-copy sync
+        // only serializes the DMA stream.
+        static const bool stream_no_presync = getenv("GGML_VK_STREAM_NO_PRESYNC") != nullptr;
+        if (!stream_no_presync) {
+            ggml_vk_sync_buffers(nullptr, subctx);
+        }
         subctx->s->buffer->buf.copyBuffer(buf->buffer, dst->buffer, slices);
         return true;
     }
