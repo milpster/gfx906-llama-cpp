@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 set -eu
 
-# Qwen3.8-Flash-Next speed lane (E175): 20k ctx PP-optimized serve config.
-# 2.0-2.9x the 200k launcher's PP (75.1 t/s vs 20.8-25, bench/logs/q38speed/
-# sp-e165-0920build) at the cost of 180k context. Context dropped per user.
+# Qwen3.8-Flash-Next speed lane: 20k ctx PP-optimized serve config.
+# 2026-09-26: CPU-computed MoE experts at prefill (GGML_MOE_CPU_COMPUTE_MIN_BATCH)
+# - PP5132 148.5 t/s warm (3 passes stable) vs 17-21 staged; the PCIe x4 expert
+# staging (93% of PP wall, 45.7 GB/pass) is gone. Decode unchanged (CPU experts,
+# fork rule batch<32). No MTP draft: its fattn pool cannot fit any device at
+# ubatch 5712 (12 placement permutations OOMed; chat ubatches never hit it, the
+# 200k lane at -ub 128 is unaffected). Chat/TG lives on run-qwen38f-200k.sh.
 #
-# GATE PENDING (do NOT treat as production until passed):
-#   bench/qwen38-nondet-arm.sh x3 + TG/acceptance lane at THIS geometry.
-#   New geometry vs E142 (ts 70,10,20 + projection -ot + ub5712): determinism NOT
-#   yet proven; E158's sibling geometry was 3/3 unique on the pre-sync build.
-#
-# Load-bearing (see journal/JOURNAL-2026-09-21.md E175):
-#   - GGML_RANGE_SPLIT_MB=2048 REQUIRED with -lzm on-direct on the 0920 sync
-#     (contiguous ROCm1 range regression); harmless without it.
+# Load-bearing:
+#   - GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 REQUIRED for the PP win; 0 = old staged
+#     behavior (also re-enables draft at chat ubatches).
+#   - GGML_RANGE_SPLIT_MB=2048 REQUIRED with -lzm on-direct (contiguous ROCm1
+#     range regression on the 0920 sync); harmless without it.
 #   - Projection-level CPU hosting keeps 602/361/476 MiB free on
 #     ROCm0/Vulkan1/ROCm1 (bench/logs/q38speed/tenancy-recovery-n27-vk2p2-r1p2).
-#   - threads MUST stay <= 8 (E141); ncmoe 27; mmproj CPU; -otd '.*=ROCm0'.
+#   - threads MUST stay <= 8 (E141); ncmoe 27; mmproj CPU.
+#   - GGML_EXPS_RING kept for the decode path; unused at prefill batches.
 
 AMD_LOG_LEVEL=0 \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 \
@@ -28,7 +30,8 @@ HSA_DISABLE_FRAGMENT_ALLOCATOR=0 \
 GPU_MAX_ALLOC_PERCENT=100 \
 GGML_RANGE_SPLIT_MB=2048 \
 GGML_EXPS_RING=1 \
-LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-sync0920/bin:/opt/rocm-6.1.0/lib \
+GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 \
+LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin:/opt/rocm-6.1.0/lib \
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads 8 --threads-batch 8 --poll 0 --poll-batch 0 \
@@ -38,9 +41,6 @@ exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   --pipeline-parallel off -sm layer -ts 70,10,20 \
   -c 20480 -ctk f16 -ctv f16 \
   -ot '(blk\.(3[1-4]|3[89])\.ffn_(up|gate|down)_exps\.|blk\.37\.ffn_down_exps\.|blk\.41\.ffn_down_exps\.)=CPU' \
-  -md /home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf \
-  --spec-type draft-mtp-adaptive --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3 \
-  -ngld all -ctkd f16 -ctvd f16 -otd '.*=ROCm0' \
   -mm /home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf -mmdev none \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \

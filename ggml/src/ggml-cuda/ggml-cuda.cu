@@ -5922,6 +5922,20 @@ static int64_t get_op_batch_size(const ggml_tensor * op) {
 static bool ggml_backend_cuda_device_offload_op(ggml_backend_dev_t dev, const ggml_tensor * op) {
     ggml_backend_cuda_device_context * dev_ctx = (ggml_backend_cuda_device_context *) dev->context;
 
+    // keep host-resident MoE experts on the CPU for large batches: staging the
+    // routed expert set over PCIe every pass dominates prefill on narrow links.
+    // 0 (default) preserves the staged device path, including all of decode.
+    if (op->op == GGML_OP_MUL_MAT_ID &&
+            op->src[0] && op->src[0]->buffer && ggml_backend_buffer_is_host(op->src[0]->buffer)) {
+        static const int64_t moe_cpu_min_batch = []() {
+            const char * e = getenv("GGML_MOE_CPU_COMPUTE_MIN_BATCH");
+            return e ? atoll(e) : 0;
+        }();
+        if (moe_cpu_min_batch > 0 && get_op_batch_size(op) >= moe_cpu_min_batch) {
+            return false;
+        }
+    }
+
     return get_op_batch_size(op) >= dev_ctx->op_offload_min_batch_size;
 }
 
