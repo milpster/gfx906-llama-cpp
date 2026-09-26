@@ -70,6 +70,7 @@ BIN=/path/to/other/build/bin/llama-server ./ab-bench.sh old-binary
 | `UB` | `448` | `-ub` (ubatch) value |
 | `LIVE_LOG` | `logs/live.log` | append target for the tee'd live stream (tmux users: `tail -f` this) |
 | `VK_F16` | `0` | `1` = do not set `GGML_VK_DISABLE_F16` |
+| `PP_WARMUPS` | `0` | number of full client runs to discard before the measured run |
 | `MODEL` | `$HOME/ai/ai/Qwen3.8-27B-Q8_0.gguf` | Model file |
 | `SPEC_TYPE` | `draft-mtp` | `none` disables speculative decoding entirely |
 | `LIVE` | `1` | client streams the TG completion text to stderr as it generates; `0` silences |

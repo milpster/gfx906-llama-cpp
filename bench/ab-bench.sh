@@ -87,6 +87,14 @@ SRV_PID=$!
   pkill -9 -f "bench-client.py $PORT" 2>/dev/null || true ) &
 WD_PID=$!
 
+for ((i = 0; i < ${PP_WARMUPS:-0}; i++)); do
+    LIVE=0 TG_N=32 PP_ABORT=0 python3 bench-client.py "$PORT" >/dev/null || {
+        kill "$WD_PID" 2>/dev/null || true
+        echo "warmup failed for trial $NAME - server log: $LOG" >&2
+        exit 1
+    }
+done
+
 RESULT=$(python3 bench-client.py "$PORT") || {
     kill "$WD_PID" 2>/dev/null || true
     echo "client failed for trial $NAME - server log: $LOG" >&2
