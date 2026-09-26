@@ -2,13 +2,12 @@
 set -eu
 
 # Qwen3.8-Flash-Next speed lane: 20k ctx, PP + MTP draft in one server.
-# 2026-09-26: -lzm on-direct kills the PLE page-fault tax (51k major faults
-# per PP5132 pass = 11 s serial NVMe fault chain in the graph GET_ROWS;
-# on-direct serves the rows via sorted parallel preads at set_input).
-# Draft single-device on ROCm1 (blk.40/42 experts CPU'd for the fit).
-# -> PP5132 185.5 t/s warm, PP16384 161.2 t/s warm, TG 9.1 @5k / 10.13 @16k
-# (bench/logs/q38speed/draft-r1-complete, pp16384/results-ondirect4.txt).
-# Staged baseline: 17-21 PP. Temp-0 sha warm-vs-warm vs -lzm on: MATCH.
+# 2026-09-26 (E164-E166): fenced vk staging ring + chunked full-tensor expert
+# staging (no ids round-trip) on top of -lzm on-direct. -> PP5132 248.4 t/s,
+# PP16384 204.7/201.3, TG 9.5 @5k / 11.07 @16k (bench/logs/q38speed/
+# draft-r1-complete/server-ringlane+chunk, pp16384/results-ringchunk).
+# Staged baseline: 17-21 PP. Arc today: 137 -> 185.5 (PLE on-direct) ->
+# 212.5 (ring) -> 248.4 (chunked staging).
 #
 # Load-bearing:
 #   - GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 REQUIRED for the PP win; 0 = old staged
@@ -38,6 +37,7 @@ GPU_MAX_ALLOC_PERCENT=100 \
 GGML_RANGE_SPLIT_MB=2048 \
 GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 \
 GGML_SPEC_DRAFT_UBATCH=128 \
+GGML_MOE_FULLCOPY_CHUNK=33554432 \
 LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin:/opt/rocm-6.1.0/lib \
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
