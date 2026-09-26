@@ -523,9 +523,7 @@ void ggml_vk_buffer_write_2d(vk_buffer& dst, size_t offset, const void * src, si
         GGML_ASSERT(ret);
         ggml_vk_ctx_end(subctx);
 
-        for (auto& cpy : subctx->in_memcpys) {
-            memcpy(cpy.dst, cpy.src, cpy.n);
-        }
+        ggml_vk_run_memcpys(subctx->in_memcpys);
 
         for (auto& mset : subctx->memsets) {
             memset(mset.dst, mset.val, mset.n);

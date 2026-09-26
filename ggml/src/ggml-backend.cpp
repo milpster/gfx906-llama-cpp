@@ -1671,6 +1671,13 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
     static double exps_issue_ms = 0.0;
     static double exps_bytes = 0.0;
     exps_ids_sync_ms = exps_issue_ms = exps_bytes = 0.0;
+    // E164: per-pass copy census - distinct weight tensors vs grouped copies,
+    // to detect redundant staging of the same expert tensor
+    static int exps_n_tensors = 0;
+    static int exps_n_copies = 0;
+    static std::vector<const void *> exps_seen;
+    exps_n_tensors = exps_n_copies = 0;
+    exps_seen.clear();
 
     struct exps_ring_slot {
         ggml_backend_buffer_t buf;
@@ -1735,6 +1742,11 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                     const int64_t n_expert   = node->op == GGML_OP_MUL_MAT_ID ? input->ne[2] : input->ne[1];
                     const size_t expert_size = node->op == GGML_OP_MUL_MAT_ID ? input->nb[2] : input->nb[1];
 
+                    if (std::find(exps_seen.begin(), exps_seen.end(), input->data) == exps_seen.end()) {
+                        exps_seen.push_back(input->data);
+                        exps_n_tensors++;
+                    }
+
                     // E147.6: at large ubatches nearly every expert is routed
                     // (expected unique ~= n_expert once n_tokens * n_sel >>
                     // n_expert), so the ids round-trip (a device sync), the
@@ -1756,6 +1768,25 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                         ggml_backend_tensor_set_async(split_backend, input_cpy, (const uint8_t *) input->data, 0, ggml_nbytes(input));
                         prev_ids_tensor = nullptr;
                         continue; // next input of this split - full copy done
+                    }
+
+                    // E166: chunked full-tensor staging. At wide ubatches nearly
+                    // every expert is routed, so skip the ids round-trip (a
+                    // device drain per layer) and stream the whole tensor in
+                    // fenced-ring chunks instead of grouped routed spans.
+                    static const int64_t fullchunk_bytes = []() {
+                        const char * e = getenv("GGML_MOE_FULLCOPY_CHUNK");
+                        return e ? atoll(e) : 0;
+                    }();
+                    if (fullchunk_bytes > 0 && n_ubatch_tokens >= 256) {
+                        const size_t total = ggml_nbytes(input);
+                        const size_t chunk = (size_t) fullchunk_bytes;
+                        for (size_t off = 0; off < total; off += chunk) {
+                            ggml_backend_tensor_set_async(split_backend, input_cpy,
+                                    (const uint8_t *) input->data + off, off, std::min(chunk, total - off));
+                        }
+                        prev_ids_tensor = nullptr;
+                        continue; // next input of this split - full chunked copy issued
                     }
 
                     const int64_t t_ids0 = ggml_time_us();
@@ -1873,8 +1904,8 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                                     memcpy(slot_data + dst_off, (const uint8_t *) input->data + src_off, len + padding_end);
                                     ggml_backend_tensor_set_async(split_backend, input_cpy,
                                         slot_data + dst_off, src_off, len + padding_end);
-                                };
-                                int id = span_first;
+                                    exps_n_copies++;
+                                };                                int id = span_first;
                                 int32_t first_id = id, last_id = id;
                                 for (++id; id <= span_last; ++id) {
                                     if (!ggml_bitset_get(used_ids.data(), id)) {
@@ -1908,10 +1939,11 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
                             ggml_backend_tensor_set_async(split_backend,
                                 input_cpy,
                                 (const uint8_t *)input->data + expert_offset, expert_offset,
-                                // copy a bit extra at the to ensure there are no NaNs in the padding of the last expert
-                                // this is necessary for MMQ in the CUDA backend
-                                expert_size_copy + padding_end);
-                            exps_bytes += expert_size_copy;
+                            // copy a bit extra at the to ensure there are no NaNs in the padding of the last expert
+                            // this is necessary for MMQ in the CUDA backend
+                            expert_size_copy + padding_end);
+                        exps_bytes += expert_size_copy;
+                        exps_n_copies++;
                         };
 
                         int id = 0;
@@ -2030,9 +2062,10 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
 
     if (exps_copy_phases && exps_bytes > 0) {
         const double gb = exps_bytes / 1e9;
-        fprintf(stderr, "EXPCOPY ids_sync=%.1f ms issue=%.1f ms bytes=%.2f GB issue_rate=%.2f GB/s\n",
+        fprintf(stderr, "EXPCOPY ids_sync=%.1f ms issue=%.1f ms bytes=%.2f GB issue_rate=%.2f GB/s tensors=%d copies=%d avg_tensor=%.1f MB\n",
                 exps_ids_sync_ms, exps_issue_ms, gb,
-                exps_issue_ms > 0 ? gb / (exps_issue_ms / 1000.0) : 0.0);
+                exps_issue_ms > 0 ? gb / (exps_issue_ms / 1000.0) : 0.0,
+                exps_n_tensors, exps_n_copies, exps_n_tensors ? exps_bytes / exps_n_tensors / 1048576.0 : 0.0);
     }
 
     return GGML_STATUS_SUCCESS;

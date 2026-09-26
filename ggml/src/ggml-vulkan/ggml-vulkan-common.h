@@ -86,6 +86,11 @@ vk_context ggml_vk_get_transfer_ctx(ggml_backend_vk_context * ctx);
 bool ggml_vk_submit_transfer_ctx(ggml_backend_vk_context * ctx);
 size_t ggml_vk_align_size(size_t width, size_t align);
 void deferred_memcpy(void * dst, const void * src, size_t size, std::vector<vk_staging_memcpy>* memcpys = nullptr);
+
+// run deferred staging memcpys; large batches are split into ~1 MiB chunks and
+// copied on worker threads, so the wide MoE expert stream does not serialize
+// on one core (GGML_VK_MEMCPY_THREADS, default 8; 1 keeps the serial loop)
+void ggml_vk_run_memcpys(std::vector<vk_staging_memcpy> & memcpys);
 void deferred_memset(void * dst, uint32_t val, size_t size, std::vector<vk_staging_memset>* memsets = nullptr);
 
 // matmul

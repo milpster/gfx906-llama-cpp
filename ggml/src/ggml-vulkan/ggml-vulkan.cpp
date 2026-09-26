@@ -5800,9 +5800,7 @@ bool ggml_vk_submit_transfer_ctx(ggml_backend_vk_context * ctx) {
     vk_context cpy_ctx = ctx->transfer_ctx.lock();
     ggml_vk_ctx_end(cpy_ctx);
 
-    for (auto& cpy : cpy_ctx->in_memcpys) {
-        memcpy(cpy.dst, cpy.src, cpy.n);
-    }
+    ggml_vk_run_memcpys(cpy_ctx->in_memcpys);
 
     ctx->transfer_semaphore.value++;
     cpy_ctx->seqs.back().back().signal_semaphores.push_back(ctx->transfer_semaphore);
@@ -5822,6 +5820,60 @@ void deferred_memcpy(void * dst, const void * src, size_t size, std::vector<vk_s
         memcpy(dst, src, size);
     } else {
         memcpys->emplace_back(dst, src, size);
+    }
+}
+
+void ggml_vk_run_memcpys(std::vector<vk_staging_memcpy> & memcpys) {
+    size_t total = 0;
+    for (const auto & c : memcpys) {
+        total += c.n;
+    }
+
+    static const bool flush_stats = getenv("GGML_VK_MEMCPY_STATS") != nullptr;
+    if (flush_stats && total >= (1u << 20)) {
+        static std::atomic<size_t> flush_big{0}, flush_bytes{0};
+        flush_big++;
+        size_t b = flush_bytes += total;
+        fprintf(stderr, "VKFLUSH n=%zu bytes=%.1f MiB cum=%.2f GiB\n", memcpys.size(), total / 1048576.0, b / 1073741824.0);
+    }
+
+    static const int n_threads = []() {
+        const char * e = getenv("GGML_VK_MEMCPY_THREADS");
+        const int n = e ? atoi(e) : 8;
+        return n > 0 ? n : 1;
+    }();
+
+    if (total < (8u << 20) || n_threads <= 1) {
+        for (const auto & c : memcpys) {
+            memcpy(c.dst, c.src, c.n);
+        }
+        return;
+    }
+
+    const size_t chunk = 1u << 20;
+    std::vector<std::tuple<uint8_t *, const uint8_t *, size_t>> jobs;
+    jobs.reserve(total / chunk + memcpys.size() + 1);
+    for (const auto & c : memcpys) {
+        for (size_t off = 0; off < c.n; off += chunk) {
+            jobs.emplace_back((uint8_t *) c.dst + off, (const uint8_t *) c.src + off, std::min(chunk, c.n - off));
+        }
+    }
+
+    std::atomic<size_t> next_job{0};
+    auto worker = [&]() {
+        for (size_t i = next_job.fetch_add(1); i < jobs.size(); i = next_job.fetch_add(1)) {
+            memcpy(std::get<0>(jobs[i]), std::get<1>(jobs[i]), std::get<2>(jobs[i]));
+        }
+    };
+
+    std::vector<std::thread> workers;
+    workers.reserve(n_threads - 1);
+    for (int t = 1; t < n_threads; t++) {
+        workers.emplace_back(worker);
+    }
+    worker();
+    for (auto & t : workers) {
+        t.join();
     }
 }
 
@@ -12706,9 +12758,7 @@ void ggml_vk_compute_forward(ggml_backend_vk_context * ctx, ggml_cgraph * cgraph
 #endif
 
         // Do staging buffer copies
-        for (auto& cpy : subctx->in_memcpys) {
-            memcpy(cpy.dst, cpy.src, cpy.n);
-        }
+        ggml_vk_run_memcpys(subctx->in_memcpys);
 
         for (auto& mset : subctx->memsets) {
             memset(mset.dst, mset.val, mset.n);
@@ -12732,9 +12782,7 @@ void ggml_vk_compute_forward(ggml_backend_vk_context * ctx, ggml_cgraph * cgraph
 
     if (tensor_idx == subctx->exit_tensor_idx) {
         // Do staging buffer copies
-        for (auto& cpy : subctx->out_memcpys) {
-            memcpy(cpy.dst, cpy.src, cpy.n);
-        }
+        ggml_vk_run_memcpys(subctx->out_memcpys);
         subctx->in_memcpys.clear();
         subctx->out_memcpys.clear();
         subctx->memsets.clear();
@@ -12793,6 +12841,20 @@ void ggml_vk_cleanup(ggml_backend_vk_context * ctx) {
     ggml_vk_destroy_buffer(ctx->prealloc_split_k);
     ggml_vk_destroy_buffer(ctx->prealloc_add_rms_partials);
     ggml_vk_destroy_buffer(ctx->sync_staging);
+
+    for (auto & s : ctx->staging_slots) {
+        if (s.fence_pending) {
+            ctx->device->device.waitForFences({ s.fence }, true, UINT64_MAX);
+            s.fence_pending = false;
+        }
+        if (s.fence) {
+            ctx->device->device.destroyFence(s.fence);
+            s.fence = nullptr;
+        }
+        ggml_vk_destroy_buffer(s.buf);
+    }
+    ctx->staging_slots.clear();
+    ctx->staging_cur = 0;
 
     ctx->prealloc_y_last_pipeline_used = nullptr;
     ctx->prealloc_y_last_tensor_used = nullptr;
@@ -13127,7 +13189,50 @@ static void ggml_backend_vk_set_tensor_2d_async(ggml_backend_t backend, ggml_ten
 
     if (!ret) {
         const size_t staging_size = size * n_copies;
-        ggml_vk_ensure_sync_staging_buffer(ctx, staging_size);
+
+        // E165: pageable writes stage through a fenced slot ring and submit
+        // right away. The old single staging buffer forced a full device
+        // synchronize per tensor_set, which drained the queue once per copy
+        // and serialized the whole MoE expert stream. The transfer-queue mode
+        // keeps the old path: its ctx is flushed by submit_transfer_ctx.
+        const bool use_ring = !ctx->device->async_use_transfer_queue;
+        ggml_backend_vk_context::staging_slot * slot = nullptr;
+
+        if (use_ring) {
+            if (ctx->staging_slots.empty()) {
+                const char * e = getenv("GGML_VK_STAGING_SLOTS");
+                const int n = e ? atoi(e) : 8;
+                ctx->staging_slots.resize(n > 1 ? n : 1);
+            }
+            slot = &ctx->staging_slots[ctx->staging_cur++ % ctx->staging_slots.size()];
+            if (slot->fence_pending) {
+                static std::atomic<size_t> slot_waits{0};
+                static std::atomic<uint64_t> slot_wait_us{0};
+                const int64_t tw0 = ggml_time_us();
+                VK_CHECK(ctx->device->device.waitForFences({ slot->fence }, true, UINT64_MAX), "staging slot waitForFences", ctx->device);
+                slot_wait_us += ggml_time_us() - tw0;
+                if (++slot_waits % 500 == 0) {
+                    fprintf(stderr, "SLOTWAIT n=%zu total_ms=%lu avg_ms=%.2f\n",
+                            slot_waits.load(), (unsigned long) (slot_wait_us.load() / 1000), slot_wait_us.load() / 1000.0 / slot_waits.load());
+                }
+                ctx->device->device.resetFences({ slot->fence });
+                slot->fence_pending = false;
+            }
+            if (slot->buf == nullptr || slot->buf->size < staging_size) {
+                ggml_vk_destroy_buffer(slot->buf);
+                slot->buf = ggml_vk_create_buffer_check(ctx->device, staging_size,
+                        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostCached,
+                        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+            }
+            if (!slot->fence) {
+                slot->fence = ctx->device->device.createFence({});
+            }
+        } else {
+            ggml_vk_ensure_sync_staging_buffer(ctx, staging_size);
+        }
+
+        vk_buffer & staging_buffer = slot ? slot->buf : ctx->sync_staging;
+
         ggml_vk_sync_buffers(nullptr, cpy_ctx);
 
         std::vector<vk::BufferCopy> slices(1);
@@ -13144,16 +13249,35 @@ static void ggml_backend_vk_set_tensor_2d_async(ggml_backend_t backend, ggml_ten
             }
         }
 
-        cpy_ctx->s->buffer->buf.copyBuffer(ctx->sync_staging->buffer, buf->buffer, slices);
+        cpy_ctx->s->buffer->buf.copyBuffer(staging_buffer->buffer, buf->buffer, slices);
 
-        if (size == stride_data) {
-            deferred_memcpy(ctx->sync_staging->ptr, data, staging_size, &cpy_ctx->in_memcpys);
-        } else {
-            for (size_t i = 0; i < n_copies; i++) {
-                deferred_memcpy((uint8_t *)ctx->sync_staging->ptr + i * size, (const uint8_t *)data + i * stride_data, size, &cpy_ctx->in_memcpys);
+        if (use_ring) {
+            // the slot is read by the submit below, so fill it now
+            std::vector<vk_staging_memcpy> memcpys;
+            if (size == stride_data) {
+                deferred_memcpy(staging_buffer->ptr, data, staging_size, &memcpys);
+            } else {
+                for (size_t i = 0; i < n_copies; i++) {
+                    deferred_memcpy((uint8_t *) staging_buffer->ptr + i * size, (const uint8_t *) data + i * stride_data, size, &memcpys);
+                }
             }
+            ggml_vk_run_memcpys(memcpys);
+
+            ggml_vk_ctx_end(cpy_ctx);
+            ggml_vk_submit(cpy_ctx, slot->fence);
+            slot->fence_pending = true;
+            ctx->submit_pending = true;
+            ctx->compute_ctx.reset();
+        } else {
+            if (size == stride_data) {
+                deferred_memcpy(ctx->sync_staging->ptr, data, staging_size, &cpy_ctx->in_memcpys);
+            } else {
+                for (size_t i = 0; i < n_copies; i++) {
+                    deferred_memcpy((uint8_t *)ctx->sync_staging->ptr + i * size, (const uint8_t *)data + i * stride_data, size, &cpy_ctx->in_memcpys);
+                }
+            }
+            ggml_vk_synchronize(ctx);
         }
-        ggml_vk_synchronize(ctx);
     }
 }
 
@@ -13308,9 +13432,7 @@ void ggml_vk_synchronize(ggml_backend_vk_context * ctx) {
 
         ggml_vk_ctx_end(compute_ctx);
 
-        for (auto& cpy : compute_ctx->in_memcpys) {
-            memcpy(cpy.dst, cpy.src, cpy.n);
-        }
+        ggml_vk_run_memcpys(compute_ctx->in_memcpys);
 
         if (ctx->device->serialize_submissions) {
             ggml_vk_submit(compute_ctx, ctx->fence);
@@ -13353,9 +13475,7 @@ void ggml_vk_synchronize(ggml_backend_vk_context * ctx) {
     }
 
     if (do_transfer) {
-        for (auto& cpy : compute_ctx->out_memcpys) {
-            memcpy(cpy.dst, cpy.src, cpy.n);
-        }
+        ggml_vk_run_memcpys(compute_ctx->out_memcpys);
         ctx->compute_ctx.reset();
     }
 }
@@ -15913,6 +16033,15 @@ static bool ggml_backend_vk_device_offload_op(ggml_backend_dev_t dev, const ggml
         }();
         if (vk_stream_min_batch > 0 && ggml_vk_get_op_batch_size(op) >= vk_stream_min_batch) {
             return true;
+        }
+        // force host experts onto the CPU for wide batches: the pageable
+        // staging copy can be slower than CPU MMQ at RAM bandwidth
+        static const int64_t vk_stream_max_batch = []() {
+            const char * e = getenv("GGML_MOE_VK_STREAM_MAX_BATCH");
+            return e ? atoll(e) : 0;
+        }();
+        if (vk_stream_max_batch > 0 && ggml_vk_get_op_batch_size(op) >= vk_stream_max_batch) {
+            return false;
         }
     }
 
