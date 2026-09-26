@@ -8,7 +8,7 @@ OUT=bench/logs/q38speed/tg-harness/results.tsv
 echo -e "round\ttps\taccept\tdraft_n\tpredicted_ms" > $OUT
 for i in $(seq 1 $R); do
   curl -s -m 600 http://127.0.0.1:$PORT/completion -d "$(jq -nc --arg p "$P" --argjson np $NP '{prompt: $p, n_predict: $np, temperature: 0.0, seed: 42}')" \
-    | jq -r --argjson i $i '[$i, .timings.predicted_per_second, (.timings.draft_n_accepted / .timings.draft_n), .timings.draft_n, .timings.predicted_ms] | @tsv' >> $OUT
+    | jq -r --argjson i $i '[$i, .timings.predicted_per_second, ((.timings.draft_n_accepted // 0) / (.timings.draft_n // 1)), (.timings.draft_n // 0), .timings.predicted_ms] | @tsv' >> $OUT
 done
 echo "=== per-round ==="; column -t $OUT
 echo "=== steady (rounds 6..$R median) ==="

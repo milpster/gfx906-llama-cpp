@@ -288,6 +288,12 @@ struct server_slot {
     // used to determine the slot that has been used the longest
     int64_t t_last_used = -1;
 
+    // speculative round phase accumulators for the E168 TG anatomy print
+    int64_t t_spec_draft_us = 0;
+    int64_t t_spec_ckpt_us  = 0;
+    int64_t t_spec_rollback_us = 0;
+    int64_t n_spec_rounds = 0;
+
     // generation props
     int32_t n_ctx   = 0;  // context size per slot
     int32_t n_keep  = 0;
@@ -568,6 +574,11 @@ struct server_slot {
             GGML_ASSERT(task);
 
             SLT_INF(*this, "stop processing: n_tokens = %d, truncated = %d\n", prompt.n_tokens(), truncated);
+
+            if (n_spec_rounds > 0) {
+                SLT_INF(*this, "spec anatomy: rounds = %" PRId64 ", draft = %.0f ms, ckpt = %.0f ms, rollback = %.0f ms\n",
+                        n_spec_rounds, t_spec_draft_us / 1000.0, t_spec_ckpt_us / 1000.0, t_spec_rollback_us / 1000.0);
+            }
 
             t_last_used = ggml_time_us();
 
@@ -1859,6 +1870,11 @@ private:
             }
             slot.spec_ckpt.clear();
         }
+
+        slot.t_spec_draft_us = 0;
+        slot.t_spec_ckpt_us  = 0;
+        slot.t_spec_rollback_us = 0;
+        slot.n_spec_rounds = 0;
 
         slot.state = slot.task->is_child()
             ? SLOT_STATE_WAIT_OTHER // wait for the parent to process prompt
@@ -3199,13 +3215,20 @@ private:
 
         // generate the actual drafts (if any)
         if (!drafting.empty()) {
+            const int64_t t_draft = ggml_time_us();
             queue_tasks.yield_to_queue([&]() {
                 common_speculative_draft(spec.get());
             });
+            const int64_t t_draft_done = ggml_time_us();
+            for (auto * slot : drafting) {
+                slot->t_spec_draft_us += t_draft_done - t_draft;
+            }
         }
 
         // make checkpoints if needed
+        const int64_t t_ckpt = ggml_time_us();
         iterate(drafting, [&](server_slot & slot) {
+            slot.n_spec_rounds++;
             auto & draft = slot.spec_draft;
             auto & ckpt  = slot.spec_ckpt;
 
@@ -3251,6 +3274,13 @@ private:
                 }
             }
         });
+
+        {
+            const int64_t t_ckpt_done = ggml_time_us();
+            for (auto * slot : drafting) {
+                slot->t_spec_ckpt_us += t_ckpt_done - t_ckpt;
+            }
+        }
 
         // update the batch with the sampled/drafted tokens
         iterate(generating, [&](server_slot & slot) {
@@ -4087,6 +4117,7 @@ private:
                 // check for partial draft acceptance
                 if (n_rollback > 0) {
                     if (use_ckpt_tgt) {
+                        const int64_t t_rb = ggml_time_us();
                         if (trace > 0) {
                             SLT_INF(slot, "accepted %2zu/%2zu draft tokens (restore checkpoint)\n", accepted.size() - 1, slot.spec_draft.size());
                         }
@@ -4106,6 +4137,8 @@ private:
                         }
 
                         slot.mem.seq_rm(slot.id, ckpt.pos_max + 1, -1);
+
+                        slot.t_spec_rollback_us += ggml_time_us() - t_rb;
 
                         slot.prompt.tokens.keep_first(ckpt.n_tokens);
                         common_sampler_copy(smpl_save.get(), slot.smpl.get());
