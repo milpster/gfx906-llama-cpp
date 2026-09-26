@@ -38,6 +38,23 @@
 
 constexpr int HTTP_POLLING_SECONDS = 1;
 
+// Upstream #28118: keep per-round speculative recurrent-state checkpoints on-device
+// instead of a host round-trip per draft round. GGML_SPEC_CKPT_ON_DEVICE:
+// 0 = host (default, upstream stock), "draft" = draft context only, 1 = both.
+// The target-side on-device checkpoint costs VRAM on the target devices and was
+// measured slowing later big prefills by ~19% on the tight fast-lane fit.
+static llama_state_seq_flags spec_ckpt_flags(bool draft) {
+    static const int mode = []{
+        const char * env = getenv("GGML_SPEC_CKPT_ON_DEVICE");
+        if (env == nullptr) return 0;
+        if (strcmp(env, "draft") == 0) return 1;
+        return atoi(env) != 0 ? 2 : 0;
+    }();
+    const bool on_device = mode == 2 || (mode == 1 && draft);
+    return llama_state_seq_flags(LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY |
+                                 (on_device ? LLAMA_STATE_SEQ_FLAGS_ON_DEVICE : 0));
+}
+
 static common_speculative_output_limits server_output_limits(const common_params & params) {
     if (params.embedding ||
             (params.pooling_type != LLAMA_POOLING_TYPE_UNSPECIFIED && params.pooling_type != LLAMA_POOLING_TYPE_NONE)) {
@@ -3139,7 +3156,7 @@ private:
                                 llama_memory_seq_pos_max(llama_get_memory(ctx_tgt), slot.id));
 
                         if (use_ckpt_dft) {
-                            slot.spec_ckpt.update_dft(ctx_dft, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                            slot.spec_ckpt.update_dft(ctx_dft, slot.id, spec_ckpt_flags(true));
                         }
 
                         slot.spec_prompt = slot.prompt.tokens.get_text_tokens();
@@ -3178,7 +3195,7 @@ private:
 
             if (ctx_dft) {
                 if (use_ckpt_dft) {
-                    ckpt.load_dft(ctx_dft, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                    ckpt.load_dft(ctx_dft, slot.id, spec_ckpt_flags(true));
                 }
 
                 if (!llama_memory_seq_rm(llama_get_memory(ctx_dft), slot.id, ckpt.pos_max + 1, -1)) {
@@ -3197,7 +3214,7 @@ private:
                 if (use_ckpt_tgt) {
                     //const int64_t t_start = ggml_time_us();
 
-                    ckpt.update_tgt(ctx_tgt, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                    ckpt.update_tgt(ctx_tgt, slot.id, spec_ckpt_flags(false));
 
                     //const int64_t t_total = ggml_time_us() - t_start;
                     //printf("checkpoint total: %f ms\n", t_total / 1000.0);
@@ -3209,7 +3226,7 @@ private:
                 }
 
                 if (use_ckpt_dft) {
-                    ckpt.update_dft(ctx_dft, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                    ckpt.update_dft(ctx_dft, slot.id, spec_ckpt_flags(true));
                 }
             }
         });
@@ -4061,10 +4078,10 @@ private:
 
                         SLT_DBG(slot, "restoring speculative checkpoint (pos_min = %d, pos_max = %d, size = %zu)\n", ckpt.pos_min, ckpt.pos_max, ckpt.size());
 
-                        ckpt.load_tgt(slot.ctx_tgt, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                        ckpt.load_tgt(slot.ctx_tgt, slot.id, spec_ckpt_flags(false));
 
                         if (slot.ctx_dft) {
-                            ckpt.load_dft(slot.ctx_dft, slot.id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY);
+                            ckpt.load_dft(slot.ctx_dft, slot.id, spec_ckpt_flags(true));
                         }
 
                         slot.mem.seq_rm(slot.id, ckpt.pos_max + 1, -1);
