@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+ROOT=$(cd "$(dirname "$0")" && pwd)
+
 # Qwen3.8-Flash-Next speed lane: 20k ctx, PP + MTP draft in one server.
 # 2026-09-26 (E164-E166): fenced vk staging ring + chunked full-tensor expert
 # staging (no ids round-trip) on top of -lzm on-direct. -> PP5132 248.4 t/s,
@@ -58,5 +60,5 @@ exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -mm /home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf -mmdev none \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
-  --chat-template-file "./sharp_chat_template.jinja" \
+  --chat-template-file "$ROOT/sharp_chat_template.jinja" \
   --reasoning on --reasoning-budget -1
