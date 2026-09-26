@@ -15898,6 +15898,21 @@ static bool ggml_backend_vk_device_supports_buft(ggml_backend_dev_t dev, ggml_ba
 static bool ggml_backend_vk_device_offload_op(ggml_backend_dev_t dev, const ggml_tensor * op) {
     ggml_backend_vk_device_context * dev_ctx = (ggml_backend_vk_device_context *)dev->context;
 
+    // stream host-resident MoE experts to this device at prefill batches: the
+    // fork stages only the routed experts per pass, so a wide-PCIe device can
+    // compute them faster than the CPU while the narrow-link devices reject
+    // the same op (GGML_MOE_CPU_COMPUTE_MIN_BATCH) and keep nothing staged
+    if (op->op == GGML_OP_MUL_MAT_ID &&
+            op->src[0] && op->src[0]->buffer && ggml_backend_buffer_is_host(op->src[0]->buffer)) {
+        static const int64_t vk_stream_min_batch = []() {
+            const char * e = getenv("GGML_MOE_VK_STREAM_MIN_BATCH");
+            return e ? atoll(e) : 0;
+        }();
+        if (vk_stream_min_batch > 0 && ggml_vk_get_op_batch_size(op) >= vk_stream_min_batch) {
+            return true;
+        }
+    }
+
     return ggml_vk_get_op_batch_size(op) >= dev_ctx->op_offload_min_batch_size;
 }
 
