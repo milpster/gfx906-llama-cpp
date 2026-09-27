@@ -22,6 +22,9 @@ fi
 # start frees them so PP-after-TG stays clean (237/257/250 vs 199-217 before).
 # Staged baseline: 17-21 PP. Arc today: 137 -> 185.5 (PLE on-direct) ->
 # 212.5 (ring) -> 248.4 (chunked staging).
+# 2026-09-27 (2): residency frontier mapped. KEPT the 242 PP point as
+# default (TG 10.89). Fast-TG escape hatch: NCMOE=21 TS=56,6,38
+# RANGESPLIT=1024 -> TG 11.88 / PP 201 (sha-gated 3cc4e0d1d0dc).
 # 2026-09-27: spec decode net-negative here (CPU-expert cost scales with
 # distinct experts touched per step; acceptance ~0.5) and drove the TG
 # wobble. Defaults now SPEC=none PPFLAG=off: PP 233.2 agg, TG 9.8-10.3
