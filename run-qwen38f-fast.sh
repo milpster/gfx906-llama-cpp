@@ -44,6 +44,25 @@ fi
 #   - Post-reboot GPU state can wedge the first task (dma fence hang / GPU
 #     page fault, cleared by relaunch or reboot).
 
+# OT=none: GPU-resident experts (drops -ncmoe and the -ot expert-CPU clauses,
+# keeps output.weight=ROCm1). Default keeps the staged CPU-expert lane.
+# NCMOE overrides the -ncmoe count (empty with OT=none); TS overrides -ts
+# (empty = drop -ts, let the loader balance by free device memory).
+OT=${OT:-on}
+NCMOE=${NCMOE:-27}
+OTARGS=()
+NCMOE_ARGS=()
+if [ "$OT" = "none" ]; then
+  OTARGS+=(-ot 'output\.weight=ROCm1')
+  [ -n "$NCMOE" ] && NCMOE_ARGS+=(-ncmoe "$NCMOE")
+elif [ "$OT" = "raw" ]; then
+  [ -n "$NCMOE" ] && NCMOE_ARGS+=(-ncmoe "$NCMOE")
+else
+  OTARGS+=(-ot '(blk\.(3[1-4]|3[89]|4[02])\.ffn_(up|gate|down)_exps\.|blk\.37\.ffn_down_exps\.|blk\.41\.ffn_down_exps\.)=CPU,output\.weight=ROCm1')
+  NCMOE_ARGS+=(-ncmoe "$NCMOE")
+fi
+TSARGS=()
+[ -n "${TS:-70,10,20}" ] && TSARGS+=(-ts "${TS:-70,10,20}")
 AMD_LOG_LEVEL=0 \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 \
 HSA_OVERRIDE_GFX_VERSION=9.0.6 \
@@ -53,7 +72,7 @@ GPU_SINGLE_ALLOC_PERCENT=100 \
 HSA_ENABLE_SDMA=1 \
 HSA_DISABLE_FRAGMENT_ALLOCATOR=0 \
 GPU_MAX_ALLOC_PERCENT=100 \
-GGML_RANGE_SPLIT_MB=2048 \
+GGML_RANGE_SPLIT_MB=${RANGESPLIT:-2048} \
 GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 \
 GGML_SPEC_DRAFT_UBATCH=128 \
 GGML_MOE_FULLCOPY_CHUNK=33554432 \
@@ -62,12 +81,12 @@ LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_ll
 exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads "${THREADS:-8}" --threads-batch 8 --poll "${POLL:-0}" --poll-batch 0 \
-  -lm mmap+mlock -lzm on-direct -fit off -fa on -ngl all -ncmoe 27 \
+  -lm mmap+mlock -lzm on-direct -fit off -fa on -ngl all ${NCMOE_ARGS[@]+"${NCMOE_ARGS[@]}"} \
   -b 5712 -ub 5712 -cram 0 --ctx-checkpoints 0 \
-  --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
-  --pipeline-parallel "${PPFLAG:-off}" -sm layer -ts 70,10,20 \
+  --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg "${MG:-0}" \
+  --pipeline-parallel "${PPFLAG:-off}" -sm layer ${TSARGS[@]+"${TSARGS[@]}"} \
   -c 20480 -ctk f16 -ctv f16 \
-  -ot '(blk\.(3[1-4]|3[89]|4[02])\.ffn_(up|gate|down)_exps\.|blk\.37\.ffn_down_exps\.|blk\.41\.ffn_down_exps\.)=CPU,output\.weight=ROCm1' \
+  "${OTARGS[@]}" \
   "${SPEC_ARGS[@]}" \
   -mm /home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf -mmdev none \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
