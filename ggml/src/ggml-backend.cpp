@@ -1714,6 +1714,16 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
             struct ggml_tensor * input = split->inputs[input_id];
             struct ggml_tensor * input_cpy = tensor_copy(input, split_backend_id, sched->cur_copy);
 
+            // trace split input copies: last line before a hang names the stuck tensor
+            static const bool input_copy_dbg = getenv("GGML_SCHED_INPUT_DEBUG") != nullptr;
+            if (input_copy_dbg) {
+                fprintf(stderr, "schedcopy split=%d/%d input=%d/%d name=%s op=%s nbytes=%zu src=%s dst=%s user=%d\n",
+                        split_id, sched->n_splits, input_id, split->n_inputs, input->name,
+                        ggml_op_name(input->op), ggml_nbytes(input),
+                        ggml_backend_name(input_backend), ggml_backend_name(split_backend),
+                        (int) !!(input->flags & GGML_TENSOR_FLAG_INPUT));
+            }
+
             if (input->flags & GGML_TENSOR_FLAG_INPUT) {
                 // inputs from the user must be copied immediately to prevent the user overwriting the data before the copy is done
                 if (sched->events[split_backend_id][sched->cur_copy] != NULL) {
