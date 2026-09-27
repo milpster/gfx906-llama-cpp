@@ -793,10 +793,55 @@ static void ggml_backend_cuda_buffer_memset_tensor(ggml_backend_buffer_t buffer,
     CUDA_CHECK(cudaStreamSynchronize(cudaStreamPerThread));
 }
 
+// route small synchronous D2H/H2D copies through a pinned bounce buffer so
+// pageable transfers avoid the driver staging path; opt-in GGML_CUDA_PINNED_D2H=1
+static bool pinned_d2h_on = getenv("GGML_CUDA_PINNED_D2H") != nullptr;
+static void * pinned_bounce_buf = nullptr;
+static size_t pinned_bounce_size = 0;
+static std::mutex pinned_bounce_mu;
+static void * ggml_cuda_host_malloc(size_t size);
+
+static bool pinned_bounce_copy(void * dst, const void * src, size_t size, cudaMemcpyKind kind) {
+    if (!pinned_d2h_on || size == 0 || size > 256*1024*1024) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(pinned_bounce_mu);
+
+    if (pinned_bounce_size < size) {
+        if (pinned_bounce_buf) {
+            cudaFreeHost(pinned_bounce_buf);
+            pinned_bounce_buf = nullptr;
+            pinned_bounce_size = 0;
+        }
+        const size_t new_size = std::max(size, (size_t) 8*1024*1024);
+        pinned_bounce_buf = ggml_cuda_host_malloc(new_size);
+        if (!pinned_bounce_buf) {
+            pinned_d2h_on = false;
+            return false;
+        }
+        pinned_bounce_size = new_size;
+    }
+
+    if (kind == cudaMemcpyDeviceToHost) {
+        CUDA_CHECK(cudaMemcpyAsync(pinned_bounce_buf, src, size, kind, cudaStreamPerThread));
+        CUDA_CHECK(cudaStreamSynchronize(cudaStreamPerThread));
+        memcpy(dst, pinned_bounce_buf, size);
+    } else {
+        memcpy(pinned_bounce_buf, src, size);
+        CUDA_CHECK(cudaMemcpyAsync(dst, pinned_bounce_buf, size, kind, cudaStreamPerThread));
+        CUDA_CHECK(cudaStreamSynchronize(cudaStreamPerThread));
+    }
+    return true;
+}
+
 static void ggml_backend_cuda_buffer_set_tensor(ggml_backend_buffer_t buffer, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
     ggml_backend_cuda_buffer_context * ctx = (ggml_backend_cuda_buffer_context *) buffer->context;
 
     ggml_cuda_set_device(ctx->device);
+    if (pinned_bounce_copy((char *) tensor->data + offset, data, size, cudaMemcpyHostToDevice)) {
+        return;
+    }
     CUDA_CHECK(cudaMemcpyAsync((char *) tensor->data + offset, data, size, cudaMemcpyHostToDevice, cudaStreamPerThread));
     CUDA_CHECK(cudaStreamSynchronize(cudaStreamPerThread));
 }
@@ -805,6 +850,9 @@ static void ggml_backend_cuda_buffer_get_tensor(ggml_backend_buffer_t buffer, co
     ggml_backend_cuda_buffer_context * ctx = (ggml_backend_cuda_buffer_context *) buffer->context;
 
     ggml_cuda_set_device(ctx->device);
+    if (pinned_bounce_copy(data, (const char *) tensor->data + offset, size, cudaMemcpyDeviceToHost)) {
+        return;
+    }
     CUDA_CHECK(cudaMemcpyAsync(data, (const char *) tensor->data + offset, size, cudaMemcpyDeviceToHost, cudaStreamPerThread));
     CUDA_CHECK(cudaStreamSynchronize(cudaStreamPerThread));
 }
@@ -896,6 +944,16 @@ static ggml_backend_buffer_t ggml_backend_cuda_buffer_type_alloc_buffer(ggml_bac
     ggml_backend_cuda_buffer_type_context * buft_ctx = (ggml_backend_cuda_buffer_type_context *)buft->context;
 
     ggml_cuda_set_device(buft_ctx->device);
+
+    // GGML_CUDA_ALLOC_DEBUG=1: log device free memory at each range alloc,
+    // to separate real capacity limits from aperture/KFD failures
+    static const bool alloc_debug = getenv("GGML_CUDA_ALLOC_DEBUG") != nullptr;
+    if (alloc_debug && size > 128*1024*1024) {
+        size_t db_free = 0, db_total = 0;
+        cudaMemGetInfo(&db_free, &db_total);
+        GGML_LOG_ERROR("allocdbg: dev %d range %.2f MiB, device free %.2f / %.2f MiB\n",
+                buft_ctx->device, size / 1024.0 / 1024.0, db_free / 1024.0 / 1024.0, db_total / 1024.0 / 1024.0);
+    }
 
     void * dev_ptr;
     cudaError_t err = ggml_cuda_device_malloc(&dev_ptr, size, buft_ctx->device);
