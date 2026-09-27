@@ -2676,7 +2676,8 @@ ggml_tensor * llm_graph_context::build_attn_mha(
              int64_t   n_kv_max,
                float   kq_scale,
                  int   il,
-         ggml_tensor * kq_nvis) const {
+         ggml_tensor * kq_nvis,
+         ggml_tensor * kq_indices) const {
     const bool v_trans = v->nb[1] > v->nb[2];
 
     // split the batch into streams if needed
@@ -2711,6 +2712,9 @@ ggml_tensor * llm_graph_context::build_attn_mha(
                                   hparams.attn_soft_cap ? hparams.f_attn_logit_softcapping : 0.0f);
         if (kq_nvis) {
             ggml_flash_attn_ext_set_kq_nvis(cur, kq_nvis);
+        }
+        if (kq_indices) {
+            ggml_flash_attn_ext_set_kq_indices(cur, kq_indices);
         }
         ggml_set_name(cur, "kqv_fa");
         res->add_fused_node({LLM_FUSED_OP_FLASH_ATTN, cur, il});
@@ -2964,7 +2968,9 @@ static std::unique_ptr<llm_graph_input_attn_kv> build_attn_inp_kv_impl(
         // the dense mask is not merely unreferenced when the generated form is active:
         // any ggml_set_input tensor becomes an alloc-forced OP_NONE node in graph_copy,
         // so under gen it must not be created at all
-        if (getenv("LLAMA_KQ_MASK_GEN") && kq_mask_gen_supported(hparams, cparams, ubatch)) {
+        const bool kq_mask_gen = (getenv("LLAMA_KQ_MASK_GEN") || getenv("LLAMA_QSA_SPARSE_FA")) &&
+            kq_mask_gen_supported(hparams, cparams, ubatch);
+        if (kq_mask_gen) {
             const int64_t n_kv = mctx_cur->get_n_kv();
 
             inp->self_kq_mask_col = ggml_new_tensor_1d(ctx0, GGML_TYPE_I32, n_kv);

@@ -1,5 +1,6 @@
 #include "common.cuh"
 #include "fattn-common.cuh"
+#include "fattn-idx.cuh"
 #include "fattn-mma-f16.cuh"
 #include "fattn-tile.cuh"
 #include "fattn-vec.cuh"
@@ -519,6 +520,7 @@ enum best_fattn_kernel {
     BEST_FATTN_KERNEL_TILE    = 200,
     BEST_FATTN_KERNEL_VEC     = 100,
     BEST_FATTN_KERNEL_MMA_F16 = 400,
+    BEST_FATTN_KERNEL_IDX     = 300,
 };
 
 #if GGML_CUDA_VEGA_TUNE_FATTN
@@ -601,6 +603,29 @@ static best_fattn_kernel ggml_cuda_get_best_fattn_kernel(const int device, const
     const ggml_tensor * K     = dst->src[1];
     const ggml_tensor * V     = dst->src[2];
     const ggml_tensor * mask  = dst->src[3];
+
+    // indexed sparse FA: the index set comes from the graph, so no dense mask
+    // may exist and the causal cutoff (nvis) is mandatory
+    if (dst->src[6] != nullptr) {
+        const ggml_tensor * idx = dst->src[6];
+        if (dst->src[3] != nullptr || dst->src[4] != nullptr || dst->src[5] == nullptr) {
+            return BEST_FATTN_KERNEL_NONE;
+        }
+        if (idx->type != GGML_TYPE_I32 || Q->type != GGML_TYPE_F32) {
+            return BEST_FATTN_KERNEL_NONE;
+        }
+        const int D = Q->ne[0];
+        if (D != K->ne[0] || D != V->ne[0] || (D != 64 && D != 128 && D != 256)) {
+            return BEST_FATTN_KERNEL_NONE;
+        }
+        const auto kv_ok = [](ggml_type t) {
+            return t == GGML_TYPE_F16 || t == GGML_TYPE_Q8_0 || t == GGML_TYPE_Q4_0;
+        };
+        if (!kv_ok(K->type) || !kv_ok(V->type)) {
+            return BEST_FATTN_KERNEL_NONE;
+        }
+        return BEST_FATTN_KERNEL_IDX;
+    }
 
     const int gqa_ratio = Q->ne[2] / K->ne[2];
     GGML_ASSERT(Q->ne[2] % K->ne[2] == 0);
@@ -826,6 +851,8 @@ size_t ggml_cuda_flash_attn_ext_get_alloc_size(int device, const ggml_tensor * d
             need_f16_K = K->type == GGML_TYPE_F32 || f16_fallback;
             need_f16_V = V->type == GGML_TYPE_F32 || f16_fallback;
         } break;
+        case BEST_FATTN_KERNEL_IDX:
+            break; // K/V rows are dequantized in-kernel, no F16 shadow needed
         case BEST_FATTN_KERNEL_NONE:
             break;
     }
@@ -849,6 +876,9 @@ void ggml_cuda_flash_attn_ext(ggml_backend_cuda_context & ctx, ggml_tensor * dst
             break;
         case BEST_FATTN_KERNEL_MMA_F16:
             ggml_cuda_flash_attn_ext_mma_f16(ctx, dst);
+            break;
+        case BEST_FATTN_KERNEL_IDX:
+            ggml_cuda_flash_attn_ext_idx(ctx, dst);
             break;
     }
 }

@@ -2529,6 +2529,15 @@ extern "C" {
             struct ggml_tensor * a,
             struct ggml_tensor * nvis);
 
+    // per-query sparse index set: query row i attends KV cell j only when
+    // j == indices[k][i] for some k, and j < nvis[i] when nvis is also set.
+    // I32 [n_idx, n_q_rows, 1, n_stream]; mutually exclusive with a dense mask.
+    // distinct from n_kv_max, which compacts the finite entries of a dense
+    // mask: here the index set comes from the graph, no mask exists at all.
+    GGML_API void ggml_flash_attn_ext_set_kq_indices(
+            struct ggml_tensor * a,
+            struct ggml_tensor * indices);
+
     // TODO: needs to be adapted to ggml_flash_attn_ext
     GGML_API struct ggml_tensor * ggml_flash_attn_back(
            struct ggml_context * ctx,

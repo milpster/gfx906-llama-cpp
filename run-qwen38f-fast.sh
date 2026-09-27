@@ -66,6 +66,9 @@ else
 fi
 TSARGS=()
 [ -n "${TS:-70,10,20}" ] && TSARGS+=(-ts "${TS:-70,10,20}")
+# KVO=off adds -nkvo (force KV on GPU); default leaves kv-offload enabled
+KVOARGS=()
+[ "${KVO:-on}" = "off" ] && KVOARGS+=(-nkvo)
 AMD_LOG_LEVEL=0 \
 GGML_CUDA_CUBLAS_COMPUTE_TYPE=f16 \
 HSA_OVERRIDE_GFX_VERSION=9.0.6 \
@@ -85,14 +88,15 @@ exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads "${THREADS:-8}" --threads-batch 8 --poll "${POLL:-0}" --poll-batch 0 \
   -lm mmap+mlock -lzm on-direct -fit off -fa on -ngl all ${NCMOE_ARGS[@]+"${NCMOE_ARGS[@]}"} \
-  -b 5712 -ub 5712 -cram 0 --ctx-checkpoints 0 \
+  -b "${UB:-5696}" -ub "${UB:-5696}" -cram 0 --ctx-checkpoints 0 \
   --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg "${MG:-0}" \
   --pipeline-parallel "${PPFLAG:-off}" -sm layer ${TSARGS[@]+"${TSARGS[@]}"} \
-  -c 20480 -ctk f16 -ctv f16 \
+  -c "${CTX:-20480}" -ctk "${CTK:-f16}" -ctv "${CTV:-f16}" ${KVOARGS[@]+"${KVOARGS[@]}"} \
   "${OTARGS[@]}" \
   "${SPEC_ARGS[@]}" \
   -mm /home/srcds/ai/ai/mmproj-Qwen3.8-Flash-Next-F16.gguf -mmdev none \
   --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 \
   --presence_penalty 0.0 --repeat-penalty 1.0 \
   --chat-template-file "$ROOT/sharp_chat_template.jinja" \
-  --reasoning on --reasoning-budget -1
+  --reasoning on --reasoning-budget -1 \
+  ${EXTRA_ARGS:-}

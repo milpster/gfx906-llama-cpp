@@ -838,9 +838,11 @@ ggml_tensor * llama_model_qwen4exp::graph::build_qsa_top_k(
     // the rest is the visible/not test the attention mask already carries, so upload the per-block half only: 1/ratio of the cells
     // alibi writes distances instead of a mask and non-causal keeps future cells, so both opt out
     // the mask also holds an mrope rule for the query's own position, but only 2d image positions can differ there
-    const bool blk_bias = kq_mask != nullptr &&
-        kq_mask->ne[0] == n_kv && kq_mask->ne[1] == n_tps && kq_mask->ne[3] == n_stream &&
-        cparams.causal_attn && !hparams.use_alibi;
+    const bool dense_mask = kq_mask != nullptr &&
+        kq_mask->ne[0] == n_kv && kq_mask->ne[1] == n_tps && kq_mask->ne[3] == n_stream;
+    const bool generated_mask = mask_col != nullptr && mask_nvis != nullptr &&
+        mask_col->ne[0] == n_kv && mask_nvis->ne[0] == n_tokens;
+    const bool blk_bias = (dense_mask || generated_mask) && cparams.causal_attn && !hparams.use_alibi;
 
     // nothing above depends on the layer, so the layers sharing a ratio share one input set
     llm_graph_input_qsa * inp = nullptr;
@@ -1053,6 +1055,20 @@ ggml_tensor * llama_model_qwen4exp::graph::build_attn_qsa(
 
     ggml_tensor * cur = nullptr;
 
+    static const bool qsa_sparse_fa = [] {
+        return getenv("LLAMA_QSA_SPARSE_FA") != nullptr;
+    }();
+    const auto qsa_idx_kv_ok = [](ggml_type t) {
+        return t == GGML_TYPE_F16 || t == GGML_TYPE_Q8_0 || t == GGML_TYPE_Q4_0;
+    };
+    if (qsa_sparse_fa && cparams.flash_attn && inp->self_kq_mask_nvis && top_k->ne[3] == 1 &&
+            !hparams.attn_soft_cap &&
+            qsa_idx_kv_ok(mctx_cur->type_k()) && qsa_idx_kv_ok(mctx_cur->type_v()) &&
+            q->ne[0] == k->ne[0] && q->ne[0] == v->ne[0] &&
+            (q->ne[0] == 64 || q->ne[0] == 128 || q->ne[0] == 256)) {
+        cur = build_attn_mha(q, k, v, nullptr, nullptr, nullptr, nullptr, top_k->ne[0], kq_scale, il,
+                inp->self_kq_mask_nvis, top_k);
+    } else
     for (int64_t c0 = 0; c0 < n_tps; c0 += chunk) {
         const int64_t cs = std::min<int64_t>(chunk, n_tps - c0);
 

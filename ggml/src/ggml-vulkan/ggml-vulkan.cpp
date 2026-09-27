@@ -15499,6 +15499,10 @@ static bool ggml_backend_vk_device_supports_op(ggml_backend_dev_t dev, const ggm
             }
         case GGML_OP_FLASH_ATTN_EXT:
             {
+                // indexed sparse FA (src[6]) has no Vulkan implementation
+                if (op->src[6]) {
+                    return false;
+                }
                 if (op->src[5] && (op->src[5]->type != GGML_TYPE_I32 || op->src[5]->ne[0] != op->src[0]->ne[1])) {
                     return false;
                 }

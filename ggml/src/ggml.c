@@ -5610,6 +5610,19 @@ void ggml_flash_attn_ext_set_kq_nvis(
     a->src[5] = nvis;
 }
 
+void ggml_flash_attn_ext_set_kq_indices(
+        struct ggml_tensor * a,
+        struct ggml_tensor * indices) {
+    GGML_ASSERT(a->op == GGML_OP_FLASH_ATTN_EXT);
+    GGML_ASSERT(a->src[6] == NULL);
+    GGML_ASSERT(a->src[3] == NULL);
+    GGML_ASSERT(indices->type == GGML_TYPE_I32);
+    GGML_ASSERT(a->src[0]->ne[1] == indices->ne[1]);
+    GGML_ASSERT(a->src[0]->ne[3] % indices->ne[3] == 0);
+
+    a->src[6] = indices;
+}
+
 // ggml_flash_attn_back
 
 struct ggml_tensor * ggml_flash_attn_back(
