@@ -1717,11 +1717,20 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
             // trace split input copies: last line before a hang names the stuck tensor
             static const bool input_copy_dbg = getenv("GGML_SCHED_INPUT_DEBUG") != nullptr;
             if (input_copy_dbg) {
-                fprintf(stderr, "schedcopy split=%d/%d input=%d/%d name=%s op=%s nbytes=%zu src=%s dst=%s user=%d\n",
+                fprintf(stderr, "schedcopy split=%d/%d input=%d/%d name=%s op=%s nbytes=%zu src=%s dst=%s user=%d"
+                        " ne=[%lld,%lld,%lld,%lld] nb=[%zu,%zu,%zu,%zu] data=%p",
                         split_id, sched->n_splits, input_id, split->n_inputs, input->name,
                         ggml_op_name(input->op), ggml_nbytes(input),
                         ggml_backend_name(input_backend), ggml_backend_name(split_backend),
-                        (int) !!(input->flags & GGML_TENSOR_FLAG_INPUT));
+                        (int) !!(input->flags & GGML_TENSOR_FLAG_INPUT),
+                        (long long) input->ne[0], (long long) input->ne[1], (long long) input->ne[2], (long long) input->ne[3],
+                        input->nb[0], input->nb[1], input->nb[2], input->nb[3], input->data);
+                if (input->view_src != nullptr) {
+                    fprintf(stderr, " parent=%p pbytes=%zu poff=%td",
+                            input->view_src->data, ggml_nbytes(input->view_src),
+                            (ptrdiff_t) ((const char *) input->data - (const char *) input->view_src->data));
+                }
+                fputc('\n', stderr);
             }
 
             if (input->flags & GGML_TENSOR_FLAG_INPUT) {
