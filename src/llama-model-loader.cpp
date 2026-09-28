@@ -1810,35 +1810,44 @@ bool llama_model_loader::load_all_data(
                 // mlock's populate loop wedges against streaming readahead
                 static const bool populate = getenv("LLAMA_MLOCK_POPULATE") != nullptr;
                 if (populate) {
-                    // warm and lock in bounded chunks: warming the whole range at once
-                    // overflows the cache budget and kswapd drops the warmed pages
-                    // before mlock() reaches them
+                    // use small paced chunks so reclaim does not race far ahead of the lock cursor
                     const int fd = open(files.at(idx)->name().c_str(), O_RDONLY);
                     uint8_t * base = (uint8_t *) mappings.at(idx)->addr();
                     const int64_t t0 = ggml_time_us();
                     size_t warmed = 0;
-                    const size_t chunk = size_t(512) << 20;
+                    const size_t chunk = size_t(64) << 20;
                     std::vector<uint8_t> bounce(size_t(1) << 20);
                     fprintf(stderr, "MLOCKPOP: staged warm+lock mapping %u (%zu ranges)\n", idx, ranges.size());
                     if (fd >= 0) {
+                        size_t since_pause = 0;
                         for (const auto & [first, last] : ranges) {
                             for (size_t off = first; off < last; ) {
                                 const size_t n = std::min(chunk, last - off);
-                                for (size_t o = off, done = 0; done < n; ) {
+                                for (size_t done = 0; done < n; ) {
                                     const size_t b = std::min(size_t(1) << 20, n - done);
-                                    const ssize_t r = pread(fd, bounce.data(), b, (off_t) (o + done));
+                                    const ssize_t r = pread(fd, bounce.data(), b, (off_t) (off + done));
                                     if (r <= 0) {
                                         close(fd);
-                                        throw std::runtime_error(format("populate pread of %zu bytes at offset %zu failed", b, o + done));
+                                        throw std::runtime_error(format("populate pread of %zu bytes at offset %zu failed", b, off + done));
                                     }
                                     done += r;
                                 }
+                                const int64_t t_lock0 = ggml_time_us();
                                 if (mlock(base + off, n) != 0) {
                                     close(fd);
                                     throw std::runtime_error(format("populate mlock of %zu bytes failed: %s", n, strerror(errno)));
                                 }
+                                const double t_lock = (ggml_time_us() - t_lock0) / 1e3;
+                                if (t_lock > 500.0) {
+                                    fprintf(stderr, "MLOCKPOP: slow lock %zu MiB in %.0f ms at off %zu MiB\n", n >> 20, t_lock, off >> 20);
+                                }
                                 warmed += n;
                                 off += n;
+                                since_pause += n;
+                                if (since_pause >= (size_t(512) << 20)) {
+                                    usleep(2000);
+                                    since_pause = 0;
+                                }
                                 if ((warmed & ((size_t(4) << 30) - 1)) < chunk) {
                                     fprintf(stderr, "MLOCKPOP: staged %zu MiB\n", warmed >> 20);
                                 }
