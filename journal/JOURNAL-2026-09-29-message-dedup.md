@@ -73,13 +73,68 @@ Two checks that were expected to be offline were stopped after their harness beh
 1. `build-dedup/bin/llama-server --help` initialized a separate binary before printing help and failed before binding because no ROCm-capable device was available in that command environment.
 2. The imported pytest scenario command inherited `tools/server/tests/conftest.py`, attempted to construct a server command at `../../../build/bin/llama-server`, and failed with `FileNotFoundError` before a process started.
 
-Do not retry HTTP, scenario, CLI, dedup-on, or dedup-off server checks while the production server is running unless the user explicitly approves the exact action. The retained source project's evidence and the local C++ conformance tests cover the implementation, but local HTTP behavior and disabled-path byte identity remain unverified in this fork.
+At that point, HTTP and server checks remained blocked pending explicit user approval.
+
+## Live server verification
+
+The user stopped the previous server, approved live verification, and specified `swift_1.5_llama_start-q6_q8_q4.sh` as the launcher. The launcher was not edited. Its existing `BIN` and `LD_LIB` overrides were used to select the dedup build:
+
+```sh
+BIN=$PWD/build-dedup/bin/llama-server LD_LIB=$PWD/build-dedup/bin PORT=8009 ./swift_1.5_llama_start-q6_q8_q4.sh
+```
+
+Startup result: pass.
+
+- PID: `4112673`.
+- Executable: `build-dedup/bin/llama-server`.
+- Endpoint: `http://127.0.0.1:8009`.
+- Two slots initialized at `n_ctx_slot=200192` after context rounding.
+- Target, DFlash2 draft model, and multimodal projector loaded successfully.
+- The server was launched without `--message-dedup`, so default-off and per-request override behavior could be checked on the same process.
+
+The live request used `tools/server/tests/fixtures/message_dedup/requests/three_copies.request.json`, with three byte-identical large `tool` results.
+
+### Template gate
+
+`POST /apply-template` without an override returned HTTP 200:
+
+- Rendered prompt: 4,713 bytes.
+- Full-copy markers: 3.
+- Dedup stubs: 0.
+
+The same request with `message_dedup={"enabled":true,"min_bytes":1,"roles":["tool"]}` returned HTTP 200:
+
+- Rendered prompt: 2,825 bytes.
+- Full-copy markers: 1.
+- Dedup stubs: 2.
+- Both stubs referenced `tool result #1 (read_file)`.
+
+This proves that default-off preserved all copies and the per-request override preserved the first copy while replacing both later copies.
+
+### Token-count gate
+
+`POST /v1/chat/completions/input_tokens` with the same off/on requests returned HTTP 200:
+
+- Dedup off: 1,473 input tokens.
+- Dedup on: 769 input tokens.
+- Saved: 704 input tokens.
+
+### Timing-statistics gate
+
+A non-streaming `POST /v1/chat/completions` used `tools/server/tests/fixtures/message_dedup/timings_request.json`, the same per-request override, and `max_tokens=1`. It returned HTTP 200 with one generated token:
+
+- `dedup_n=1`.
+- `dedup_bytes_saved=245`.
+- `dedup_tokens_saved_est=61`.
+- `prompt_n=440`, `cache_n=0`, `predicted_n=1`.
+
+Post-test `GET /health` returned `{"status":"ok"}`. The verified server remains running on port 8009; it was not stopped or restarted after the checks.
 
 ## Promotion state
 
 - Source adoption: complete.
 - Fresh build and C++ conformance: complete.
-- Production binary replacement: not done.
-- Launcher changes: not done; the feature remains opt-in.
-- Live HTTP validation: blocked pending explicit user approval.
+- Retained production binary replacement: not done; `build-rcfix` remains unchanged.
+- Launcher changes: not done; the live process uses `BIN` and `LD_LIB` overrides and the feature remains default-off.
+- Live HTTP validation: complete for default-off rendering, per-request dedup rendering, token count reduction, timing statistics, and post-test health.
 - Push: not requested and not performed.
