@@ -1853,10 +1853,26 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                 throw std::runtime_error(format("unable to allocate %s buffer", ggml_backend_buft_name(buft)));
             }
             if (use_mlock && ggml_backend_buffer_is_host(buf)) {
-                pimpl->mlock_bufs.emplace_back(new llama_mlock);
-                auto & mlock_buf = pimpl->mlock_bufs.back();
-                mlock_buf->init   (ggml_backend_buffer_get_base(buf));
-                mlock_buf->grow_to(ggml_backend_buffer_get_size(buf));
+                std::vector<ggml_backend_buffer_t> buffers_to_lock;
+                for (ggml_tensor * tensor = ggml_get_first_tensor(ctx); tensor != nullptr; tensor = ggml_get_next_tensor(ctx, tensor)) {
+                    ggml_backend_buffer_t tensor_buf = tensor->buffer;
+                    if (tensor_buf != nullptr &&
+                        ggml_backend_buffer_is_host(tensor_buf) &&
+                        std::find(buffers_to_lock.begin(), buffers_to_lock.end(), tensor_buf) == buffers_to_lock.end()) {
+                        buffers_to_lock.push_back(tensor_buf);
+                    }
+                }
+
+                for (ggml_backend_buffer_t tensor_buf : buffers_to_lock) {
+                    void * base = ggml_backend_buffer_get_base(tensor_buf);
+                    size_t size = ggml_backend_buffer_get_size(tensor_buf);
+                    if (size > 0) {
+                        pimpl->mlock_bufs.emplace_back(new llama_mlock);
+                        auto & mlock_buf = pimpl->mlock_bufs.back();
+                        mlock_buf->init   (base);
+                        mlock_buf->grow_to(size);
+                    }
+                }
             }
             bufs.emplace_back(buf);
             for (uint32_t idx = 0; idx < ml.files.size(); idx++) {
