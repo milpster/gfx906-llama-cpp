@@ -700,13 +700,18 @@ struct llama_mlock::impl {
 
     bool raw_lock(const void * addr, size_t size) const {
 #if defined(__linux__) && defined(MLOCK_ONFAULT)
-        // populate-now triggers a page-migration storm on large mapped ranges;
-        // lock pages on first fault instead
-        if (syscall(SYS_mlock2, addr, size, MLOCK_ONFAULT) == 0) {
-            return true;
-        }
-        if (errno != ENOSYS) {
-            return false;
+        // populate-now wedges in __mm_populate when the cache is cold (fault
+        // path meets streaming reclaim); with the cache pre-warmed by the
+        // loader's readahead pass it runs at 10+ GB/s, so LLAMA_MLOCK_POPULATE=1
+        // selects it and keeps every page faulted and locked at load time
+        static const bool populate_now = getenv("LLAMA_MLOCK_POPULATE") != nullptr;
+        if (!populate_now) {
+            if (syscall(SYS_mlock2, addr, size, MLOCK_ONFAULT) == 0) {
+                return true;
+            }
+            if (errno != ENOSYS) {
+                return false;
+            }
         }
 #endif
         if (!mlock(addr, size)) {
@@ -875,6 +880,10 @@ struct llama_mlock::impl {
         GGML_ASSERT(addr);
         if (failed_already || ranges.empty()) {
             return;
+        }
+
+        if (getenv("LLAMA_MLOCK_POPULATE")) {
+            fprintf(stderr, "MLOCKPOP: lock_ranges %zu ranges, locking\n", ranges.size());
         }
 
         size_t granularity = lock_granularity();

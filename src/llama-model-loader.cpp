@@ -16,6 +16,8 @@
 
 #ifdef __linux__
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #endif
 
 static const size_t kiB = 1024;
@@ -1802,6 +1804,55 @@ bool llama_model_loader::load_all_data(
         if (lmlocks && !mlock_pending.empty()) {
             for (auto & [idx, ranges] : mlock_pending) {
                 LLAMA_LOG_INFO("%s: selective mlock: mapping %u, %zu ranges\n", __func__, idx, ranges.size());
+
+                // LLAMA_MLOCK_POPULATE=1: fill the page cache for the locked ranges
+                // synchronously before mlock() runs; faulting cold pages inside
+                // mlock's populate loop wedges against streaming readahead
+                static const bool populate = getenv("LLAMA_MLOCK_POPULATE") != nullptr;
+                if (populate) {
+                    // warm and lock in bounded chunks: warming the whole range at once
+                    // overflows the cache budget and kswapd drops the warmed pages
+                    // before mlock() reaches them
+                    const int fd = open(files.at(idx)->name().c_str(), O_RDONLY);
+                    uint8_t * base = (uint8_t *) mappings.at(idx)->addr();
+                    const int64_t t0 = ggml_time_us();
+                    size_t warmed = 0;
+                    const size_t chunk = size_t(512) << 20;
+                    std::vector<uint8_t> bounce(size_t(1) << 20);
+                    fprintf(stderr, "MLOCKPOP: staged warm+lock mapping %u (%zu ranges)\n", idx, ranges.size());
+                    if (fd >= 0) {
+                        for (const auto & [first, last] : ranges) {
+                            for (size_t off = first; off < last; ) {
+                                const size_t n = std::min(chunk, last - off);
+                                for (size_t o = off, done = 0; done < n; ) {
+                                    const size_t b = std::min(size_t(1) << 20, n - done);
+                                    const ssize_t r = pread(fd, bounce.data(), b, (off_t) (o + done));
+                                    if (r <= 0) {
+                                        close(fd);
+                                        throw std::runtime_error(format("populate pread of %zu bytes at offset %zu failed", b, o + done));
+                                    }
+                                    done += r;
+                                }
+                                if (mlock(base + off, n) != 0) {
+                                    close(fd);
+                                    throw std::runtime_error(format("populate mlock of %zu bytes failed: %s", n, strerror(errno)));
+                                }
+                                warmed += n;
+                                off += n;
+                                if ((warmed & ((size_t(4) << 30) - 1)) < chunk) {
+                                    fprintf(stderr, "MLOCKPOP: staged %zu MiB\n", warmed >> 20);
+                                }
+                            }
+                        }
+                        close(fd);
+                    }
+                    fprintf(stderr, "MLOCKPOP: staged %zu MiB in %.2f s\n",
+                            warmed >> 20, (ggml_time_us() - t0) / 1e6);
+                    LLAMA_LOG_INFO("%s: populate warmed %.2f GiB for mapping %u in %.2f s\n", __func__,
+                            warmed / (1024.0 * 1024.0 * 1024.0), idx, (ggml_time_us() - t0) / 1e6);
+                    // the staged pass already locked the same range union
+                    continue;
+                }
                 lmlocks->at(idx)->lock_ranges(std::move(ranges));
 
                 // mainline #26659 registers whole mappings and fails when they rival RAM;
