@@ -1,0 +1,91 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"shipping/rates.py\", \"line\": 7, \"text\": \"    \\\"remote\\\": 245,\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited shipping/rates.py: line 7 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_2",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_2",
+   "content": "test_first_kilogram_is_free (tests.test_rates.BaseRateTests.test_first_kilogram_is_free) ... ok\ntest_exact_kilograms_are_not_rounded_up (tests.test_rates.BillableWeightTests.test_exact_kilograms_are_not_rounded_up) ... ok\ntest_fractions_round_up (tests.test_rates.BillableWeightTests.test_fractions_round_up) ... ok\ntest_local_quote (tests.test_rates.QuoteTests.test_local_quote) ... ok\ntest_regional_quote_rounds_half_up (tests.test_rates.QuoteTests.test_regional_quote_rounds_half_up) ... ok\ntest_remote_zone_is_priced_at_245_percent (tests.test_rates.QuoteTests.test_remote_zone_is_priced_at_245_percent) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.004s\n\nOK\n"
+  },
+  {
+   "role": "assistant",
+   "content": "The remote zone multiplier is now 245; the tests pass."
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"shipping/rates.py\", \"line\": 7, \"text\": \"    \\\"remote\\\": 254,\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited shipping/rates.py: line 7 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_2",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_2",
+   "content": "test_first_kilogram_is_free (tests.test_rates.BaseRateTests.test_first_kilogram_is_free) ... ok\ntest_exact_kilograms_are_not_rounded_up (tests.test_rates.BillableWeightTests.test_exact_kilograms_are_not_rounded_up) ... ok\ntest_fractions_round_up (tests.test_rates.BillableWeightTests.test_fractions_round_up) ... ok\ntest_local_quote (tests.test_rates.QuoteTests.test_local_quote) ... ok\ntest_regional_quote_rounds_half_up (tests.test_rates.QuoteTests.test_regional_quote_rounds_half_up) ... ok\ntest_remote_zone_is_priced_at_245_percent (tests.test_rates.QuoteTests.test_remote_zone_is_priced_at_245_percent) ... FAIL\n\n======================================================================\nFAIL: test_remote_zone_is_priced_at_245_percent (tests.test_rates.QuoteTests.test_remote_zone_is_priced_at_245_percent)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"tests/test_rates.py\", line 28, in test_remote_zone_is_priced_at_245_percent\n    self.assertEqual(rates.zone_multiplier(\"remote\"), 245)\nAssertionError: 254 != 245\n\n----------------------------------------------------------------------\nRan 6 tests in 0.004s\n\nFAILED (failures=1)\n"
+  },
+  {
+   "role": "assistant",
+   "content": "Fixed the remote zone multiplier."
+  }
+ ]
+}

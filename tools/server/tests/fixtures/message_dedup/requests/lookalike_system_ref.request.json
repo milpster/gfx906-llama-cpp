@@ -1,0 +1,31 @@
+{
+ "messages": [
+  {
+   "content": "You are a careful assistant.",
+   "role": "system"
+  },
+  {
+   "content": "Fetch the page",
+   "role": "user"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{}",
+      "name": "fetch_url"
+     },
+     "id": "w1",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "[duplicate content omitted: byte-identical to system message #1, which begins \"You are a careful assistant...\"; unchanged since then]",
+   "role": "tool",
+   "tool_call_id": "w1"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "messages": [
+  {
+   "content": "LF line 000: synthetic fixture text for SPEC-0001, not real data.\nLF line 001: synthetic fixture text for SPEC-0001, not real data.\nLF line 002: synthetic fixture text for SPEC-0001, not real data.\nLF line 003: synthetic fixture text for SPEC-0001, not real data.\nLF line 004: synthetic fixture text for SPEC-0001, not real data.\nLF line 005: synthetic fixture text for SPEC-0001, not real data.\nLF line 006: synthetic fixture text for SPEC-0001, not real data.\nLF line 007: synthetic fixture text for SPEC-0001, not real data.\nLF line 008: synthetic fixture text for SPEC-0001, not real data.\nLF line 009: synthetic fixture text for SPEC-0001, not real data.\nLF line 010: synthetic fixture text for SPEC-0001, not real data.\nLF line 011: synthetic fixture text for SPEC-0001, not real data.\nLF line 012: synthetic fixture text for SPEC-0001, not real data.\nLF line 013: synthetic fixture text for SPEC-0001, not real data.\nLF line 014: synthetic fixture text for SPEC-0001, not real data.\nLF line 015: synthetic fixture text for SPEC-0001, not real data.\nLF line 016: synthetic fixture text for SPEC",
+   "role": "tool",
+   "tool_call_id": "a"
+  },
+  {
+   "content": "LF line 000: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 001: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 002: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 003: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 004: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 005: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 006: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 007: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 008: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 009: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 010: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 011: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 012: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 013: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 014: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 015: synthetic fixture text for SPEC-0001, not real data.\r\nLF line 016: synthetic fixture text for SPEC",
+   "role": "tool",
+   "tool_call_id": "b"
+  }
+ ]
+}

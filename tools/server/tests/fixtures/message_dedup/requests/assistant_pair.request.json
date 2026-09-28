@@ -1,0 +1,52 @@
+{
+ "messages": [
+  {
+   "content": "Check a.c twice",
+   "role": "user"
+  },
+  {
+   "content": "Here is my analysis of the file.\nASST line 000: synthetic fixture text for SPEC-0001, not real data.\nASST line 001: synthetic fixture text for SPEC-0001, not real data.\nASST line 002: synthetic fixture text for SPEC-0001, not real data.\nASST line 003: synthetic fixture text for SPEC-0001, not real data.\nASST line 004: synthetic fixture text for SPEC-0001, not real data.\nASST line 005: synthetic fixture text for SPEC-0001, not real data.\nASST line 006: synthetic fixture text for SPEC-0001, not real data.\nASST line 007: synthetic fixture text for SPEC-0001, not real data.\nASST line 008: synthetic fixture text for SPEC-0001, not real data.\nASST line 009: synthetic fixture text for SPEC-0001, not real data.\nASST line 010: synthetic fixture text for SPEC-0001, not real data.\nASST line 011: synthetic fixture text for SPEC-0001, not real data.\nASST line 012: synthetic fixture text for SPEC-0001, not real data.\nASST line 013: synthetic fixture text for SPEC-0001, not real data.\nASST line 014: synthetic fixture text for SPEC-0001, not real data.\nASST line 015: synthetic fixture text for SPEC-",
+   "reasoning_content": "Think about a.c first.",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "x1",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "ok 1",
+   "role": "tool",
+   "tool_call_id": "x1"
+  },
+  {
+   "content": "Here is my analysis of the file.\nASST line 000: synthetic fixture text for SPEC-0001, not real data.\nASST line 001: synthetic fixture text for SPEC-0001, not real data.\nASST line 002: synthetic fixture text for SPEC-0001, not real data.\nASST line 003: synthetic fixture text for SPEC-0001, not real data.\nASST line 004: synthetic fixture text for SPEC-0001, not real data.\nASST line 005: synthetic fixture text for SPEC-0001, not real data.\nASST line 006: synthetic fixture text for SPEC-0001, not real data.\nASST line 007: synthetic fixture text for SPEC-0001, not real data.\nASST line 008: synthetic fixture text for SPEC-0001, not real data.\nASST line 009: synthetic fixture text for SPEC-0001, not real data.\nASST line 010: synthetic fixture text for SPEC-0001, not real data.\nASST line 011: synthetic fixture text for SPEC-0001, not real data.\nASST line 012: synthetic fixture text for SPEC-0001, not real data.\nASST line 013: synthetic fixture text for SPEC-0001, not real data.\nASST line 014: synthetic fixture text for SPEC-0001, not real data.\nASST line 015: synthetic fixture text for SPEC-",
+   "reasoning_content": "Think about a.c first.",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "x2",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "ok 2",
+   "role": "tool",
+   "tool_call_id": "x2"
+  },
+  {
+   "content": "Thanks, continue.",
+   "role": "user"
+  }
+ ]
+}

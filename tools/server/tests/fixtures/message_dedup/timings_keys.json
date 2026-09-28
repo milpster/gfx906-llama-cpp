@@ -1,0 +1,24 @@
+{
+ "non_stream": [
+  "cache_n",
+  "predicted_ms",
+  "predicted_n",
+  "predicted_per_second",
+  "predicted_per_token_ms",
+  "prompt_ms",
+  "prompt_n",
+  "prompt_per_second",
+  "prompt_per_token_ms"
+ ],
+ "stream": [
+  "cache_n",
+  "predicted_ms",
+  "predicted_n",
+  "predicted_per_second",
+  "predicted_per_token_ms",
+  "prompt_ms",
+  "prompt_n",
+  "prompt_per_second",
+  "prompt_per_token_ms"
+ ]
+}

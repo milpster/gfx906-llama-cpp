@@ -1,0 +1,40 @@
+{
+ "messages": [
+  {
+   "content": "G line 000: synthetic fixture text for SPEC-0001, not real data.\nG line 001: synthetic fixture text for SPEC-0001, not real data.\nG line 002: synthetic fixture text for SPEC-0001, not real data.\nG line 003: synthetic fixture text for SPEC-0001, not real data.\nG line 004: synthetic fixture text for SPEC-0001, not real data.\nG line 005: synthetic fixture text for SPEC-0001, not real data.\nG line 006: synthetic fixture text for SPEC-0001, not real data.\nG line 007: synthetic fixture text for SPEC-0001, not real data.\nG line 008: synthetic fixture text for SPEC-0001, not real data.\nG line 009: synthetic fixture text for SPEC-0001, not real data.\nG line 010: synthetic fixture text for SPEC-0001, not real data.\nG line 011: synthetic fixture text for SPEC-0001, not real data.\nG line 012: synthetic fixture text for SPEC-0001, not real data.\nG line 013: synthetic fixture text for SPEC-0001, not real data.\nG line 014: synthetic fixture text for SPEC-0001, not real data.\nG line 015: synthetic fixture text for SPEC-0001",
+   "role": "tool",
+   "tool_call_id": "a"
+  },
+  {
+   "content": "G line 000: synthetic fixture text for SPEC-0001, not real data.\nG line 001: synthetic fixture text for SPEC-0001, not real data.\nG line 002: synthetic fixture text for SPEC-0001, not real data.\nG line 003: synthetic fixture text for SPEC-0001, not real data.\nG line 004: synthetic fixture text for SPEC-0001, not real data.\nG line 005: synthetic fixture text for SPEC-0001, not real data.\nG line 006: synthetic fixture text for SPEC-0001, not real data.\nG line 007: synthetic fixture text for SPEC-0001, not real data.\nG line 008: synthetic fixture text for SPEC-0001, not real data.\nG line 009: synthetic fixture text for SPEC-0001, not real data.\nG line 010: synthetic fixture text for SPEC-0001, not real data.\nG line 011: synthetic fixture text for SPEC-0001, not real data.\nG line 012: synthetic fixture text for SPEC-0001, not real data.\nG line 013: synthetic fixture text for SPEC-0001, not real data.\nG line 014: synthetic fixture text for SPEC-0001, not real data.\nG line 015: synthetic fixture text for SPEC-0001",
+   "role": "tool",
+   "tool_call_id": "b"
+  },
+  {
+   "content": "H line 000: synthetic fixture text for SPEC-0001, not real data.\nH line 001: synthetic fixture text for SPEC-0001, not real data.\nH line 002: synthetic fixture text for SPEC-0001, not real data.\nH line 003: synthetic fixture text for SPEC-0001, not real data.\nH line 004: synthetic fixture text for SPEC-0001, not real data.\nH line 005: synthetic fixture text for SPEC-0001, not real data.\nH line 006: synthetic fixture text for SPEC-0001, not real data.\nH line 007: synthetic fixture text for SPEC-0001, not real data.\nH line 008: synthetic fixture text for SPEC-0001, not real data.\nH line 009: synthetic fixture text for SPEC-0001, not real data.\nH line 010: synthetic fixture text for SPEC-0001, not real data.\nH line 011: synthetic fixture text for SPEC-0001, not real data.\nH line 012: synthetic fixture text for SPEC-0001, not real data.\nH line 013: synthetic fixture text for SPEC-0001, not real data.\nH line 014: synthetic fixture text for SPEC-0001, not real data.\nH line 015: synthetic fixture text for SPEC-0001,",
+   "role": "tool",
+   "tool_call_id": "c"
+  },
+  {
+   "content": [
+    {
+     "text": "H line 000: synthetic fixture text for SPEC-0001, not real data.\nH line 001: synthetic fixture text for SPEC-0001, not real data.\nH line 002: synthetic fixture text for SPEC-0001, not real data.\nH line 003: synthetic fixture text for SPEC-0001, not real data.\nH line 004: synthetic fixture text for SPEC-0001, not real data.\nH line 005: synthetic fixture text for SPEC-0001, not real data.\nH line 006: synthetic fixture text for SPEC-0001, not real data.\nH line 007: synthetic fixture text for SPEC-0001, not real data.\nH line 008: synthetic fixture text for SPEC-0001, not real data.\nH line 009: synthetic fixture text for SPEC-0001, not real data.\nH line 010: synthetic fixture text for SPEC-0001, not real data.\nH line 011: synthetic fixture text for SPEC-0001, not real data.\nH line 012: synthetic fixture text for SPEC-0001, not real data.\nH line 013: synthetic fixture text for SPEC-0001, not real data.\nH line 014: synthetic fixture text for SPEC-0001, not real data.\nH line 015: synthetic fixture text for SPEC-0001,",
+     "type": "text"
+    },
+    {
+     "image_url": {
+      "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAABlklEQVR4nBXRURVEIQhFUSMYgQhGMAIRiGCEE8EIRiACEYhABCLMG7/ZrMt1jMEcyGAN9kAHNjgDBnfwBj6IQQ5q0IMxJnMikzXZE53Y5EyY3Mmb+CQmOalJzw8IUxBhCVtQwYQjIFzhCS6EkEIJLR9YzIUs1mIvdGGLs2BxF2/hi1jkoha9PrCZG9mszd7oxjZnw+Zu3sY3sclNbXp/QJmKKEvZiiqmHAXlKk9xJZRUSmn9gDENMZaxDTXMOAbGNZ7hRhhplNH2gcM8yGEd9kEPdjgHDvfwDn6IQx7q0OcD/wK/Sr4jv9hfkG/1N/x/Fx44BCQU9Pc94zIvclmXfdGLXc79j9/Lu/glLnmpS98PPOZDHuuxH/qwx3n/5ffxHv6IRz7q0e8DznTEWc521DHn+D/KdZ7jTjjplNP+gWAGEqxgBxpYcOIf/AYv8CCCDCro+EAyE0lWshNNLDn5P/MmL/Ekkkwq6fxAMQspVrELLaw49S/lFq/wIoosquj6QDMbaVazG22sOf2v8Dav8SaabKrp5geIAnAQEbP2+wAAAABJRU5ErkJggg=="
+     },
+     "type": "image_url"
+    }
+   ],
+   "role": "tool",
+   "tool_call_id": "d"
+  },
+  {
+   "content": "[duplicate content omitted: byte-identical to tool result #1, which begins \"x\"; unchanged since then]",
+   "role": "tool",
+   "tool_call_id": "e"
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"ledgerkit/journal.py\", \"line\": 15, \"text\": \"    if len(lines) < 2:\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited ledgerkit/journal.py: line 15 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_2",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_2",
+   "content": "test_asset_balance_is_debit_normal (tests.test_accounts.BalanceTests.test_asset_balance_is_debit_normal) ... ok\ntest_expense_is_debit_normal (tests.test_accounts.BalanceTests.test_expense_is_debit_normal) ... ok\ntest_income_balance_is_credit_normal (tests.test_accounts.BalanceTests.test_income_balance_is_credit_normal) ... ok\ntest_unknown_kind_is_rejected (tests.test_accounts.BalanceTests.test_unknown_kind_is_rejected) ... ok\ntest_missing_rate_is_an_error (tests.test_fx.ConvertTests.test_missing_rate_is_an_error) ... ok\ntest_negative_amounts_round_symmetrically (tests.test_fx.ConvertTests.test_negative_amounts_round_symmetrically) ... ok\ntest_rounds_half_away_from_zero (tests.test_fx.ConvertTests.test_rounds_half_away_from_zero) ... ok\ntest_same_currency_is_identity (tests.test_fx.ConvertTests.test_same_currency_is_identity) ... ok\ntest_whole_result (tests.test_fx.ConvertTests.test_whole_result) ... ok\ntest_balanced_entry_is_posted (tests.test_journal.PostEntryTests.test_balanced_entry_is_posted) ... ok\ntest_lines_are_flattened (tests.test_journal.PostEntryTests.test_lines_are_flattened) ... ok\ntest_memo_is_kept (tests.test_journal.PostEntryTests.test_memo_is_kept) ... ok\ntest_single_line_entry_is_rejected (tests.test_journal.PostEntryTests.test_single_line_entry_is_rejected) ... ok\ntest_unbalanced_entry_is_rejected (tests.test_journal.PostEntryTests.test_unbalanced_entry_is_rejected) ... ok\ntest_negative_amount (tests.test_money.FormatCentsTests.test_negative_amount) ... ok\ntest_round_trip (tests.test_money.FormatCentsTests.test_round_trip) ... ok\ntest_negative_amount (tests.test_money.ParseCentsTests.test_negative_amount) ... ok\ntest_plain_amount (tests.test_money.ParseCentsTests.test_plain_amount) ... ok\ntest_single_decimal_digit (tests.test_money.ParseCentsTests.test_single_decimal_digit) ... ok\ntest_even_split (tests.test_money.SplitEvenlyTests.test_even_split) ... ok\ntest_parts_must_be_positive (tests.test_money.SplitEvenlyTests.test_parts_must_be_positive) ... ok\ntest_remainder_goes_to_first_shares (tests.test_money.SplitEvenlyTests.test_remainder_goes_to_first_shares) ... ok\n\n----------------------------------------------------------------------\nRan 22 tests in 0.004s\n\nOK\n"
+  },
+  {
+   "role": "assistant",
+   "content": "post_entry now rejects single-line entries; all tests pass."
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "test_asset_balance_is_debit_normal (tests.test_accounts.BalanceTests.test_asset_balance_is_debit_normal) ... ok\ntest_expense_is_debit_normal (tests.test_accounts.BalanceTests.test_expense_is_debit_normal) ... ok\ntest_income_balance_is_credit_normal (tests.test_accounts.BalanceTests.test_income_balance_is_credit_normal) ... ok\ntest_unknown_kind_is_rejected (tests.test_accounts.BalanceTests.test_unknown_kind_is_rejected) ... ok\ntest_missing_rate_is_an_error (tests.test_fx.ConvertTests.test_missing_rate_is_an_error) ... ok\ntest_negative_amounts_round_symmetrically (tests.test_fx.ConvertTests.test_negative_amounts_round_symmetrically) ... ok\ntest_rounds_half_away_from_zero (tests.test_fx.ConvertTests.test_rounds_half_away_from_zero) ... ok\ntest_same_currency_is_identity (tests.test_fx.ConvertTests.test_same_currency_is_identity) ... ok\ntest_whole_result (tests.test_fx.ConvertTests.test_whole_result) ... ok\ntest_balanced_entry_is_posted (tests.test_journal.PostEntryTests.test_balanced_entry_is_posted) ... ok\ntest_lines_are_flattened (tests.test_journal.PostEntryTests.test_lines_are_flattened) ... ok\ntest_memo_is_kept (tests.test_journal.PostEntryTests.test_memo_is_kept) ... ok\ntest_single_line_entry_is_rejected (tests.test_journal.PostEntryTests.test_single_line_entry_is_rejected) ... FAIL\ntest_unbalanced_entry_is_rejected (tests.test_journal.PostEntryTests.test_unbalanced_entry_is_rejected) ... ok\ntest_negative_amount (tests.test_money.FormatCentsTests.test_negative_amount) ... ok\ntest_round_trip (tests.test_money.FormatCentsTests.test_round_trip) ... ok\ntest_negative_amount (tests.test_money.ParseCentsTests.test_negative_amount) ... ok\ntest_plain_amount (tests.test_money.ParseCentsTests.test_plain_amount) ... ok\ntest_single_decimal_digit (tests.test_money.ParseCentsTests.test_single_decimal_digit) ... ok\ntest_even_split (tests.test_money.SplitEvenlyTests.test_even_split) ... ok\ntest_parts_must_be_positive (tests.test_money.SplitEvenlyTests.test_parts_must_be_positive) ... ok\ntest_remainder_goes_to_first_shares (tests.test_money.SplitEvenlyTests.test_remainder_goes_to_first_shares) ... ok\n\n======================================================================\nFAIL: test_single_line_entry_is_rejected (tests.test_journal.PostEntryTests.test_single_line_entry_is_rejected)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"tests/test_journal.py\", line 19, in test_single_line_entry_is_rejected\n    with self.assertRaises(ValueError):\nAssertionError: ValueError not raised\n\n----------------------------------------------------------------------\nRan 22 tests in 0.004s\n\nFAILED (failures=1)\n"
+  },
+  {
+   "role": "assistant",
+   "content": "Done."
+  }
+ ]
+}

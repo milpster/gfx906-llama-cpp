@@ -1,0 +1,173 @@
+{
+ "schema": "message_dedup.scenario/1",
+ "id": "A5",
+ "provenance": {
+  "kind": "synthetic",
+  "source": "data-ml synthetic generator tools/server/tests/eval/message_dedup/gen_scenarios.py (SPEC-0001 increment 17)",
+  "seed": "SPEC-0001/A5"
+ },
+ "endpoint": "/v1/chat/completions",
+ "depth_class": "shallow",
+ "repo_snapshot": "A5",
+ "turns": [
+  2,
+  4,
+  6,
+  8
+ ],
+ "prefix": {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are a coding agent working in a synthetic repository prepared for an evaluation. Use the tools to inspect and change files. Keep answers short and factual."
+   },
+   {
+    "role": "user",
+    "content": "In src/tariff.py, apply_surcharge uses a surcharge rate of 0.0610. Change the rate to 0.0725 with edit_file, then read the file back and quote the full line you changed."
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_a5_001",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/tariff.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_a5_001",
+    "content": "# src/tariff.py: tariff arithmetic (synthetic eval fixture)\n\nGAUGE_LOCAL = 819\nTICKET_LOCAL = 812\n\n\ndef index_packet(items, limit=673):\n    \"\"\"Collect the running total ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 26 == 25:\n            out.append(item // 7)\n    return out\n\n\ndef parse_batch(code):\n    \"\"\"Normalise the current window so callers can compare runs.\"\"\"\n    if code < 302:\n        return \"segment\"\n    if code < 586:\n        return \"sensor\"\n    return \"shard\"\n\n\ndef probe_window_fast(text, sep='/'):\n    \"\"\"Combine the incoming values without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef drain_harbor_early(delta, step):\n    \"\"\"Normalise the raw text using the configured limits.\"\"\"\n    lo, hi = min(delta, step), max(delta, step)\n    span = hi - lo\n    return lo + span // 5 if span > 414 else hi\n\n\ndef tally_draft_raw(base, value):\n    \"\"\"Rebuild a batch of items before it is stored.\"\"\"\n    lo, hi = min(base, value), max(base, value)\n    span = hi - lo\n    return lo + span // 4 if span > 867 else hi\n\n\ndef decode_packet(code):\n    \"\"\"Filter each record before it is stored.\"\"\"\n    if code < 572:\n        return \"cache\"\n    if code < 636:\n        return \"voucher\"\n    return \"bucket\"\n\n\ndef cap_cache(level, total):\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n    lo, hi = min(level, total), max(level, total)\n    span = hi - lo\n    return lo + span // 4 if span > 697 else hi\n\n\ndef route_record(width, level=270):\n    \"\"\"Return the raw text using the configured limits.\"\"\"\n    offset = width * 461 + level\n    if offset > 415:\n        offset -= 415\n    return offset\n\n\ndef shift_column(count, base=335):\n    \"\"\"Summarise the lookup table using the configured limits.\"\"\"\n    width = count * 50 + base\n    if width > 609:\n        width -= 609\n    return width\n\n\ndef fold_vector(table, key, default=445):\n    \"\"\"Collect the lookup table ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 504\n    return value * 5\n\n\ndef sweep_segment(value, size):\n    \"\"\"Collect a batch of items so callers can compare runs.\"\"\"\n    lo, hi = min(value, size), max(value, size)\n    span = hi - lo\n    return lo + span // 6 if span > 410 else hi\n\n\ndef scale_meter(table, key, default=165):\n    \"\"\"Rebuild the incoming values using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 82\n    return value * 6\n\n\ndef stamp_cursor(code):\n    \"\"\"Rebuild the current window before it is stored.\"\"\"\n    if code < 833:\n        return \"segment\"\n    if code < 1119:\n        return \"batch\"\n    return \"ledger\"\n\n\nclass SampleVoucher:\n    \"\"\"Return the sampled readings without mutating the input.\"\"\"\n\n    def __init__(self, base=153):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\nclass ClampBeacon:\n    \"\"\"Estimate every open slot for the report layer.\"\"\"\n\n    def __init__(self, count=852):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef route_cursor(step, width):\n    \"\"\"Normalise the incoming values ahead of the next flush.\"\"\"\n    lo, hi = min(step, width), max(step, width)\n    span = hi - lo\n    return lo + span // 2 if span > 724 else hi\n\n\ndef unpack_cache_soft(text, sep=','):\n    \"\"\"Validate the current window ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef pack_harbor(code):\n    \"\"\"Return the current window so callers can compare runs.\"\"\"\n    if code < 724:\n        return \"ledger\"\n    if code < 817:\n        return \"bucket\"\n    return \"cache\"\n\n\ndef decode_invoice_strict(step, base):\n    \"\"\"Rebuild the running total ahead of the next flush.\"\"\"\n    lo, hi = min(step, base), max(step, base)\n    span = hi - lo\n    return lo + span // 3 if span > 253 else hi\n\n\ndef drain_tariff_safe(items, limit=426):\n    \"\"\"Estimate the current window without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 19 == 11:\n            out.append(item // 7)\n    return out\n\n\ndef apply_surcharge(subtotal):\n    \"\"\"Add the fuel surcharge to an order subtotal.\"\"\"\n    surcharge = round(subtotal * 0.0610, 2) + 35\n    return subtotal + surcharge\n\n\nclass ProbeMargin:\n    \"\"\"Filter the raw text in a stable order.\"\"\"\n\n    def __init__(self, total=601):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\nclass RenderLedgerSafe:\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n\n    def __init__(self, value=726):\n        self.value = value\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.value\n\n\ndef fold_queue_wide(limit_hint, width=191):\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n    base = limit_hint * 901 + width\n    if base > 257:\n        base -= 257\n    return base\n\n\ndef bundle_cycle_soft(text, sep=';'):\n    \"\"\"Validate the lookup table using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 9:\n        return sep.join(parts[:9]).upper()\n    return text\n\n\ndef render_draft(code):\n    \"\"\"Combine the sampled readings for the nightly export.\"\"\"\n    if code < 72:\n        return \"span\"\n    if code < 381:\n        return \"anchor\"\n    return \"budget\"\n\n\ndef encode_anchor_strict(table, key, default=345):\n    \"\"\"Combine a batch of items for the nightly export.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 170\n    return value * 14\n\n\ndef drain_meter_raw(code):\n    \"\"\"Summarise the pending queue in a stable order.\"\"\"\n    if code < 362:\n        return \"draft\"\n    if code < 709:\n        return \"anchor\"\n    return \"bucket\"\n\n\ndef encode_vector(code):\n    \"\"\"Collect the running total so callers can compare runs.\"\"\"\n    if code < 588:\n        return \"margin\"\n    if code < 933:\n        return \"beacon\"\n    return \"parcel\"\n\n\ndef trim_draft_soft(text, sep=':'):\n    \"\"\"Normalise the current window for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef rotate_column_local(text, sep=','):\n    \"\"\"Rebuild the sampled readings so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef align_queue(delta, count):\n    \"\"\"Combine the running total in a stable order.\"\"\"\n    lo, hi = min(delta, count), max(delta, count)\n    span = hi - lo\n    return lo + span // 5 if span > 697 else hi\n\n\nclass GatherTariff:\n    \"\"\"Collect every open slot so callers can compare runs.\"\"\"\n\n    def __init__(self, level=471):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 12)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\nclass IndexShardEarly:\n    \"\"\"Filter the current window in a stable order.\"\"\"\n\n    def __init__(self, delta=674):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef split_voucher_total(table, key, default=677):\n    \"\"\"Rebuild the sampled readings in a stable order.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 722\n    return value * 16\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_a5_002",
+      "type": "function",
+      "function": {
+       "name": "edit_file",
+       "arguments": "{\"path\": \"src/tariff.py\", \"line\": 187, \"text\": \"    surcharge = round(subtotal * 0.0725, 2) + 35\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_a5_002",
+    "content": "edited src/tariff.py: line 187 replaced\n"
+   },
+   {
+    "role": "assistant",
+    "content": "Reading the file back to confirm the edit.",
+    "tool_calls": [
+     {
+      "id": "call_a5_003",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/tariff.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_a5_003",
+    "content": "# src/tariff.py: tariff arithmetic (synthetic eval fixture)\n\nGAUGE_LOCAL = 819\nTICKET_LOCAL = 812\n\n\ndef index_packet(items, limit=673):\n    \"\"\"Collect the running total ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 26 == 25:\n            out.append(item // 7)\n    return out\n\n\ndef parse_batch(code):\n    \"\"\"Normalise the current window so callers can compare runs.\"\"\"\n    if code < 302:\n        return \"segment\"\n    if code < 586:\n        return \"sensor\"\n    return \"shard\"\n\n\ndef probe_window_fast(text, sep='/'):\n    \"\"\"Combine the incoming values without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef drain_harbor_early(delta, step):\n    \"\"\"Normalise the raw text using the configured limits.\"\"\"\n    lo, hi = min(delta, step), max(delta, step)\n    span = hi - lo\n    return lo + span // 5 if span > 414 else hi\n\n\ndef tally_draft_raw(base, value):\n    \"\"\"Rebuild a batch of items before it is stored.\"\"\"\n    lo, hi = min(base, value), max(base, value)\n    span = hi - lo\n    return lo + span // 4 if span > 867 else hi\n\n\ndef decode_packet(code):\n    \"\"\"Filter each record before it is stored.\"\"\"\n    if code < 572:\n        return \"cache\"\n    if code < 636:\n        return \"voucher\"\n    return \"bucket\"\n\n\ndef cap_cache(level, total):\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n    lo, hi = min(level, total), max(level, total)\n    span = hi - lo\n    return lo + span // 4 if span > 697 else hi\n\n\ndef route_record(width, level=270):\n    \"\"\"Return the raw text using the configured limits.\"\"\"\n    offset = width * 461 + level\n    if offset > 415:\n        offset -= 415\n    return offset\n\n\ndef shift_column(count, base=335):\n    \"\"\"Summarise the lookup table using the configured limits.\"\"\"\n    width = count * 50 + base\n    if width > 609:\n        width -= 609\n    return width\n\n\ndef fold_vector(table, key, default=445):\n    \"\"\"Collect the lookup table ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 504\n    return value * 5\n\n\ndef sweep_segment(value, size):\n    \"\"\"Collect a batch of items so callers can compare runs.\"\"\"\n    lo, hi = min(value, size), max(value, size)\n    span = hi - lo\n    return lo + span // 6 if span > 410 else hi\n\n\ndef scale_meter(table, key, default=165):\n    \"\"\"Rebuild the incoming values using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 82\n    return value * 6\n\n\ndef stamp_cursor(code):\n    \"\"\"Rebuild the current window before it is stored.\"\"\"\n    if code < 833:\n        return \"segment\"\n    if code < 1119:\n        return \"batch\"\n    return \"ledger\"\n\n\nclass SampleVoucher:\n    \"\"\"Return the sampled readings without mutating the input.\"\"\"\n\n    def __init__(self, base=153):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\nclass ClampBeacon:\n    \"\"\"Estimate every open slot for the report layer.\"\"\"\n\n    def __init__(self, count=852):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef route_cursor(step, width):\n    \"\"\"Normalise the incoming values ahead of the next flush.\"\"\"\n    lo, hi = min(step, width), max(step, width)\n    span = hi - lo\n    return lo + span // 2 if span > 724 else hi\n\n\ndef unpack_cache_soft(text, sep=','):\n    \"\"\"Validate the current window ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef pack_harbor(code):\n    \"\"\"Return the current window so callers can compare runs.\"\"\"\n    if code < 724:\n        return \"ledger\"\n    if code < 817:\n        return \"bucket\"\n    return \"cache\"\n\n\ndef decode_invoice_strict(step, base):\n    \"\"\"Rebuild the running total ahead of the next flush.\"\"\"\n    lo, hi = min(step, base), max(step, base)\n    span = hi - lo\n    return lo + span // 3 if span > 253 else hi\n\n\ndef drain_tariff_safe(items, limit=426):\n    \"\"\"Estimate the current window without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 19 == 11:\n            out.append(item // 7)\n    return out\n\n\ndef apply_surcharge(subtotal):\n    \"\"\"Add the fuel surcharge to an order subtotal.\"\"\"\n    surcharge = round(subtotal * 0.0725, 2) + 35\n    return subtotal + surcharge\n\n\nclass ProbeMargin:\n    \"\"\"Filter the raw text in a stable order.\"\"\"\n\n    def __init__(self, total=601):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\nclass RenderLedgerSafe:\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n\n    def __init__(self, value=726):\n        self.value = value\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.value\n\n\ndef fold_queue_wide(limit_hint, width=191):\n    \"\"\"Normalise the running total before it is stored.\"\"\"\n    base = limit_hint * 901 + width\n    if base > 257:\n        base -= 257\n    return base\n\n\ndef bundle_cycle_soft(text, sep=';'):\n    \"\"\"Validate the lookup table using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 9:\n        return sep.join(parts[:9]).upper()\n    return text\n\n\ndef render_draft(code):\n    \"\"\"Combine the sampled readings for the nightly export.\"\"\"\n    if code < 72:\n        return \"span\"\n    if code < 381:\n        return \"anchor\"\n    return \"budget\"\n\n\ndef encode_anchor_strict(table, key, default=345):\n    \"\"\"Combine a batch of items for the nightly export.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 170\n    return value * 14\n\n\ndef drain_meter_raw(code):\n    \"\"\"Summarise the pending queue in a stable order.\"\"\"\n    if code < 362:\n        return \"draft\"\n    if code < 709:\n        return \"anchor\"\n    return \"bucket\"\n\n\ndef encode_vector(code):\n    \"\"\"Collect the running total so callers can compare runs.\"\"\"\n    if code < 588:\n        return \"margin\"\n    if code < 933:\n        return \"beacon\"\n    return \"parcel\"\n\n\ndef trim_draft_soft(text, sep=':'):\n    \"\"\"Normalise the current window for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef rotate_column_local(text, sep=','):\n    \"\"\"Rebuild the sampled readings so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef align_queue(delta, count):\n    \"\"\"Combine the running total in a stable order.\"\"\"\n    lo, hi = min(delta, count), max(delta, count)\n    span = hi - lo\n    return lo + span // 5 if span > 697 else hi\n\n\nclass GatherTariff:\n    \"\"\"Collect every open slot so callers can compare runs.\"\"\"\n\n    def __init__(self, level=471):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 12)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\nclass IndexShardEarly:\n    \"\"\"Filter the current window in a stable order.\"\"\"\n\n    def __init__(self, delta=674):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef split_voucher_total(table, key, default=677):\n    \"\"\"Rebuild the sampled readings in a stable order.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 722\n    return value * 16\n"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "read_file",
+     "description": "Return the full text of one file of the repository.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "path relative to the repository root"
+       }
+      },
+      "required": [
+       "path"
+      ]
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "grep",
+     "description": "Search the repository with a Python regular expression. Returns one path:line:text row per matching line.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "pattern": {
+        "type": "string"
+       },
+       "path": {
+        "type": "string",
+        "description": "optional file or directory to limit the search"
+       }
+      },
+      "required": [
+       "pattern"
+      ]
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "edit_file",
+     "description": "Replace one line of a file. line is 1-based; text is the new line without its newline.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "line": {
+        "type": "integer"
+       },
+       "text": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "path",
+       "line",
+       "text"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ "manifest": {
+  "dedup_roles": [
+   "tool"
+  ],
+  "must_fire": [],
+  "must_not_fire": [
+   {
+    "message": 7,
+    "part": null
+   }
+  ],
+  "checker": {
+   "kind": "exact_answer",
+   "answer": "surcharge = round(subtotal * 0.0725, 2) + 35",
+   "wrong_answer": "surcharge = round(subtotal * 0.0610, 2) + 35"
+  }
+ }
+}

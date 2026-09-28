@@ -1,0 +1,53 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "run_linter",
+      "arguments": "{\"path\": \"src/ember/pool_policy.py\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "src/ember/pool_policy.py:1:80: E501 line too long (81 > 79 characters)\nFound 1 problem(s).\n"
+  },
+  {
+   "role": "assistant",
+   "content": "The linter output for src/ember/pool_policy.py is above."
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "run_linter",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "src/ember/pool_policy.py:1:80: E501 line too long (81 > 79 characters)\nFound 1 problem(s).\n"
+  },
+  {
+   "role": "assistant",
+   "content": "The linter output for the repository is above."
+  }
+ ]
+}

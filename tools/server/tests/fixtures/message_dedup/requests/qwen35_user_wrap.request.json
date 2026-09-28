@@ -1,0 +1,26 @@
+{
+ "messages": [
+  {
+   "content": "What does a.c print?",
+   "role": "user"
+  },
+  {
+   "content": "Let me look.",
+   "reasoning_content": "Need the file.",
+   "role": "assistant"
+  },
+  {
+   "content": "<tool_response>\nQW line 000: synthetic fixture text for SPEC-0001, not real data.\nQW line 001: synthetic fixture text for SPEC-0001, not real data.\nQW line 002: synthetic fixture text for SPEC-0001, not real data.\nQW line 003: synthetic fixture text for SPEC-0001, not real data.\nQW line 004: synthetic fixture text for SPEC-0001, not real data.\nQW line 005: synthetic fixture text for SPEC-0001, not real data.\nQW line 006: synthetic fixture text for SPEC-0001, not real data.\nQW line 007: synthetic fixture text for SPEC-0001, not real data.\nQW line 008: synthetic fixture text for SPEC-0001, not real data.\nQW line 009: synthetic fixture text for SPEC-0001, not real data.\nQW line 010: synthetic fixture text for SPEC-0001, not real data.\nQW line 011: synthetic fixture text for SPEC-0001, not real data.\nQW line 012: synthetic fixture text for SPEC-0001, not real data.\nQW line 013: synthetic fixture text for SPEC-0001, not real data.\nQW line 014: synthetic fixture text for SPEC-0001, not real data.\nQW line 015: synthetic fixture text for SPEC-0001, not real data.\nQW line 016\n</tool_response>",
+   "role": "user"
+  },
+  {
+   "content": "Looking again.",
+   "reasoning_content": "Check once more.",
+   "role": "assistant"
+  },
+  {
+   "content": "<tool_response>\nQW line 000: synthetic fixture text for SPEC-0001, not real data.\nQW line 001: synthetic fixture text for SPEC-0001, not real data.\nQW line 002: synthetic fixture text for SPEC-0001, not real data.\nQW line 003: synthetic fixture text for SPEC-0001, not real data.\nQW line 004: synthetic fixture text for SPEC-0001, not real data.\nQW line 005: synthetic fixture text for SPEC-0001, not real data.\nQW line 006: synthetic fixture text for SPEC-0001, not real data.\nQW line 007: synthetic fixture text for SPEC-0001, not real data.\nQW line 008: synthetic fixture text for SPEC-0001, not real data.\nQW line 009: synthetic fixture text for SPEC-0001, not real data.\nQW line 010: synthetic fixture text for SPEC-0001, not real data.\nQW line 011: synthetic fixture text for SPEC-0001, not real data.\nQW line 012: synthetic fixture text for SPEC-0001, not real data.\nQW line 013: synthetic fixture text for SPEC-0001, not real data.\nQW line 014: synthetic fixture text for SPEC-0001, not real data.\nQW line 015: synthetic fixture text for SPEC-0001, not real data.\nQW line 016\n</tool_response>",
+   "role": "user"
+  }
+ ]
+}

@@ -1,0 +1,3 @@
+{
+ "prompt": "<|im_start|>user\nTwo screenshots<|im_end|>\n<|im_start|>assistant\n<|im_end|>\n<|im_start|>tool\n<__media__><|im_end|>\n<|im_start|>assistant\n<|im_end|>\n<|im_start|>tool\n<__media__><|im_end|>\n<|im_start|>assistant\n"
+}

@@ -1,0 +1,259 @@
+{
+ "fixtures": {
+  "assistant_pair": {
+   "covers": [
+    "DEDUP_ASSISTANT_NEVER_STUBBED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "cross_role_relocation": {
+   "covers": [
+    "DEDUP_CROSS_ROLE_AUTHORITY_RELOCATION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "lookalike_repeat": {
+   "covers": [
+    "DEDUP_STUB_LOOKALIKE_INPUT"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "lookalike_system_ref": {
+   "covers": [
+    "DEDUP_LOOKALIKE_IN_UNTRUSTED_CONTENT"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "lookalike_verbatim": {
+   "covers": [
+    "DEDUP_STUB_LOOKALIKE_INPUT_VERBATIM"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "near_dup_crlf_lf": {
+   "covers": [
+    "DEDUP_NEAR_DUPLICATE_UNCHANGED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "near_dup_nfc_nfd": {
+   "covers": [
+    "DEDUP_NEAR_DUPLICATE_UNCHANGED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "near_dup_one_byte": {
+   "covers": [
+    "DEDUP_NEAR_DUPLICATE_UNCHANGED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "near_dup_trailing_newline": {
+   "covers": [
+    "DEDUP_NEAR_DUPLICATE_UNCHANGED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "non_participating_role": {
+   "covers": [
+    "DEDUP_NON_PARTICIPATING_ROLE_NOT_A_REFERENCE"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "pair_60_bytes": {
+   "covers": [
+    "DEDUP_STUB_NOT_LONGER_THAN_CONTENT"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "qwen35_user_wrap": {
+   "covers": [
+    "DEDUP_STUB_ALTERS_TEMPLATE_CONTROL_FLOW"
+   ],
+   "server": "tinyllama2_qwen35_template"
+  },
+  "s8_1_reread_file": {
+   "covers": [
+    "DEDUP_OFF_BY_DEFAULT_PROMPT_UNCHANGED",
+    "DEDUP_OFF_BY_OVERRIDE_PROMPT_UNCHANGED",
+    "DEDUP_SERVER_FLAG_ENABLES_PASS",
+    "DEDUP_OVERRIDE_ENABLES_PASS",
+    "DEDUP_OVERRIDE_PARTIAL_INHERITS_ENABLED",
+    "DEDUP_OVERRIDE_MIN_BYTES_APPLIES",
+    "DEDUP_TOOL_RESULT_REPEAT_STUBBED",
+    "DEDUP_FIRST_OCCURRENCE_UNCHANGED",
+    "DEDUP_STUB_FORMAT_EXACT",
+    "DEDUP_EQUIVALENT_TO_MANUAL_SUBSTITUTION",
+    "AC_F01",
+    "toolname (a) read_file"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "s8_2_threshold_image_lookalike": {
+   "covers": [
+    "\u00a78.2",
+    "DEDUP_THRESHOLD_BOUNDARY_INCLUSIVE",
+    "DEDUP_STUB_LOOKALIKE_INPUT_VERBATIM"
+   ],
+   "server": "tinygemma3_chatml"
+  },
+  "s8_4_off_override": {
+   "covers": [
+    "\u00a78.4",
+    "DEDUP_OFF_BY_OVERRIDE_PROMPT_UNCHANGED",
+    "AC_F01"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "s8_5_escaping": {
+   "covers": [
+    "DEDUP_STUB_FORMAT_EXACT",
+    "DEDUP_STUB_NO_CONTROL_TOKENS",
+    "DEDUP_EXCERPT_FORGES_ROLE_BOUNDARY"
+   ],
+   "server": "tinygemma3_chatml"
+  },
+  "s8_5_noname_variant": {
+   "covers": [
+    "DEDUP_STUB_FORMAT_EXACT"
+   ],
+   "server": "tinygemma3_chatml"
+  },
+  "same_message_parts": {
+   "covers": [
+    "DEDUP_SAME_MESSAGE_PARTS"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "same_role_only": {
+   "covers": [
+    "DEDUP_REFERENCE_SAME_ROLE_ONLY"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "system_reminder_repeat": {
+   "covers": [
+    "DEDUP_REPEATED_INSTRUCTION_SUPPRESSED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "text_part_plus_image": {
+   "covers": [
+    "DEDUP_TEXT_PART_REPEAT_STUBBED"
+   ],
+   "server": "tinygemma3_chatml"
+  },
+  "three_copies": {
+   "covers": [
+    "DEDUP_LATER_REPEATS_REFERENCE_FIRST"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "threshold_1024_1023": {
+   "covers": [
+    "DEDUP_THRESHOLD_BOUNDARY_INCLUSIVE"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "tool_repeat_with_tools": {
+   "covers": [
+    "DEDUP_TOOL_PAIRING_PRESERVED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_b_dotted": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_c_quote": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_d_bracket": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_e_special": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_f_nonascii": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_g_65_bytes": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_h_empty": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_msgname_bad": {
+   "covers": [
+    "DEDUP_TOOLNAME_INJECTION (tool message name)"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_msgname_ok": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST (tool message name)"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "toolname_ns_colon": {
+   "covers": [
+    "DEDUP_TOOLNAME_ALLOWLIST",
+    "DEDUP_TOOLNAME_INJECTION"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "truncated_history": {
+   "covers": [
+    "DEDUP_FIRST_COPY_DROPPED_NEXT_IS_FULL",
+    "DEDUP_FIRST_OCCURRENCE_REMOVED"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "two_image_only": {
+   "covers": [
+    "DEDUP_NON_TEXT_PARTS_UNTOUCHED"
+   ],
+   "server": "tinygemma3_chatml"
+  },
+  "user_and_tool_pairs": {
+   "covers": [
+    "DEDUP_OVERRIDE_ROLES_APPLIES"
+   ],
+   "server": "tinyllama2_chatml"
+  },
+  "user_system_pairs": {
+   "covers": [
+    "DEDUP_USER_SYSTEM_EXCLUDED_BY_DEFAULT",
+    "DEDUP_USER_SYSTEM_OPT_IN"
+   ],
+   "server": "tinyllama2_chatml"
+  }
+ }
+}

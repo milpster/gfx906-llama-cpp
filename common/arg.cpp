@@ -23,6 +23,8 @@
 #endif
 
 #include <algorithm>
+#include <cctype>
+#include <charconv>
 #include <cinttypes>
 #include <climits>
 #include <cmath>
@@ -3850,6 +3852,55 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             params.prefill_assistant = value;
         }
     ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_PREFILL_ASSISTANT"));
+    add_opt(common_arg(
+        {"--message-dedup"},
+        {"--no-message-dedup"},
+        string_format(
+            "whether to render a message that repeats an earlier message of the same role byte for byte as a short reference to it (default: %s)\n"
+            "assumes the chat template renders every participating message in full; keep it off for templates that do not\n"
+            "warning: a request can override this with its \"message_dedup\" field, and the dedup stats reveal which messages matched;\n"
+            "a gateway that merges hidden content into client requests must strip \"message_dedup\" or keep this off",
+            params.message_dedup ? "enabled" : "disabled"
+        ),
+        [](common_params & params, bool value) {
+            params.message_dedup = value;
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_MESSAGE_DEDUP"));
+    add_opt(common_arg(
+        {"--message-dedup-min-bytes"}, "N",
+        string_format("smallest message, in UTF-8 bytes, that message dedup considers, a base-10 integer in [1, %d]; does not enable it (default: %d)",
+            INT32_MAX, params.message_dedup_min_bytes),
+        [](common_params & params, const std::string & value) {
+            // digits only, whole string: std::stoi would accept "1024abc", "1.5" or " 1024" by reading a prefix
+            int32_t n = 0;
+            const char * end = value.data() + value.size();
+            const auto [ptr, ec] = std::from_chars(value.data(), end, n);
+            if (value.empty() || !std::isdigit((unsigned char) value[0]) || ptr != end) {
+                throw std::invalid_argument("expected a base-10 integer");
+            }
+            if (ec == std::errc::result_out_of_range || n < 1) {
+                throw std::invalid_argument(string_format("value must be in [1, %d]", INT32_MAX));
+            }
+            params.message_dedup_min_bytes = n;
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_MESSAGE_DEDUP_MIN_BYTES"));
+    add_opt(common_arg(
+        {"--message-dedup-roles"}, "LIST",
+        string_format("comma-separated roles whose messages message dedup considers, from tool, user, system; empty = none; does not enable it (default: %s)",
+            string_join(std::vector<std::string>(params.message_dedup_roles.begin(), params.message_dedup_roles.end()), ",").c_str()),
+        [](common_params & params, const std::string & value) {
+            std::set<std::string> roles;
+            if (!value.empty()) {
+                for (const auto & role : string_split<std::string>(value, ',')) {
+                    if (!common_message_dedup_role_allowed(role)) {
+                        throw std::invalid_argument("invalid role \"" + role + "\", allowed roles are tool, user, system");
+                    }
+                    roles.insert(role);
+                }
+            }
+            params.message_dedup_roles = std::move(roles);
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_MESSAGE_DEDUP_ROLES"));
     add_opt(common_arg(
         {"-sps", "--slot-prompt-similarity"}, "SIMILARITY",
         string_format("how much the prompt of a request must match the prompt of a slot in order to use that slot (default: %.2f, 0.0 = disabled)\n", params.slot_prompt_similarity),

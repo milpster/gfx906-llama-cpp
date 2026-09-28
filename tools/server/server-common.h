@@ -9,6 +9,7 @@
 #include "subproc.h"
 
 #include "json.h"
+#include "server-message-dedup.h"
 
 #include <atomic>
 #include <chrono>
@@ -210,7 +211,10 @@ public:
     // for compatibility with speculative decoding, ctx shift
     const llama_tokens & get_tokens() const;
 
+    // the text tokens, i.e. every position not occupied by a media chunk
     llama_tokens get_text_tokens() const;
+    // their count, without copying them
+    size_t n_text_tokens() const;
 
     std::vector<char> serialize() const;
     static server_tokens deserialize(const llama_tokens & packed, bool has_mtmd);
@@ -319,16 +323,21 @@ struct server_chat_params {
     std::string reasoning_budget_message;
     std::string media_path;
     bool force_pure_content = false;
+    dedup_settings     dedup_defaults;  // server defaults of the message dedup pass, from common_params
+    dedup_special_pred dedup_predicate; // special-text predicate of the served vocab; owns its data
 };
 
 // used by /completions endpoint
 json oaicompat_completion_params_parse(const json & body);
 
 // used by /chat/completions endpoint
+// out_dedup, when given, is set to the message dedup stats (n, bytes_saved) if the pass ran, and reset otherwise;
+// it is the only channel for them, so a request body cannot forge them
 json oaicompat_chat_params_parse(
     json & body, /* openai api json semantics */
     const server_chat_params & opt,
-    std::vector<raw_buffer> & out_files);
+    std::vector<raw_buffer> & out_files,
+    std::optional<dedup_stats> * out_dedup = nullptr);
 
 // TODO: move it to server-task.cpp
 json format_embeddings_response_oaicompat(
@@ -361,6 +370,9 @@ struct server_slot_stats {
     uint64_t n_draft_tokens      = 0;
     uint64_t n_draft_accepted    = 0;
     uint64_t n_draft_verif_steps = 0;
+
+    // message dedup stats, set only when the pass ran for the task's request
+    std::optional<dedup_stats> dedup;
 
     // these are absolute timestamps (in us)
     // note: must be signed - they are subtracted before the later ones are set

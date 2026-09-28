@@ -589,8 +589,8 @@ json server_chat_convert_anthropic_to_oai(const json & body) {
         oai_body["max_tokens"] = 4096;
     }
 
-    // Pass through common params
-    for (const auto & key : {"temperature", "top_p", "top_k", "stream", "chat_template_kwargs"}) {
+    // Pass through common params, and the llama.cpp message_dedup override (validated by the chat parser)
+    for (const auto & key : {"temperature", "top_p", "top_k", "stream", "chat_template_kwargs", "message_dedup"}) {
         if (body.contains(key)) {
             oai_body[key] = body.at(key);
         }

@@ -1,0 +1,18 @@
+{
+ "messages": [
+  {
+   "content": "#include <stdio.h>\nint main(void) {\n  printf(\"hello\\n\");\n  return 0;\n}\nF line 000: synthetic fixture text for SPEC-0001, not real data.\nF line 001: synthetic fixture text for SPEC-0001, not real data.\nF line 002: synthetic fixture text for SPEC-0001, not real data.\nF line 003: synthetic fixture text for SPEC-0001, not real data.\nF line 004: synthetic fixture text for SPEC-0001, not real data.\nF line 005: synthetic fixture text for SPEC-0001, not real data.\nF line 006: synthetic fixture text for SPEC-0001, not real data.\nF line 007: synthetic fixture text for SPEC-0001, not real data.\nF line 008: synthetic fixture text for SPEC-0001, not real data.\nF line 009: synthetic fixture text for SPEC-0001, not real data.\nF line 010: synthetic fixture text for SPEC-0001, not real data.\nF line 011: synthetic fixture text for SPEC-0001, not real data.\nF line 012: synthetic fixture text for SPEC-0001, not real data.\nF line 013: synthetic fixture text for SPEC-0001, not real data.\nF line 014: synthetic fixture text for SPEC-0001, not real data.\nF line 015: synthetic fixture text for SPEC-0001, not ",
+   "role": "tool",
+   "tool_call_id": "a"
+  },
+  {
+   "content": "#include <stdio.h>\nint main(void) {\n  printf(\"hello\\n\");\n  return 0;\n}\nF line 000: synthetic fixture text for SPEC-0001, not real data.\nF line 001: synthetic fixture text for SPEC-0001, not real data.\nF line 002: synthetic fixture text for SPEC-0001, not real data.\nF line 003: synthetic fixture text for SPEC-0001, not real data.\nF line 004: synthetic fixture text for SPEC-0001, not real data.\nF line 005: synthetic fixture text for SPEC-0001, not real data.\nF line 006: synthetic fixture text for SPEC-0001, not real data.\nF line 007: synthetic fixture text for SPEC-0001, not real data.\nF line 008: synthetic fixture text for SPEC-0001, not real data.\nF line 009: synthetic fixture text for SPEC-0001, not real data.\nF line 010: synthetic fixture text for SPEC-0001, not real data.\nF line 011: synthetic fixture text for SPEC-0001, not real data.\nF line 012: synthetic fixture text for SPEC-0001, not real data.\nF line 013: synthetic fixture text for SPEC-0001, not real data.\nF line 014: synthetic fixture text for SPEC-0001, not real data.\nF line 015: synthetic fixture text for SPEC-0001, not ",
+   "role": "user"
+  },
+  {
+   "content": "#include <stdio.h>\nint main(void) {\n  printf(\"hello\\n\");\n  return 0;\n}\nF line 000: synthetic fixture text for SPEC-0001, not real data.\nF line 001: synthetic fixture text for SPEC-0001, not real data.\nF line 002: synthetic fixture text for SPEC-0001, not real data.\nF line 003: synthetic fixture text for SPEC-0001, not real data.\nF line 004: synthetic fixture text for SPEC-0001, not real data.\nF line 005: synthetic fixture text for SPEC-0001, not real data.\nF line 006: synthetic fixture text for SPEC-0001, not real data.\nF line 007: synthetic fixture text for SPEC-0001, not real data.\nF line 008: synthetic fixture text for SPEC-0001, not real data.\nF line 009: synthetic fixture text for SPEC-0001, not real data.\nF line 010: synthetic fixture text for SPEC-0001, not real data.\nF line 011: synthetic fixture text for SPEC-0001, not real data.\nF line 012: synthetic fixture text for SPEC-0001, not real data.\nF line 013: synthetic fixture text for SPEC-0001, not real data.\nF line 014: synthetic fixture text for SPEC-0001, not real data.\nF line 015: synthetic fixture text for SPEC-0001, not ",
+   "role": "tool",
+   "tool_call_id": "b"
+  }
+ ]
+}

@@ -1,0 +1,631 @@
+{
+ "schema": "message_dedup.scenario/1",
+ "id": "A4",
+ "provenance": {
+  "kind": "synthetic",
+  "source": "data-ml synthetic generator tools/server/tests/eval/message_dedup/gen_scenarios.py (SPEC-0001 increment 17)",
+  "seed": "SPEC-0001/A4"
+ },
+ "endpoint": "/v1/messages",
+ "depth_class": "shallow",
+ "repo_snapshot": "A4",
+ "turns": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20
+ ],
+ "prefix": {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are a coding agent working in a synthetic repository prepared for an evaluation. Use the tools to inspect and change files. Keep answers short and factual."
+   },
+   {
+    "role": "user",
+    "content": "Read config/limits.toml. Its [tooling] section names a lint_target. Run run_linter on exactly that path and report what it finds."
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_001",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"config/limits.toml\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_001",
+    "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_002",
+      "type": "function",
+      "function": {
+       "name": "grep",
+       "arguments": "{\"path\":\"src/ember/workers.py\",\"pattern\":\"max_\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_002",
+    "content": "no matches for 'max_'\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_003",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"config/limits.toml\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_003",
+    "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_004",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"src/ember/workers.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_004",
+    "content": "# src/ember/workers.py: cursor and span utilities (synthetic eval fixture)\n\nMARGIN_TOTAL = 518\nFILTER_STRICT = 893\nMETER_WIDE = 450\n\n\ndef probe_voucher(text, sep='/'):\n    \"\"\"Rebuild the pending queue using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef decode_roster_late(items, limit=345):\n    \"\"\"Rebuild the sampled readings using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 19 == 1:\n            out.append(item // 3)\n    return out\n\n\ndef stamp_segment_local(level, offset):\n    \"\"\"Filter the running total for the nightly export.\"\"\"\n    lo, hi = min(level, offset), max(level, offset)\n    span = hi - lo\n    return lo + span // 2 if span > 109 else hi\n\n\ndef rotate_packet(total, count):\n    \"\"\"Collect the current window so callers can compare runs.\"\"\"\n    lo, hi = min(total, count), max(total, count)\n    span = hi - lo\n    return lo + span // 2 if span > 81 else hi\n\n\ndef pack_manifest(table, key, default=748):\n    \"\"\"Filter a batch of items so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 345\n    return value * 9\n\n\ndef shift_cycle(items, limit=860):\n    \"\"\"Normalise the sampled readings without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 25 == 24:\n            out.append(item // 8)\n    return out\n\n\ndef rank_gauge(text, sep=','):\n    \"\"\"Return each record before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\nclass ScaleLedger:\n    \"\"\"Filter the running total in a stable order.\"\"\"\n\n    def __init__(self, limit_hint=893):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 21)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\nclass IndexDraftSafe:\n    \"\"\"Compute the lookup table in a stable order.\"\"\"\n\n    def __init__(self, width=656):\n        self.width = width\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.width\n\n\ndef shift_cache_raw(items, limit=329):\n    \"\"\"Validate the running total ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 21 == 15:\n            out.append(item // 3)\n    return out\n\n\nclass UnpackCursorWide:\n    \"\"\"Estimate the sampled readings without mutating the input.\"\"\"\n\n    def __init__(self, count=360):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef rank_ticket(table, key, default=989):\n    \"\"\"Normalise the current window using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 19\n    return value * 4\n\n\ndef pack_budget(text, sep=','):\n    \"\"\"Return the raw text before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef score_gauge(count, width=335):\n    \"\"\"Collect the pending queue without mutating the input.\"\"\"\n    level = count * 558 + width\n    if level > 848:\n        level -= 848\n    return level\n\n\ndef decode_bucket_early(table, key, default=341):\n    \"\"\"Collect the incoming values ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 121\n    return value * 10\n\n\ndef shift_frame_lazy(items, limit=108):\n    \"\"\"Normalise every open slot without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 3 == 1:\n            out.append(item // 4)\n    return out\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_005",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"config/limits.toml\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_005",
+    "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_006",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"src/ember/queues.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_006",
+    "content": "# src/ember/queues.py: text normalisers (synthetic eval fixture)\n\nBATCH_LOCAL = 238\nMARGIN_STRICT = 5\nSHARD_FAST = 299\nBUDGET_STRICT = 230\n\n\ndef resolve_token_strict(code):\n    \"\"\"Summarise a batch of items for the nightly export.\"\"\"\n    if code < 556:\n        return \"cache\"\n    if code < 928:\n        return \"window\"\n    return \"cycle\"\n\n\nclass AlignBeaconWide:\n    \"\"\"Combine the sampled readings for the report layer.\"\"\"\n\n    def __init__(self, delta=216):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 27)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef render_frame_wide(table, key, default=340):\n    \"\"\"Summarise the lookup table for the report layer.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 794\n    return value * 16\n\n\ndef flush_ledger_safe(items, limit=584):\n    \"\"\"Filter a batch of items before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 27 == 12:\n            out.append(item // 7)\n    return out\n\n\ndef route_token_local(text, sep='/'):\n    \"\"\"Combine the current window without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\nclass LoadAnchor:\n    \"\"\"Normalise the pending queue so callers can compare runs.\"\"\"\n\n    def __init__(self, limit_hint=486):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\ndef route_harbor_safe(items, limit=223):\n    \"\"\"Validate the raw text ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 4 == 1:\n            out.append(item // 2)\n    return out\n\n\ndef flush_tick(text, sep=';'):\n    \"\"\"Rebuild the lookup table before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\ndef flush_record(table, key, default=445):\n    \"\"\"Return the pending queue so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 650\n    return value * 9\n\n\ndef sample_batch_local(delta, limit_hint=447):\n    \"\"\"Combine the raw text using the configured limits.\"\"\"\n    count = delta * 41 + limit_hint\n    if count > 792:\n        count -= 792\n    return count\n\n\ndef clamp_manifest_raw(table, key, default=33):\n    \"\"\"Summarise the lookup table using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 464\n    return value * 11\n\n\ndef unpack_column_fast(size, delta=859):\n    \"\"\"Rebuild a batch of items ahead of the next flush.\"\"\"\n    count = size * 464 + delta\n    if count > 459:\n        count -= 459\n    return count\n\n\ndef weigh_cache_soft(text, sep=','):\n    \"\"\"Collect the incoming values before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\ndef pack_queue(width, level):\n    \"\"\"Compute the sampled readings so callers can compare runs.\"\"\"\n    lo, hi = min(width, level), max(width, level)\n    span = hi - lo\n    return lo + span // 2 if span > 337 else hi\n\n\ndef index_window(text, sep=';'):\n    \"\"\"Summarise a batch of items ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef encode_anchor_local(text, sep=','):\n    \"\"\"Combine the sampled readings without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_007",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"config/limits.toml\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_007",
+    "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_008",
+      "type": "function",
+      "function": {
+       "name": "grep",
+       "arguments": "{\"path\":\"src/ember/queues.py\",\"pattern\":\"def \"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_008",
+    "content": "src/ember/queues.py:9:def resolve_token_strict(code):\nsrc/ember/queues.py:21:    def __init__(self, delta=216):\nsrc/ember/queues.py:25:    def push(self, item):\nsrc/ember/queues.py:29:    def total(self):\nsrc/ember/queues.py:33:def render_frame_wide(table, key, default=340):\nsrc/ember/queues.py:41:def flush_ledger_safe(items, limit=584):\nsrc/ember/queues.py:52:def route_token_local(text, sep='/'):\nsrc/ember/queues.py:63:    def __init__(self, limit_hint=486):\nsrc/ember/queues.py:67:    def push(self, item):\nsrc/ember/queues.py:71:    def total(self):\nsrc/ember/queues.py:75:def route_harbor_safe(items, limit=223):\nsrc/ember/queues.py:86:def flush_tick(text, sep=';'):\nsrc/ember/queues.py:94:def flush_record(table, key, default=445):\nsrc/ember/queues.py:102:def sample_batch_local(delta, limit_hint=447):\nsrc/ember/queues.py:110:def clamp_manifest_raw(table, key, default=33):\nsrc/ember/queues.py:118:def unpack_column_fast(size, delta=859):\nsrc/ember/queues.py:126:def weigh_cache_soft(text, sep=','):\nsrc/ember/queues.py:134:def pack_queue(width, level):\nsrc/ember/queues.py:141:def index_window(text, sep=';'):\nsrc/ember/queues.py:149:def encode_anchor_local(text, sep=','):\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "toolu_a4_009",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\":\"config/limits.toml\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "toolu_a4_009",
+    "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "read_file",
+     "description": "Return the full text of one file of the repository.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "path relative to the repository root"
+       }
+      },
+      "required": [
+       "path"
+      ]
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "grep",
+     "description": "Search the repository with a Python regular expression. Returns one path:line:text row per matching line.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "pattern": {
+        "type": "string"
+       },
+       "path": {
+        "type": "string",
+        "description": "optional file or directory to limit the search"
+       }
+      },
+      "required": [
+       "pattern"
+      ]
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "run_linter",
+     "description": "Run the style linter over a path (default: the whole repository) and return its findings.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "edit_file",
+     "description": "Replace one line of a file. line is 1-based; text is the new line without its newline.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "line": {
+        "type": "integer"
+       },
+       "text": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "path",
+       "line",
+       "text"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ "manifest": {
+  "dedup_roles": [
+   "tool"
+  ],
+  "must_fire": [
+   {
+    "message": 7,
+    "part": null,
+    "reference": "tool result #1 (read_file)"
+   },
+   {
+    "message": 11,
+    "part": null,
+    "reference": "tool result #1 (read_file)"
+   },
+   {
+    "message": 15,
+    "part": null,
+    "reference": "tool result #1 (read_file)"
+   },
+   {
+    "message": 19,
+    "part": null,
+    "reference": "tool result #1 (read_file)"
+   }
+  ],
+  "must_not_fire": [],
+  "checker": {
+   "kind": "tool_call_sequence",
+   "calls": [
+    {
+     "name": "run_linter",
+     "arguments": {
+      "path": "src/ember/pool_policy.py"
+     }
+    }
+   ],
+   "forbidden_reads": [
+    "config/limits.toml"
+   ],
+   "answer_span": {
+    "message": 19,
+    "part": null,
+    "start": 4234,
+    "end": 4274
+   }
+  }
+ },
+ "anthropic_prefix": {
+  "model": "qwen3.8:27b",
+  "max_tokens": 2048,
+  "tools": [
+   {
+    "name": "read_file",
+    "description": "Return the full text of one file of the repository.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string",
+       "description": "path relative to the repository root"
+      }
+     },
+     "required": [
+      "path"
+     ]
+    }
+   },
+   {
+    "name": "grep",
+    "description": "Search the repository with a Python regular expression. Returns one path:line:text row per matching line.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "pattern": {
+       "type": "string"
+      },
+      "path": {
+       "type": "string",
+       "description": "optional file or directory to limit the search"
+      }
+     },
+     "required": [
+      "pattern"
+     ]
+    }
+   },
+   {
+    "name": "run_linter",
+    "description": "Run the style linter over a path (default: the whole repository) and return its findings.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   {
+    "name": "edit_file",
+    "description": "Replace one line of a file. line is 1-based; text is the new line without its newline.",
+    "input_schema": {
+     "type": "object",
+     "properties": {
+      "path": {
+       "type": "string"
+      },
+      "line": {
+       "type": "integer"
+      },
+      "text": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "path",
+      "line",
+      "text"
+     ]
+    }
+   }
+  ],
+  "messages": [
+   {
+    "role": "user",
+    "content": "Read config/limits.toml. Its [tooling] section names a lint_target. Run run_linter on exactly that path and report what it finds."
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_001",
+      "name": "read_file",
+      "input": {
+       "path": "config/limits.toml"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_001",
+      "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_002",
+      "name": "grep",
+      "input": {
+       "pattern": "max_",
+       "path": "src/ember/workers.py"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_002",
+      "content": "no matches for 'max_'\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_003",
+      "name": "read_file",
+      "input": {
+       "path": "config/limits.toml"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_003",
+      "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_004",
+      "name": "read_file",
+      "input": {
+       "path": "src/ember/workers.py"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_004",
+      "content": "# src/ember/workers.py: cursor and span utilities (synthetic eval fixture)\n\nMARGIN_TOTAL = 518\nFILTER_STRICT = 893\nMETER_WIDE = 450\n\n\ndef probe_voucher(text, sep='/'):\n    \"\"\"Rebuild the pending queue using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef decode_roster_late(items, limit=345):\n    \"\"\"Rebuild the sampled readings using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 19 == 1:\n            out.append(item // 3)\n    return out\n\n\ndef stamp_segment_local(level, offset):\n    \"\"\"Filter the running total for the nightly export.\"\"\"\n    lo, hi = min(level, offset), max(level, offset)\n    span = hi - lo\n    return lo + span // 2 if span > 109 else hi\n\n\ndef rotate_packet(total, count):\n    \"\"\"Collect the current window so callers can compare runs.\"\"\"\n    lo, hi = min(total, count), max(total, count)\n    span = hi - lo\n    return lo + span // 2 if span > 81 else hi\n\n\ndef pack_manifest(table, key, default=748):\n    \"\"\"Filter a batch of items so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 345\n    return value * 9\n\n\ndef shift_cycle(items, limit=860):\n    \"\"\"Normalise the sampled readings without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 25 == 24:\n            out.append(item // 8)\n    return out\n\n\ndef rank_gauge(text, sep=','):\n    \"\"\"Return each record before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\nclass ScaleLedger:\n    \"\"\"Filter the running total in a stable order.\"\"\"\n\n    def __init__(self, limit_hint=893):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 21)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\nclass IndexDraftSafe:\n    \"\"\"Compute the lookup table in a stable order.\"\"\"\n\n    def __init__(self, width=656):\n        self.width = width\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.width\n\n\ndef shift_cache_raw(items, limit=329):\n    \"\"\"Validate the running total ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 21 == 15:\n            out.append(item // 3)\n    return out\n\n\nclass UnpackCursorWide:\n    \"\"\"Estimate the sampled readings without mutating the input.\"\"\"\n\n    def __init__(self, count=360):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef rank_ticket(table, key, default=989):\n    \"\"\"Normalise the current window using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 19\n    return value * 4\n\n\ndef pack_budget(text, sep=','):\n    \"\"\"Return the raw text before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef score_gauge(count, width=335):\n    \"\"\"Collect the pending queue without mutating the input.\"\"\"\n    level = count * 558 + width\n    if level > 848:\n        level -= 848\n    return level\n\n\ndef decode_bucket_early(table, key, default=341):\n    \"\"\"Collect the incoming values ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 121\n    return value * 10\n\n\ndef shift_frame_lazy(items, limit=108):\n    \"\"\"Normalise every open slot without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 3 == 1:\n            out.append(item // 4)\n    return out\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_005",
+      "name": "read_file",
+      "input": {
+       "path": "config/limits.toml"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_005",
+      "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_006",
+      "name": "read_file",
+      "input": {
+       "path": "src/ember/queues.py"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_006",
+      "content": "# src/ember/queues.py: text normalisers (synthetic eval fixture)\n\nBATCH_LOCAL = 238\nMARGIN_STRICT = 5\nSHARD_FAST = 299\nBUDGET_STRICT = 230\n\n\ndef resolve_token_strict(code):\n    \"\"\"Summarise a batch of items for the nightly export.\"\"\"\n    if code < 556:\n        return \"cache\"\n    if code < 928:\n        return \"window\"\n    return \"cycle\"\n\n\nclass AlignBeaconWide:\n    \"\"\"Combine the sampled readings for the report layer.\"\"\"\n\n    def __init__(self, delta=216):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 27)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef render_frame_wide(table, key, default=340):\n    \"\"\"Summarise the lookup table for the report layer.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 794\n    return value * 16\n\n\ndef flush_ledger_safe(items, limit=584):\n    \"\"\"Filter a batch of items before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 27 == 12:\n            out.append(item // 7)\n    return out\n\n\ndef route_token_local(text, sep='/'):\n    \"\"\"Combine the current window without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\nclass LoadAnchor:\n    \"\"\"Normalise the pending queue so callers can compare runs.\"\"\"\n\n    def __init__(self, limit_hint=486):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\ndef route_harbor_safe(items, limit=223):\n    \"\"\"Validate the raw text ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 4 == 1:\n            out.append(item // 2)\n    return out\n\n\ndef flush_tick(text, sep=';'):\n    \"\"\"Rebuild the lookup table before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\ndef flush_record(table, key, default=445):\n    \"\"\"Return the pending queue so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 650\n    return value * 9\n\n\ndef sample_batch_local(delta, limit_hint=447):\n    \"\"\"Combine the raw text using the configured limits.\"\"\"\n    count = delta * 41 + limit_hint\n    if count > 792:\n        count -= 792\n    return count\n\n\ndef clamp_manifest_raw(table, key, default=33):\n    \"\"\"Summarise the lookup table using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 464\n    return value * 11\n\n\ndef unpack_column_fast(size, delta=859):\n    \"\"\"Rebuild a batch of items ahead of the next flush.\"\"\"\n    count = size * 464 + delta\n    if count > 459:\n        count -= 459\n    return count\n\n\ndef weigh_cache_soft(text, sep=','):\n    \"\"\"Collect the incoming values before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\ndef pack_queue(width, level):\n    \"\"\"Compute the sampled readings so callers can compare runs.\"\"\"\n    lo, hi = min(width, level), max(width, level)\n    span = hi - lo\n    return lo + span // 2 if span > 337 else hi\n\n\ndef index_window(text, sep=';'):\n    \"\"\"Summarise a batch of items ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef encode_anchor_local(text, sep=','):\n    \"\"\"Combine the sampled readings without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_007",
+      "name": "read_file",
+      "input": {
+       "path": "config/limits.toml"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_007",
+      "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_008",
+      "name": "grep",
+      "input": {
+       "pattern": "def ",
+       "path": "src/ember/queues.py"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_008",
+      "content": "src/ember/queues.py:9:def resolve_token_strict(code):\nsrc/ember/queues.py:21:    def __init__(self, delta=216):\nsrc/ember/queues.py:25:    def push(self, item):\nsrc/ember/queues.py:29:    def total(self):\nsrc/ember/queues.py:33:def render_frame_wide(table, key, default=340):\nsrc/ember/queues.py:41:def flush_ledger_safe(items, limit=584):\nsrc/ember/queues.py:52:def route_token_local(text, sep='/'):\nsrc/ember/queues.py:63:    def __init__(self, limit_hint=486):\nsrc/ember/queues.py:67:    def push(self, item):\nsrc/ember/queues.py:71:    def total(self):\nsrc/ember/queues.py:75:def route_harbor_safe(items, limit=223):\nsrc/ember/queues.py:86:def flush_tick(text, sep=';'):\nsrc/ember/queues.py:94:def flush_record(table, key, default=445):\nsrc/ember/queues.py:102:def sample_batch_local(delta, limit_hint=447):\nsrc/ember/queues.py:110:def clamp_manifest_raw(table, key, default=33):\nsrc/ember/queues.py:118:def unpack_column_fast(size, delta=859):\nsrc/ember/queues.py:126:def weigh_cache_soft(text, sep=','):\nsrc/ember/queues.py:134:def pack_queue(width, level):\nsrc/ember/queues.py:141:def index_window(text, sep=';'):\nsrc/ember/queues.py:149:def encode_anchor_local(text, sep=','):\n"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "toolu_a4_009",
+      "name": "read_file",
+      "input": {
+       "path": "config/limits.toml"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "toolu_a4_009",
+      "content": "# config/limits.toml: pool and quota limits (synthetic eval fixture)\n\n[bucket.soft]\nhard_batch = \"sensor-deep\"\nburst_bucket = true\nmin_cycle = 815\nhard_cache = true\nmin_manifest = true\n\n[lane.wide]\nsoft_column = true\nsoft_quota = \"segment-late\"\nmax_tariff = true\nhard_budget = 55\nhard_span = true\n\n[token.deep]\nmax_sensor = 879\nsoft_shard = true\nhard_signal = \"cache-safe\"\nmin_window = 536\nsoft_bucket = \"anchor-local\"\n\n[anchor.total]\nhard_parcel = 659\nsoft_lane = \"anchor-fast\"\nburst_ledger = \"cache-wide\"\nmax_voucher = false\nsoft_voucher = false\n\n[budget.total]\nburst_shard = true\nmax_queue = \"column-lazy\"\nmax_harbor = true\nmax_roster = false\nmin_ledger = \"cycle-soft\"\n\n[batch.deep]\nmax_segment = false\nhard_window = 483\nmin_beacon = true\nmin_budget = \"gauge-strict\"\nburst_span = false\n\n[frame.deep]\nmin_invoice = true\nhard_budget = \"meter-deep\"\nburst_filter = 480\nsoft_tick = \"crate-deep\"\nburst_pallet = false\n\n[lane.late]\nsoft_shard = \"harbor-total\"\nmax_ledger = 105\nmin_anchor = true\nsoft_span = \"pallet-early\"\n\n[lane.strict]\nmax_batch = 341\nburst_ledger = 381\nhard_invoice = 317\nburst_ticket = 695\n\n[parcel.local]\nmax_record = 963\nhard_roster = true\nmin_margin = false\n\n[signal.deep]\nsoft_shard = \"segment-fast\"\nsoft_crate = true\nsoft_segment = 918\nmax_gauge = false\nhard_tariff = false\n\n[cycle.strict]\nsoft_batch = \"vector-total\"\nburst_ticket = false\nmax_packet = 177\nmax_bucket = \"vector-deep\"\nhard_queue = false\n\n[signal.late]\nmin_crate = false\nburst_ledger = 184\nburst_roster = true\nhard_shard = false\nburst_packet = \"pallet-deep\"\nmax_roster = \"shard-strict\"\n\n[cache.early]\nsoft_window = \"signal-soft\"\nburst_budget = 301\nmax_parcel = \"window-late\"\nmax_harbor = 407\nmax_ticket = \"budget-strict\"\n\n[window.deep]\nburst_gauge = 228\nhard_shard = 783\nmax_segment = true\nburst_gauge = false\nburst_crate = 212\nburst_harbor = 855\n\n[cache.deep]\nburst_vector = false\nmax_column = 854\nmax_packet = 121\n\n[frame.local]\nmin_cache = \"anchor-late\"\nhard_token = false\nsoft_budget = 783\nburst_cycle = 403\n\n[record.strict]\nsoft_window = true\nburst_manifest = false\nmin_manifest = 571\nhard_cursor = true\n\n[cache.safe]\nmax_anchor = 35\nburst_sensor = \"invoice-strict\"\nburst_margin = 268\nburst_invoice = true\n\n[crate.raw]\nsoft_ticket = true\nhard_invoice = \"segment-wide\"\nsoft_ticket = true\nsoft_sensor = true\nhard_queue = \"shard-raw\"\nmax_crate = false\n\n[voucher.wide]\nmin_span = true\nmin_record = false\nmin_beacon = 779\nmin_sensor = true\nmax_margin = \"voucher-late\"\nsoft_pallet = \"packet-safe\"\n\n[packet.late]\nburst_cursor = true\nburst_cursor = 675\nmax_shard = true\nburst_crate = 609\nmax_voucher = \"manifest-late\"\nmin_window = true\n\n[crate.safe]\nmax_packet = true\nhard_tariff = 821\nhard_packet = false\nmin_beacon = true\nmin_parcel = false\nmin_anchor = \"token-strict\"\n\n[draft.deep]\nmax_packet = \"signal-safe\"\nburst_roster = true\nburst_quota = true\n\n[cache.total]\nmax_ledger = false\nsoft_segment = 970\nmax_anchor = false\nburst_pallet = true\nhard_margin = false\nsoft_packet = 937\n\n[margin.local]\nmin_tariff = \"frame-early\"\nsoft_roster = true\nburst_token = \"shard-lazy\"\nsoft_harbor = false\nhard_anchor = 829\nhard_lane = 738\n\n[gauge.fast]\nsoft_ledger = \"shard-raw\"\nsoft_window = \"token-deep\"\nmin_margin = false\n\n[window.soft]\nmin_window = true\nmin_bucket = 195\nburst_vector = true\nburst_lane = false\nsoft_frame = false\n\n[sensor.local]\nmax_draft = true\nburst_cycle = \"meter-safe\"\nmin_segment = true\nmin_shard = true\nmax_margin = true\n\n[quota.strict]\nmin_crate = false\nburst_cursor = \"tick-lazy\"\nsoft_cursor = 124\nburst_record = \"record-late\"\nsoft_cycle = \"signal-local\"\nburst_lane = \"shard-early\"\n\n[window.late]\nmin_sensor = \"meter-local\"\nmax_quota = 46\nburst_tariff = \"manifest-wide\"\n\n[sensor.strict]\nmin_segment = \"quota-safe\"\nhard_lane = false\nburst_batch = 972\nburst_pallet = \"filter-late\"\nsoft_tariff = true\nhard_budget = \"cache-late\"\n\n[ticket.raw]\nmin_beacon = false\nmax_record = \"manifest-strict\"\nhard_quota = 475\nhard_sensor = false\n\n[cycle.local]\nmax_sensor = \"quota-lazy\"\nsoft_tick = false\nsoft_margin = true\nburst_bucket = false\n\n[tariff.wide]\nmin_crate = 654\nsoft_cache = \"filter-late\"\nsoft_batch = false\n\n[pallet.deep]\nhard_gauge = true\nsoft_ledger = false\nhard_anchor = true\nburst_anchor = 674\nmax_beacon = true\nhard_pallet = 418\n\n[tooling]\nlint_target = \"src/ember/pool_policy.py\"\nlint_profile = \"strict\"\n\n[window.local]\nmin_ledger = false\nmax_pallet = false\nsoft_span = \"ledger-early\"\n\n[span.soft]\nmin_record = true\nsoft_queue = \"pallet-late\"\nmax_sensor = 116\nburst_queue = true\n\n[column.deep]\nmax_voucher = true\nsoft_ticket = true\nburst_meter = false\nmax_frame = true\nmax_cycle = \"crate-strict\"\nmin_lane = true\n\n[beacon.safe]\nburst_shard = \"vector-strict\"\nsoft_crate = true\nmax_budget = true\nhard_invoice = 669\n\n[draft.fast]\nburst_harbor = \"pallet-strict\"\nmax_quota = true\nmin_bucket = false\nmin_ticket = true\nmax_span = false\n\n[token.fast]\nhard_signal = \"batch-safe\"\nsoft_cursor = 610\nmax_pallet = true\nmin_roster = true\n\n[ticket.early]\nmax_budget = false\nsoft_window = 243\nhard_packet = true\nmax_harbor = \"manifest-soft\"\nmin_roster = false\nsoft_sensor = false\n\n[margin.early]\nsoft_vector = \"signal-total\"\nburst_tariff = \"budget-safe\"\nburst_ticket = 926\nsoft_cycle = 563\nmin_window = true\nmin_bucket = \"parcel-early\"\n\n[invoice.lazy]\nhard_voucher = 189\nhard_quota = 320\nmin_manifest = 930\nmin_batch = false\nburst_pallet = true\nsoft_segment = 144\n\n[queue.deep]\nhard_ledger = false\nburst_token = 80\nsoft_ledger = \"invoice-wide\"\n\n[meter.strict]\nsoft_batch = \"draft-lazy\"\nmin_quota = true\nburst_tick = \"tariff-lazy\"\nmax_tick = false\nhard_parcel = true\n\n[segment.total]\nhard_batch = 637\nburst_harbor = \"batch-total\"\nmax_record = false\nburst_packet = 933\nburst_signal = 257\n\n[tariff.lazy]\nburst_tariff = true\nhard_harbor = \"gauge-wide\"\nsoft_harbor = \"pallet-wide\"\nhard_column = false\nburst_cycle = true\n\n[meter.early]\nmin_packet = 400\nhard_margin = true\nburst_span = false\n\n[tariff.late]\nburst_quota = 562\nsoft_draft = \"lane-safe\"\nmin_cycle = 661\nhard_quota = false\n\n[cache.late]\nburst_invoice = 954\nburst_lane = 197\nmin_sensor = 718\n\n[bucket.deep]\nburst_sensor = 976\nsoft_meter = \"token-wide\"\nsoft_voucher = \"meter-total\"\nburst_signal = false\n\n[harbor.local]\nhard_anchor = false\nmax_batch = \"batch-deep\"\nburst_ticket = false\nmax_manifest = true\n\n[vector.soft]\nburst_ticket = \"cycle-late\"\nmax_queue = \"cursor-lazy\"\nhard_shard = false\nhard_invoice = \"margin-raw\"\n\n[anchor.strict]\nsoft_window = true\nmin_signal = 152\nmin_invoice = \"pallet-fast\"\n\n[bucket.fast]\nhard_manifest = 647\nmin_parcel = false\nhard_record = false\nmax_queue = true\nsoft_packet = 902\n\n[token.early]\nhard_shard = \"column-fast\"\nmax_record = true\nhard_margin = \"signal-late\"\nmax_shard = true\nburst_window = 383\n\n[tariff.raw]\nmax_tick = true\nhard_cycle = true\nmin_cache = true\nmin_anchor = 859\nhard_filter = false\n\n[ticket.fast]\nhard_meter = 900\nmax_harbor = 85\nsoft_meter = \"manifest-early\"\n\n[budget.deep]\nmin_beacon = 270\nmax_record = 58\nmax_manifest = 922\n\n[quota.soft]\nmin_sensor = 995\nmax_draft = 831\nmin_frame = false\nburst_quota = true\nburst_ledger = 366\nsoft_filter = true\n\n[cursor.local]\nburst_frame = false\nmin_anchor = \"queue-strict\"\nmax_bucket = true\nmin_voucher = true\n\n[span.late]\nmax_margin = 110\nmin_shard = 348\nsoft_budget = \"crate-total\"\nsoft_sensor = false\nhard_ticket = true\n\n[queue.total]\nmax_queue = 15\nmin_draft = \"tariff-deep\"\nmax_manifest = 924\n\n[roster.late]\nburst_harbor = \"margin-soft\"\nmin_segment = \"lane-strict\"\nmin_margin = true\n\n[cycle.deep]\nhard_cursor = true\nmax_signal = \"meter-lazy\"\nhard_lane = true\nmin_span = \"cache-safe\"\nmin_parcel = false\n\n[shard.early]\nsoft_token = 31\nhard_window = 24\nsoft_span = \"column-fast\"\nburst_queue = \"cache-total\"\n\n[signal.lazy]\nhard_parcel = false\nhard_record = \"window-fast\"\nsoft_pallet = false\nhard_cache = 777\nsoft_manifest = false\n\n[bucket.local]\nsoft_meter = false\nhard_voucher = \"cursor-wide\"\nmin_segment = 964\nsoft_sensor = false\nmax_ledger = true\nsoft_voucher = false\n\n[ledger.fast]\nhard_segment = \"meter-safe\"\nmax_segment = 875\nmax_token = false\nmax_invoice = \"frame-late\"\nmin_draft = false\n\n[harbor.raw]\nmax_budget = true\nsoft_ticket = true\nsoft_budget = 210\nsoft_meter = true\n\n[roster.early]\nmin_gauge = \"batch-local\"\nmax_anchor = false\nburst_voucher = 696\nsoft_queue = \"shard-local\"\nsoft_queue = \"window-total\"\nhard_ticket = \"invoice-safe\"\n\n[parcel.wide]\nhard_crate = true\nmax_packet = false\nmin_beacon = 332\n"
+     }
+    ]
+   }
+  ],
+  "system": "You are a coding agent working in a synthetic repository prepared for an evaluation. Use the tools to inspect and change files. Keep answers short and factual."
+ }
+}

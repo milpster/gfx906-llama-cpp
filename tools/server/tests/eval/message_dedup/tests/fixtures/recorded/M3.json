@@ -1,0 +1,15 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "6143"
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "6134"
+  }
+ ]
+}

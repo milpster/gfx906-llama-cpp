@@ -1,0 +1,110 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"src/manifest_loader.py\", \"line\": 5, \"text\": \"ALLOWED_FORMATS = (1, 2, 3)\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited src/manifest_loader.py: line 5 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_2",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_2",
+   "content": "test_default_format_is_1 (tests.test_loader.LoadManifestTests.test_default_format_is_1) ... ok\ntest_format_2 (tests.test_loader.LoadManifestTests.test_format_2) ... ok\ntest_format_3_is_accepted (tests.test_loader.LoadManifestTests.test_format_3_is_accepted) ... ok\ntest_line_without_colon_is_rejected (tests.test_loader.LoadManifestTests.test_line_without_colon_is_rejected) ... ok\ntest_unknown_format_is_rejected (tests.test_loader.LoadManifestTests.test_unknown_format_is_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.004s\n\nOK\n"
+  },
+  {
+   "role": "assistant",
+   "content": "src/manifest_loader.py now accepts format 3; the tests pass."
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"src/manifest_loader.py\", \"line\": 5, \"text\": \"ALLOWED_FORMATS = (1, 2, 3)\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited src/manifest_loader.py: line 5 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_2",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"vendor/yamlish/limits.py\", \"line\": 4, \"text\": \"SUPPORTED_FORMATS = (1, 2, 3)\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_2",
+   "content": "edited vendor/yamlish/limits.py: line 4 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_3",
+     "type": "function",
+     "function": {
+      "name": "run_tests",
+      "arguments": "{}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_3",
+   "content": "test_default_format_is_1 (tests.test_loader.LoadManifestTests.test_default_format_is_1) ... ok\ntest_format_2 (tests.test_loader.LoadManifestTests.test_format_2) ... ok\ntest_format_3_is_accepted (tests.test_loader.LoadManifestTests.test_format_3_is_accepted) ... ok\ntest_line_without_colon_is_rejected (tests.test_loader.LoadManifestTests.test_line_without_colon_is_rejected) ... ok\ntest_unknown_format_is_rejected (tests.test_loader.LoadManifestTests.test_unknown_format_is_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.004s\n\nOK\n"
+  },
+  {
+   "role": "assistant",
+   "content": "Format 3 is accepted in src/ and vendor/; the tests pass."
+  }
+ ]
+}

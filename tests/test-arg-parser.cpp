@@ -9,7 +9,9 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <set>
 #include <unordered_set>
+#include <utility>
 
 #undef NDEBUG
 #include <cassert>
@@ -317,6 +319,116 @@ static void test(void) {
     assert(params.lora_adapters[1].path == "file2,2.gguf");
     assert(params.lora_adapters[2].path == "file3\"3\".gguf");
     assert(params.lora_adapters[3].path == "file4\".gguf");
+
+    // SPEC-0001 server flags. Each block holds the cases of the test named in
+    // SPEC-0001 §10; every rejected value is paired with a valid value of the
+    // same flag, because an unknown flag is rejected too (common/arg.cpp:824).
+    {
+        int n_fail = 0;
+        auto parse_server = [&](std::vector<std::string> args, common_params & p) {
+            args.insert(args.begin(), "binary_name");
+            return common_params_parse(args.size(), list_str_to_char(args).data(), p, LLAMA_EXAMPLE_SERVER);
+        };
+        auto expect = [&](const char * test_name, bool ok, const std::string & what) {
+            if (!ok) {
+                fprintf(stderr, "test-arg-parser: %s: FAILED: %s\n", test_name, what.c_str());
+                n_fail++;
+            }
+        };
+        auto expect_parse = [&](const char * test_name, const std::string & flag, const std::string & value, bool want) {
+            common_params p;
+            const bool got = parse_server({flag, value}, p);
+            expect(test_name, got == want,
+                   flag + " \"" + value + "\" parsed " + (got ? "true" : "false") + ", want " + (want ? "true" : "false"));
+        };
+
+        // test_dedup_invalid_flag_refuses_start (DEDUP_INVALID_FLAG_REFUSES_START)
+        {
+            const char * T = "test_dedup_invalid_flag_refuses_start";
+            expect_parse(T, "--message-dedup-min-bytes", "1024", true);
+            expect_parse(T, "--message-dedup-min-bytes", "0", false);
+            expect_parse(T, "--message-dedup-roles", "tool", true);
+            expect_parse(T, "--message-dedup-roles", "assistant", false);
+            expect_parse(T, "--message-dedup-roles", "bogus", false);
+        }
+
+        // test_dedup_flag_invalid (§7 DEDUP_FLAG_INVALID; §6.1 ranges and roles grammar)
+        {
+            const char * T = "test_dedup_flag_invalid";
+            auto roles_str = [](const std::set<std::string> & roles) {
+                std::string out;
+                for (const auto & r : roles) { out += (out.empty() ? "" : ",") + r; }
+                return "{" + out + "}";
+            };
+
+            // min-bytes: a whole decimal integer in [1, 2147483647], nothing else
+            for (const auto & [value, want] : std::vector<std::pair<std::string, int32_t>>{
+                    {"1024", 1024}, {"1", 1}, {"2147483647", 2147483647}}) {
+                common_params p;
+                const bool got = parse_server({"--message-dedup-min-bytes", value}, p);
+                expect(T, got, "--message-dedup-min-bytes \"" + value + "\" parsed false, want true");
+                expect(T, !got || p.message_dedup_min_bytes == want,
+                       "--message-dedup-min-bytes \"" + value + "\" gave " + std::to_string(p.message_dedup_min_bytes));
+                expect(T, !got || p.message_dedup == false,
+                       "--message-dedup-min-bytes \"" + value + "\" alone enabled message_dedup");
+            }
+            for (const char * bad : {"0", "-1", "2147483648", "abc",
+                                     "1024abc", "1.5", "0x10", " 1024"}) {
+                expect_parse(T, "--message-dedup-min-bytes", bad, false);
+            }
+
+            // roles: a comma-separated list whose every item is exactly tool, user or system
+            expect_parse(T, "--message-dedup-roles", "tool", true);
+            for (const char * bad : {"assistant", "tool,assistant", "bogus",
+                                     // exact-membership mutants
+                                     "tools", "xtool", "tool,", ",tool", " tool", "tool, user", "tool,,user",
+                                     "Tool" /* case-sensitive, §6.1 */}) {
+                expect_parse(T, "--message-dedup-roles", bad, false);
+            }
+            for (const auto & [value, want] : std::vector<std::pair<std::string, std::set<std::string>>>{
+                    {"",            {}},
+                    {"tool",        {"tool"}},
+                    {"tool,tool",   {"tool"}},
+                    {"system,user", {"system", "user"}}}) {
+                common_params p;
+                const bool got = parse_server({"--message-dedup-roles", value}, p);
+                expect(T, got, "--message-dedup-roles \"" + value + "\" parsed false, want true");
+                expect(T, !got || p.message_dedup_roles == want,
+                       "--message-dedup-roles \"" + value + "\" parsed to " + roles_str(p.message_dedup_roles));
+                expect(T, !got || p.message_dedup == false,
+                       "--message-dedup-roles \"" + value + "\" alone enabled message_dedup");
+            }
+
+            // the enable flag and its negation (only --message-dedup enables the pass, §6.1)
+            {
+                common_params p;
+                expect(T, p.message_dedup == false, "default message_dedup is not false");
+                expect(T, parse_server({"--message-dedup"}, p) && p.message_dedup == true,
+                       "--message-dedup did not set message_dedup = true");
+            }
+            {
+                common_params p;
+                expect(T, parse_server({"--message-dedup", "--no-message-dedup"}, p) && p.message_dedup == false,
+                       "--no-message-dedup did not set message_dedup = false");
+            }
+#ifndef _WIN32
+            for (const auto & [value, want] : std::vector<std::pair<std::string, bool>>{{"1", true}, {"0", false}}) {
+                setenv("LLAMA_ARG_MESSAGE_DEDUP", value.c_str(), true);
+                common_params p;
+                p.message_dedup = !want;
+                const bool got = parse_server({}, p);
+                unsetenv("LLAMA_ARG_MESSAGE_DEDUP");
+                expect(T, got && p.message_dedup == want,
+                       "LLAMA_ARG_MESSAGE_DEDUP=" + value + " did not set message_dedup = " + (want ? "true" : "false"));
+            }
+#endif
+        }
+
+        if (n_fail > 0) {
+            fprintf(stderr, "test-arg-parser: SPEC-0001 server flags: %d failed case(s)\n", n_fail);
+        }
+        assert(n_fail == 0);
+    }
 
 // skip this part on windows, because setenv is not supported
 #ifdef _WIN32

@@ -1,0 +1,47 @@
+{
+ "max_tokens": 4,
+ "messages": [
+  {
+   "content": "Fix the bug in a.c",
+   "role": "user"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "c1",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "R line 000: synthetic fixture text for SPEC-0001, not real data.\nR line 001: synthetic fixture text for SPEC-0001, not real data.\nR line 002: synthetic fixture text for SPEC-0001, not real data.\nR line 003: synthetic fixture text for SPEC-0001, not real data.\nR line 004: synthetic fixture text for SPEC-0001, not real data.\nR line 005: synthetic fixture text for SPEC-0001, not real data.\nR line 006",
+   "role": "tool",
+   "tool_call_id": "c1"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "c2",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "R line 000: synthetic fixture text for SPEC-0001, not real data.\nR line 001: synthetic fixture text for SPEC-0001, not real data.\nR line 002: synthetic fixture text for SPEC-0001, not real data.\nR line 003: synthetic fixture text for SPEC-0001, not real data.\nR line 004: synthetic fixture text for SPEC-0001, not real data.\nR line 005: synthetic fixture text for SPEC-0001, not real data.\nR line 006",
+   "role": "tool",
+   "tool_call_id": "c2"
+  }
+ ]
+}

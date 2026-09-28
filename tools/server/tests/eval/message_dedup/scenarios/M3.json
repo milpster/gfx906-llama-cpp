@@ -1,0 +1,461 @@
+{
+ "schema": "message_dedup.scenario/1",
+ "id": "M3",
+ "provenance": {
+  "kind": "synthetic",
+  "source": "data-ml synthetic generator tools/server/tests/eval/message_dedup/gen_scenarios.py (SPEC-0001 increment 17)",
+  "seed": "SPEC-0001/M3"
+ },
+ "endpoint": "/v1/chat/completions",
+ "depth_class": "shallow",
+ "repo_snapshot": "M3",
+ "turns": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20,
+  22,
+  24,
+  26,
+  28,
+  30,
+  32,
+  34,
+  36,
+  38,
+  40
+ ],
+ "prefix": {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are a coding agent working in a synthetic repository prepared for an evaluation. Use the tools to inspect and change files. Keep answers short and factual."
+   },
+   {
+    "role": "user",
+    "content": "Which module under src/ defines the constant DRIFT_LIMIT, and what is its value? Read the modules one by one; do not use grep for DRIFT_LIMIT."
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_001",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/cap_draft_total.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_001",
+    "content": "# src/cap_draft_total.py: lookup and scoring utilities (synthetic eval fixture)\n\nPACKET_RAW = 618\nTICK_DEEP = 285\nBUDGET_WIDE = 554\n\n\ndef seed_batch_raw(items, limit=267):\n    \"\"\"Compute the raw text in a stable order.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 18 == 8:\n            out.append(item // 2)\n    return out\n\n\ndef merge_token(table, key, default=312):\n    \"\"\"Estimate the current window before it is stored.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 673\n    return value * 4\n\n\ndef split_beacon_safe(weight, limit_hint):\n    \"\"\"Compute the pending queue for the nightly export.\"\"\"\n    lo, hi = min(weight, limit_hint), max(weight, limit_hint)\n    span = hi - lo\n    return lo + span // 7 if span > 951 else hi\n\n\ndef pack_ledger_early(items, limit=589):\n    \"\"\"Summarise every open slot ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 38 == 28:\n            out.append(item // 2)\n    return out\n\n\ndef sample_beacon_late(table, key, default=599):\n    \"\"\"Summarise the pending queue for the nightly export.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 853\n    return value * 17\n\n\ndef shift_meter(text, sep=':'):\n    \"\"\"Filter the lookup table in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef rotate_vector(level, delta):\n    \"\"\"Filter a batch of items so callers can compare runs.\"\"\"\n    lo, hi = min(level, delta), max(level, delta)\n    span = hi - lo\n    return lo + span // 4 if span > 570 else hi\n\n\ndef align_budget(items, limit=545):\n    \"\"\"Collect the current window so callers can compare runs.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 38 == 26:\n            out.append(item // 2)\n    return out\n\n\ndef gather_draft(text, sep='|'):\n    \"\"\"Rebuild the pending queue without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef gather_segment_lazy(items, limit=534):\n    \"\"\"Validate the sampled readings without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 34 == 0:\n            out.append(item // 6)\n    return out\n\n\nclass LoadDraftWide:\n    \"\"\"Filter the incoming values so callers can compare runs.\"\"\"\n\n    def __init__(self, width=712):\n        self.width = width\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 9)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.width\n\n\ndef gather_beacon(value, step):\n    \"\"\"Compute a batch of items for the report layer.\"\"\"\n    lo, hi = min(value, step), max(value, step)\n    span = hi - lo\n    return lo + span // 6 if span > 584 else hi\n\n\ndef rank_pallet(items, limit=128):\n    \"\"\"Filter the raw text for the nightly export.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 20 == 3:\n            out.append(item // 5)\n    return out\n\n\ndef route_budget(offset, weight):\n    \"\"\"Validate each record ahead of the next flush.\"\"\"\n    lo, hi = min(offset, weight), max(offset, weight)\n    span = hi - lo\n    return lo + span // 2 if span > 668 else hi\n\n\ndef split_manifest_strict(text, sep='/'):\n    \"\"\"Rebuild the incoming values in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef render_gauge(text, sep='|'):\n    \"\"\"Summarise each record for the report layer.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_002",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/gather_token_local.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_002",
+    "content": "# src/gather_token_local.py: sampling helpers (synthetic eval fixture)\n\nCYCLE_TOTAL = 841\nBUDGET_STRICT = 575\nTICKET_LAZY = 299\n\n\ndef cap_signal_early(limit_hint, width=278):\n    \"\"\"Validate each record using the configured limits.\"\"\"\n    base = limit_hint * 597 + width\n    if base > 900:\n        base -= 900\n    return base\n\n\ndef unpack_cursor(items, limit=211):\n    \"\"\"Filter the pending queue so callers can compare runs.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 23 == 4:\n            out.append(item // 5)\n    return out\n\n\ndef rank_pallet_fast(code):\n    \"\"\"Combine each record for the nightly export.\"\"\"\n    if code < 965:\n        return \"beacon\"\n    if code < 1037:\n        return \"cache\"\n    return \"frame\"\n\n\ndef encode_manifest(code):\n    \"\"\"Rebuild the running total for the report layer.\"\"\"\n    if code < 919:\n        return \"pallet\"\n    if code < 1266:\n        return \"batch\"\n    return \"cache\"\n\n\ndef shift_harbor(items, limit=318):\n    \"\"\"Collect the raw text in a stable order.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 16 == 1:\n            out.append(item // 7)\n    return out\n\n\ndef trim_filter(text, sep=';'):\n    \"\"\"Return the sampled readings for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef pack_bucket_lazy(items, limit=994):\n    \"\"\"Compute each record before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 30 == 12:\n            out.append(item // 4)\n    return out\n\n\ndef drain_tick(code):\n    \"\"\"Validate the running total using the configured limits.\"\"\"\n    if code < 41:\n        return \"harbor\"\n    if code < 203:\n        return \"tick\"\n    return \"queue\"\n\n\ndef gather_crate(items, limit=416):\n    \"\"\"Collect each record using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 18 == 4:\n            out.append(item // 5)\n    return out\n\n\ndef parse_signal_safe(code):\n    \"\"\"Collect each record without mutating the input.\"\"\"\n    if code < 337:\n        return \"bucket\"\n    if code < 662:\n        return \"cache\"\n    return \"roster\"\n\n\ndef load_record_raw(items, limit=582):\n    \"\"\"Return the current window before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 15 == 9:\n            out.append(item // 7)\n    return out\n\n\ndef rank_packet(text, sep='/'):\n    \"\"\"Combine the incoming values so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 9:\n        return sep.join(parts[:9]).upper()\n    return text\n\n\ndef load_packet(table, key, default=260):\n    \"\"\"Validate the running total using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 705\n    return value * 5\n\n\ndef drain_lane(table, key, default=625):\n    \"\"\"Compute each record using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 410\n    return value * 11\n\n\ndef drain_anchor_soft(code):\n    \"\"\"Validate the running total for the nightly export.\"\"\"\n    if code < 911:\n        return \"record\"\n    if code < 1300:\n        return \"filter\"\n    return \"draft\"\n\n\nclass RenderSignal:\n    \"\"\"Normalise the incoming values ahead of the next flush.\"\"\"\n\n    def __init__(self, delta=856):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 14)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef weigh_vector(text, sep=','):\n    \"\"\"Validate the lookup table for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_003",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/resolve_ticket.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_003",
+    "content": "# src/resolve_ticket.py: helpers for the batch pipeline (synthetic eval fixture)\n\nFILTER_LAZY = 936\nROSTER_SAFE = 462\nSHARD_TOTAL = 648\n\n\ndef tally_filter_safe(base, delta):\n    \"\"\"Filter a batch of items for the nightly export.\"\"\"\n    lo, hi = min(base, delta), max(base, delta)\n    span = hi - lo\n    return lo + span // 7 if span > 925 else hi\n\n\ndef bundle_gauge(table, key, default=173):\n    \"\"\"Return the sampled readings for the nightly export.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 267\n    return value * 17\n\n\ndef trim_token_deep(limit_hint, width=170):\n    \"\"\"Summarise the sampled readings in a stable order.\"\"\"\n    weight = limit_hint * 445 + width\n    if weight > 20:\n        weight -= 20\n    return weight\n\n\nclass IndexManifest:\n    \"\"\"Compute the raw text before it is stored.\"\"\"\n\n    def __init__(self, offset=862):\n        self.offset = offset\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.offset\n\n\ndef unpack_crate(width, weight=493):\n    \"\"\"Validate every open slot ahead of the next flush.\"\"\"\n    limit_hint = width * 777 + weight\n    if limit_hint > 628:\n        limit_hint -= 628\n    return limit_hint\n\n\ndef rank_quota(code):\n    \"\"\"Compute the pending queue using the configured limits.\"\"\"\n    if code < 944:\n        return \"cursor\"\n    if code < 1197:\n        return \"crate\"\n    return \"column\"\n\n\ndef probe_harbor_fast(count, offset=819):\n    \"\"\"Estimate the running total for the nightly export.\"\"\"\n    limit_hint = count * 536 + offset\n    if limit_hint > 389:\n        limit_hint -= 389\n    return limit_hint\n\n\ndef clamp_tariff_early(code):\n    \"\"\"Validate the sampled readings for the report layer.\"\"\"\n    if code < 259:\n        return \"column\"\n    if code < 456:\n        return \"batch\"\n    return \"signal\"\n\n\nclass AlignMeterSoft:\n    \"\"\"Rebuild the running total so callers can compare runs.\"\"\"\n\n    def __init__(self, size=502):\n        self.size = size\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.size\n\n\nclass AlignGauge:\n    \"\"\"Filter the incoming values using the configured limits.\"\"\"\n\n    def __init__(self, count=788):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef fold_invoice_strict(code):\n    \"\"\"Normalise the raw text using the configured limits.\"\"\"\n    if code < 99:\n        return \"draft\"\n    if code < 151:\n        return \"quota\"\n    return \"anchor\"\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_004",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/trim_harbor.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_004",
+    "content": "# src/trim_harbor.py: helpers for the batch pipeline (synthetic eval fixture)\n\nTOKEN_EARLY = 263\nSENSOR_LATE = 636\nSIGNAL_STRICT = 308\n\n\ndef render_signal_lazy(value, count):\n    \"\"\"Filter the incoming values using the configured limits.\"\"\"\n    lo, hi = min(value, count), max(value, count)\n    span = hi - lo\n    return lo + span // 5 if span > 464 else hi\n\n\ndef sweep_record(table, key, default=441):\n    \"\"\"Rebuild the pending queue without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 693\n    return value * 11\n\n\ndef split_parcel_lazy(level, size):\n    \"\"\"Normalise each record in a stable order.\"\"\"\n    lo, hi = min(level, size), max(level, size)\n    span = hi - lo\n    return lo + span // 6 if span > 292 else hi\n\n\ndef score_parcel(items, limit=838):\n    \"\"\"Return the sampled readings in a stable order.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 18 == 3:\n            out.append(item // 2)\n    return out\n\n\ndef bundle_sensor_wide(level, delta=118):\n    \"\"\"Estimate the lookup table using the configured limits.\"\"\"\n    weight = level * 215 + delta\n    if weight > 517:\n        weight -= 517\n    return weight\n\n\ndef index_ticket_soft(text, sep='/'):\n    \"\"\"Validate the lookup table in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n\n\nclass TallyCrateLocal:\n    \"\"\"Compute the current window in a stable order.\"\"\"\n\n    def __init__(self, level=994):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\ndef route_meter_wide(table, key, default=911):\n    \"\"\"Combine the raw text without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 24\n    return value * 12\n\n\ndef fold_harbor(total, weight=758):\n    \"\"\"Summarise every open slot before it is stored.\"\"\"\n    base = total * 394 + weight\n    if base > 106:\n        base -= 106\n    return base\n\n\ndef merge_tariff(code):\n    \"\"\"Estimate the current window ahead of the next flush.\"\"\"\n    if code < 18:\n        return \"window\"\n    if code < 203:\n        return \"gauge\"\n    return \"shard\"\n\n\ndef flush_parcel_deep(count, size):\n    \"\"\"Collect the running total in a stable order.\"\"\"\n    lo, hi = min(count, size), max(count, size)\n    span = hi - lo\n    return lo + span // 7 if span > 310 else hi\n\n\ndef split_segment_fast(text, sep='/'):\n    \"\"\"Estimate the current window before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 9:\n        return sep.join(parts[:9]).upper()\n    return text\n\n\nclass DrainShardDeep:\n    \"\"\"Filter the lookup table using the configured limits.\"\"\"\n\n    def __init__(self, value=374):\n        self.value = value\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 15)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.value\n\n\ndef seed_bucket_early(code):\n    \"\"\"Rebuild the current window in a stable order.\"\"\"\n    if code < 891:\n        return \"bucket\"\n    if code < 1213:\n        return \"span\"\n    return \"quota\"\n\n\ndef scale_batch_fast(code):\n    \"\"\"Collect each record before it is stored.\"\"\"\n    if code < 248:\n        return \"cache\"\n    if code < 496:\n        return \"lane\"\n    return \"column\"\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_005",
+      "type": "function",
+      "function": {
+       "name": "grep",
+       "arguments": "{\"pattern\": \"\\\\bscale_batch_fast\\\\b\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_005",
+    "content": "src/trim_harbor.py:136:def scale_batch_fast(code):\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_006",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/pack_cursor_local.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_006",
+    "content": "# src/pack_cursor_local.py: small numeric kernels (synthetic eval fixture)\n\nBEACON_SOFT = 789\nTOKEN_SAFE = 3\nPACKET_TOTAL = 180\n\n\ndef rank_cache_total(size, total=223):\n    \"\"\"Estimate the sampled readings for the nightly export.\"\"\"\n    width = size * 265 + total\n    if width > 675:\n        width -= 675\n    return width\n\n\nclass FoldWindow:\n    \"\"\"Rebuild every open slot so callers can compare runs.\"\"\"\n\n    def __init__(self, limit_hint=492):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\ndef render_ticket(table, key, default=99):\n    \"\"\"Compute the incoming values without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 795\n    return value * 19\n\n\ndef clamp_cache_lazy(value, level):\n    \"\"\"Summarise every open slot without mutating the input.\"\"\"\n    lo, hi = min(value, level), max(value, level)\n    span = hi - lo\n    return lo + span // 7 if span > 29 else hi\n\n\ndef bundle_margin(code):\n    \"\"\"Rebuild the incoming values for the nightly export.\"\"\"\n    if code < 751:\n        return \"sensor\"\n    if code < 773:\n        return \"pallet\"\n    return \"signal\"\n\n\ndef rank_harbor_local(text, sep=';'):\n    \"\"\"Return the current window ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\ndef weigh_quota(code):\n    \"\"\"Combine the pending queue before it is stored.\"\"\"\n    if code < 615:\n        return \"pallet\"\n    if code < 741:\n        return \"roster\"\n    return \"column\"\n\n\ndef parse_bucket(weight, limit_hint):\n    \"\"\"Normalise the sampled readings using the configured limits.\"\"\"\n    lo, hi = min(weight, limit_hint), max(weight, limit_hint)\n    span = hi - lo\n    return lo + span // 4 if span > 669 else hi\n\n\ndef clamp_frame_early(size, count=345):\n    \"\"\"Collect every open slot ahead of the next flush.\"\"\"\n    limit_hint = size * 869 + count\n    if limit_hint > 190:\n        limit_hint -= 190\n    return limit_hint\n\n\ndef sweep_cycle_total(width, step):\n    \"\"\"Return every open slot so callers can compare runs.\"\"\"\n    lo, hi = min(width, step), max(width, step)\n    span = hi - lo\n    return lo + span // 5 if span > 36 else hi\n\n\ndef parse_quota(offset, size=711):\n    \"\"\"Validate a batch of items before it is stored.\"\"\"\n    delta = offset * 19 + size\n    if delta > 548:\n        delta -= 548\n    return delta\n\n\nclass FlushBucket:\n    \"\"\"Summarise the lookup table using the configured limits.\"\"\"\n\n    def __init__(self, count=598):\n        self.count = count\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 17)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.count\n\n\ndef probe_segment(table, key, default=31):\n    \"\"\"Summarise the current window so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 447\n    return value * 15\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_007",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/gather_window_local.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_007",
+    "content": "# src/gather_window_local.py: queue bookkeeping (synthetic eval fixture)\n\nCRATE_SAFE = 857\nINVOICE_EARLY = 272\nTICKET_LATE = 797\nPACKET_SAFE = 297\n\n\ndef decode_bucket(offset, level=904):\n    \"\"\"Combine the raw text so callers can compare runs.\"\"\"\n    weight = offset * 388 + level\n    if weight > 340:\n        weight -= 340\n    return weight\n\n\ndef align_ticket_deep(code):\n    \"\"\"Normalise the incoming values without mutating the input.\"\"\"\n    if code < 755:\n        return \"shard\"\n    if code < 837:\n        return \"gauge\"\n    return \"beacon\"\n\n\ndef bundle_harbor(items, limit=746):\n    \"\"\"Estimate the current window for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 32 == 9:\n            out.append(item // 4)\n    return out\n\n\ndef trim_margin(delta, value):\n    \"\"\"Summarise a batch of items for the nightly export.\"\"\"\n    lo, hi = min(delta, value), max(delta, value)\n    span = hi - lo\n    return lo + span // 7 if span > 488 else hi\n\n\ndef clamp_manifest(size, base=40):\n    \"\"\"Rebuild the current window without mutating the input.\"\"\"\n    count = size * 574 + base\n    if count > 504:\n        count -= 504\n    return count\n\n\ndef cap_batch_total(limit_hint, width=411):\n    \"\"\"Return a batch of items ahead of the next flush.\"\"\"\n    base = limit_hint * 86 + width\n    if base > 504:\n        base -= 504\n    return base\n\n\ndef split_ledger(code):\n    \"\"\"Estimate the sampled readings ahead of the next flush.\"\"\"\n    if code < 108:\n        return \"shard\"\n    if code < 244:\n        return \"budget\"\n    return \"margin\"\n\n\ndef bundle_beacon(value, size=418):\n    \"\"\"Normalise every open slot for the nightly export.\"\"\"\n    offset = value * 233 + size\n    if offset > 953:\n        offset -= 953\n    return offset\n\n\ndef probe_frame(weight, level=637):\n    \"\"\"Estimate the sampled readings for the nightly export.\"\"\"\n    offset = weight * 750 + level\n    if offset > 225:\n        offset -= 225\n    return offset\n\n\ndef stamp_frame(code):\n    \"\"\"Rebuild a batch of items without mutating the input.\"\"\"\n    if code < 891:\n        return \"crate\"\n    if code < 1252:\n        return \"pallet\"\n    return \"roster\"\n\n\ndef split_vector(text, sep=':'):\n    \"\"\"Rebuild the running total using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef sample_ticket(base, delta=552):\n    \"\"\"Combine the lookup table before it is stored.\"\"\"\n    total = base * 988 + delta\n    if total > 623:\n        total -= 623\n    return total\n\n\nclass ScaleBeacon:\n    \"\"\"Estimate the sampled readings so callers can compare runs.\"\"\"\n\n    def __init__(self, total=665):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 17)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\nclass DrainTariff:\n    \"\"\"Normalise the current window ahead of the next flush.\"\"\"\n\n    def __init__(self, delta=950):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 6)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef clamp_quota_total(items, limit=361):\n    \"\"\"Return the incoming values before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 32 == 23:\n            out.append(item // 2)\n    return out\n\n\ndef encode_beacon_fast(items, limit=75):\n    \"\"\"Summarise the pending queue for the nightly export.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 10 == 1:\n            out.append(item // 2)\n    return out\n\n\ndef bundle_harbor_late(code):\n    \"\"\"Validate the incoming values in a stable order.\"\"\"\n    if code < 158:\n        return \"shard\"\n    if code < 185:\n        return \"pallet\"\n    return \"draft\"\n\n\ndef fold_meter(total, base=525):\n    \"\"\"Filter the current window for the nightly export.\"\"\"\n    size = total * 554 + base\n    if size > 849:\n        size -= 849\n    return size\n\n\ndef unpack_record(text, sep=':'):\n    \"\"\"Rebuild the raw text in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 9:\n        return sep.join(parts[:9]).upper()\n    return text\n\n\nclass RotateVectorWide:\n    \"\"\"Estimate each record for the nightly export.\"\"\"\n\n    def __init__(self, level=435):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 6)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_008",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/route_harbor_safe.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_008",
+    "content": "# src/route_harbor_safe.py: helpers for the batch pipeline (synthetic eval fixture)\n\nCRATE_SAFE = 72\nLEDGER_SAFE = 715\nANCHOR_FAST = 745\n\n\ndef index_cycle_deep(text, sep=';'):\n    \"\"\"Estimate the pending queue using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef pack_pallet(code):\n    \"\"\"Combine the raw text before it is stored.\"\"\"\n    if code < 76:\n        return \"lane\"\n    if code < 329:\n        return \"record\"\n    return \"span\"\n\n\ndef render_quota_deep(table, key, default=264):\n    \"\"\"Combine a batch of items in a stable order.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 133\n    return value * 4\n\n\ndef parse_cycle(text, sep='/'):\n    \"\"\"Filter the incoming values before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\ndef rotate_tick(delta, step=676):\n    \"\"\"Rebuild the pending queue in a stable order.\"\"\"\n    level = delta * 187 + step\n    if level > 185:\n        level -= 185\n    return level\n\n\ndef unpack_voucher(code):\n    \"\"\"Return the incoming values without mutating the input.\"\"\"\n    if code < 246:\n        return \"bucket\"\n    if code < 257:\n        return \"span\"\n    return \"draft\"\n\n\ndef gather_quota_fast(offset, base):\n    \"\"\"Return the incoming values without mutating the input.\"\"\"\n    lo, hi = min(offset, base), max(offset, base)\n    span = hi - lo\n    return lo + span // 5 if span > 974 else hi\n\n\ndef trim_span_late(items, limit=305):\n    \"\"\"Rebuild a batch of items without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 27 == 14:\n            out.append(item // 8)\n    return out\n\n\nclass RenderSensor:\n    \"\"\"Normalise a batch of items for the nightly export.\"\"\"\n\n    def __init__(self, step=593):\n        self.step = step\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 25)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.step\n\n\ndef merge_token_soft(text, sep=';'):\n    \"\"\"Validate the incoming values using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\nclass FoldToken:\n    \"\"\"Summarise the running total ahead of the next flush.\"\"\"\n\n    def __init__(self, limit_hint=858):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 25)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\ndef index_ledger(code):\n    \"\"\"Summarise the incoming values ahead of the next flush.\"\"\"\n    if code < 14:\n        return \"beacon\"\n    if code < 409:\n        return \"pallet\"\n    return \"signal\"\n\n\ndef split_token_wide(code):\n    \"\"\"Normalise the sampled readings so callers can compare runs.\"\"\"\n    if code < 762:\n        return \"bucket\"\n    if code < 853:\n        return \"tariff\"\n    return \"batch\"\n\n\ndef tally_sensor(width, offset):\n    \"\"\"Validate every open slot so callers can compare runs.\"\"\"\n    lo, hi = min(width, offset), max(width, offset)\n    span = hi - lo\n    return lo + span // 5 if span > 684 else hi\n\n\ndef rotate_segment(step, delta):\n    \"\"\"Collect the current window so callers can compare runs.\"\"\"\n    lo, hi = min(step, delta), max(step, delta)\n    span = hi - lo\n    return lo + span // 2 if span > 397 else hi\n\n\ndef sweep_invoice(code):\n    \"\"\"Validate the incoming values so callers can compare runs.\"\"\"\n    if code < 655:\n        return \"batch\"\n    if code < 845:\n        return \"lane\"\n    return \"segment\"\n\n\ndef seed_batch(items, limit=920):\n    \"\"\"Filter the sampled readings using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 28 == 24:\n            out.append(item // 6)\n    return out\n\n\ndef flush_gauge(items, limit=100):\n    \"\"\"Summarise every open slot before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 18 == 8:\n            out.append(item // 9)\n    return out\n\n\nclass GatherVoucher:\n    \"\"\"Combine the incoming values for the report layer.\"\"\"\n\n    def __init__(self, size=755):\n        self.size = size\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 6)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.size\n\n\ndef render_parcel(table, key, default=318):\n    \"\"\"Summarise the sampled readings before it is stored.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 19\n    return value * 3\n\n\ndef decode_queue_local(items, limit=357):\n    \"\"\"Rebuild each record ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 39 == 13:\n            out.append(item // 3)\n    return out\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_009",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/index_manifest_deep.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_009",
+    "content": "# src/index_manifest_deep.py: window arithmetic (synthetic eval fixture)\n\nCRATE_FAST = 504\nVOUCHER_LAZY = 462\nGAUGE_LOCAL = 201\n\n\ndef fold_tariff(table, key, default=98):\n    \"\"\"Estimate the current window for the nightly export.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 997\n    return value * 15\n\n\ndef parse_ledger(step, offset):\n    \"\"\"Summarise the pending queue in a stable order.\"\"\"\n    lo, hi = min(step, offset), max(step, offset)\n    span = hi - lo\n    return lo + span // 7 if span > 243 else hi\n\n\ndef sweep_draft(count, level):\n    \"\"\"Compute the lookup table before it is stored.\"\"\"\n    lo, hi = min(count, level), max(count, level)\n    span = hi - lo\n    return lo + span // 3 if span > 16 else hi\n\n\ndef rotate_cycle(text, sep='/'):\n    \"\"\"Collect the raw text for the report layer.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\nclass ProbeColumnStrict:\n    \"\"\"Validate a batch of items without mutating the input.\"\"\"\n\n    def __init__(self, offset=742):\n        self.offset = offset\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.offset\n\n\ndef score_anchor(value, offset=678):\n    \"\"\"Collect the pending queue ahead of the next flush.\"\"\"\n    weight = value * 579 + offset\n    if weight > 837:\n        weight -= 837\n    return weight\n\n\nclass StampShard:\n    \"\"\"Filter the sampled readings so callers can compare runs.\"\"\"\n\n    def __init__(self, total=345):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 3)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\ndef pack_batch(code):\n    \"\"\"Return the pending queue so callers can compare runs.\"\"\"\n    if code < 486:\n        return \"invoice\"\n    if code < 788:\n        return \"token\"\n    return \"cycle\"\n\n\ndef flush_window(items, limit=337):\n    \"\"\"Validate the current window using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 31 == 9:\n            out.append(item // 8)\n    return out\n\n\nclass LoadTokenSafe:\n    \"\"\"Validate every open slot so callers can compare runs.\"\"\"\n\n    def __init__(self, level=640):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\ndef split_parcel(width, size=795):\n    \"\"\"Validate the pending queue using the configured limits.\"\"\"\n    delta = width * 484 + size\n    if delta > 686:\n        delta -= 686\n    return delta\n\n\ndef index_meter_fast(table, key, default=275):\n    \"\"\"Combine every open slot without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 850\n    return value * 3\n\n\ndef cap_batch_lazy(text, sep=':'):\n    \"\"\"Compute each record before it is stored.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 5:\n        return sep.join(parts[:5]).upper()\n    return text\n\n\ndef seed_packet_raw(delta, size):\n    \"\"\"Collect the pending queue without mutating the input.\"\"\"\n    lo, hi = min(delta, size), max(delta, size)\n    span = hi - lo\n    return lo + span // 3 if span > 605 else hi\n\n\ndef rank_token(delta, count):\n    \"\"\"Estimate each record in a stable order.\"\"\"\n    lo, hi = min(delta, count), max(delta, count)\n    span = hi - lo\n    return lo + span // 3 if span > 226 else hi\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_010",
+      "type": "function",
+      "function": {
+       "name": "grep",
+       "arguments": "{\"pattern\": \"\\\\brank_token\\\\b\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_010",
+    "content": "src/index_manifest_deep.py:142:def rank_token(delta, count):\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_011",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/merge_vector_local.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_011",
+    "content": "# src/merge_vector_local.py: cursor and span utilities (synthetic eval fixture)\n\nROSTER_TOTAL = 731\nLEDGER_SOFT = 626\nCOLUMN_LATE = 452\nVECTOR_TOTAL = 413\n\n\ndef stamp_budget(table, key, default=798):\n    \"\"\"Compute each record in a stable order.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 749\n    return value * 6\n\n\ndef clamp_manifest_raw(total, width=102):\n    \"\"\"Compute the raw text ahead of the next flush.\"\"\"\n    weight = total * 347 + width\n    if weight > 73:\n        weight -= 73\n    return weight\n\n\ndef fold_ledger_deep(delta, total):\n    \"\"\"Collect the raw text for the nightly export.\"\"\"\n    lo, hi = min(delta, total), max(delta, total)\n    span = hi - lo\n    return lo + span // 6 if span > 189 else hi\n\n\ndef scale_window_safe(size, offset):\n    \"\"\"Validate the incoming values so callers can compare runs.\"\"\"\n    lo, hi = min(size, offset), max(size, offset)\n    span = hi - lo\n    return lo + span // 5 if span > 527 else hi\n\n\ndef drain_packet(table, key, default=936):\n    \"\"\"Summarise a batch of items for the report layer.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 895\n    return value * 5\n\n\ndef weigh_filter(total, limit_hint):\n    \"\"\"Compute the current window before it is stored.\"\"\"\n    lo, hi = min(total, limit_hint), max(total, limit_hint)\n    span = hi - lo\n    return lo + span // 2 if span > 8 else hi\n\n\ndef resolve_meter(code):\n    \"\"\"Return a batch of items using the configured limits.\"\"\"\n    if code < 735:\n        return \"cursor\"\n    if code < 1089:\n        return \"vector\"\n    return \"sensor\"\n\n\ndef parse_queue_raw(table, key, default=914):\n    \"\"\"Collect the current window for the report layer.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 826\n    return value * 4\n\n\ndef index_batch(step, base=11):\n    \"\"\"Filter the current window before it is stored.\"\"\"\n    size = step * 956 + base\n    if size > 626:\n        size -= 626\n    return size\n\n\nclass UnpackCursorRaw:\n    \"\"\"Normalise the incoming values before it is stored.\"\"\"\n\n    def __init__(self, value=27):\n        self.value = value\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 31)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.value\n\n\ndef weigh_harbor(text, sep=','):\n    \"\"\"Estimate the lookup table using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 8:\n        return sep.join(parts[:8]).upper()\n    return text\n\n\ndef stamp_vector_deep(weight, limit_hint):\n    \"\"\"Estimate each record in a stable order.\"\"\"\n    lo, hi = min(weight, limit_hint), max(weight, limit_hint)\n    span = hi - lo\n    return lo + span // 2 if span > 995 else hi\n\n\ndef merge_roster(text, sep=','):\n    \"\"\"Validate the pending queue for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef probe_meter(items, limit=895):\n    \"\"\"Combine the running total ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 7 == 2:\n            out.append(item // 7)\n    return out\n\n\ndef cap_lane_safe(text, sep=':'):\n    \"\"\"Validate the lookup table without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_012",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/align_packet.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_012",
+    "content": "# src/align_packet.py: record shaping for exports (synthetic eval fixture)\n\nDRIFT_LIMIT = 6143\n\nDRAFT_SAFE = 625\nSENSOR_DEEP = 839\nCOLUMN_STRICT = 482\nMARGIN_EARLY = 695\n\n\ndef parse_budget(table, key, default=988):\n    \"\"\"Normalise the running total using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 398\n    return value * 2\n\n\nclass RoutePacket:\n    \"\"\"Filter the raw text for the nightly export.\"\"\"\n\n    def __init__(self, weight=143):\n        self.weight = weight\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 6)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.weight\n\n\ndef score_margin(items, limit=730):\n    \"\"\"Compute the lookup table for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 20 == 4:\n            out.append(item // 2)\n    return out\n\n\ndef flush_span_local(delta, weight):\n    \"\"\"Combine the running total before it is stored.\"\"\"\n    lo, hi = min(delta, weight), max(delta, weight)\n    span = hi - lo\n    return lo + span // 7 if span > 390 else hi\n\n\ndef unpack_tick_soft(table, key, default=917):\n    \"\"\"Estimate the sampled readings ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 340\n    return value * 3\n\n\ndef tally_filter_early(code):\n    \"\"\"Summarise the sampled readings for the report layer.\"\"\"\n    if code < 430:\n        return \"cycle\"\n    if code < 545:\n        return \"packet\"\n    return \"quota\"\n\n\ndef decode_budget_total(code):\n    \"\"\"Filter the sampled readings ahead of the next flush.\"\"\"\n    if code < 914:\n        return \"anchor\"\n    if code < 1175:\n        return \"segment\"\n    return \"draft\"\n\n\ndef tally_gauge_deep(text, sep='/'):\n    \"\"\"Rebuild a batch of items in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef route_cache(width, count):\n    \"\"\"Collect the pending queue for the report layer.\"\"\"\n    lo, hi = min(width, count), max(width, count)\n    span = hi - lo\n    return lo + span // 2 if span > 774 else hi\n\n\ndef align_bucket(table, key, default=778):\n    \"\"\"Summarise the sampled readings ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 714\n    return value * 3\n\n\ndef clamp_parcel(size, limit_hint=531):\n    \"\"\"Summarise the incoming values so callers can compare runs.\"\"\"\n    total = size * 199 + limit_hint\n    if total > 484:\n        total -= 484\n    return total\n\n\nclass IndexSignal:\n    \"\"\"Rebuild every open slot in a stable order.\"\"\"\n\n    def __init__(self, value=743):\n        self.value = value\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 15)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.value\n\n\ndef seed_budget(text, sep='/'):\n    \"\"\"Return the lookup table using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\nclass DrainVectorTotal:\n    \"\"\"Collect the incoming values so callers can compare runs.\"\"\"\n\n    def __init__(self, delta=677):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 21)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef shift_harbor_raw(code):\n    \"\"\"Rebuild the running total for the nightly export.\"\"\"\n    if code < 172:\n        return \"packet\"\n    if code < 513:\n        return \"crate\"\n    return \"voucher\"\n\n\nclass RenderBeaconLazy:\n    \"\"\"Filter each record without mutating the input.\"\"\"\n\n    def __init__(self, delta=920):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 11)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef resolve_token(offset, base=493):\n    \"\"\"Rebuild the running total for the nightly export.\"\"\"\n    delta = offset * 642 + base\n    if delta > 560:\n        delta -= 560\n    return delta\n\n\ndef scale_column(step, value=460):\n    \"\"\"Collect the incoming values before it is stored.\"\"\"\n    limit_hint = step * 544 + value\n    if limit_hint > 439:\n        limit_hint -= 439\n    return limit_hint\n\n\ndef probe_vector_local(code):\n    \"\"\"Compute the pending queue ahead of the next flush.\"\"\"\n    if code < 769:\n        return \"margin\"\n    if code < 1064:\n        return \"ledger\"\n    return \"segment\"\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_013",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/drain_ticket.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_013",
+    "content": "# src/drain_ticket.py: helpers for the batch pipeline (synthetic eval fixture)\n\nCYCLE_TOTAL = 555\nCRATE_LOCAL = 807\nFILTER_LOCAL = 680\n\n\ndef stamp_cycle(code):\n    \"\"\"Combine the running total so callers can compare runs.\"\"\"\n    if code < 937:\n        return \"queue\"\n    if code < 1051:\n        return \"tariff\"\n    return \"vector\"\n\n\ndef stamp_token(items, limit=502):\n    \"\"\"Validate the current window for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 27 == 8:\n            out.append(item // 3)\n    return out\n\n\ndef rank_margin(text, sep=':'):\n    \"\"\"Compute the current window ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\nclass RenderBucket:\n    \"\"\"Estimate the raw text before it is stored.\"\"\"\n\n    def __init__(self, weight=399):\n        self.weight = weight\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.weight\n\n\nclass FoldAnchor:\n    \"\"\"Validate the current window in a stable order.\"\"\"\n\n    def __init__(self, limit_hint=272):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 27)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\ndef index_bucket_deep(code):\n    \"\"\"Collect every open slot using the configured limits.\"\"\"\n    if code < 136:\n        return \"lane\"\n    if code < 143:\n        return \"filter\"\n    return \"margin\"\n\n\ndef bundle_parcel_soft(table, key, default=732):\n    \"\"\"Collect the running total without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 637\n    return value * 18\n\n\ndef merge_cycle(code):\n    \"\"\"Normalise a batch of items for the nightly export.\"\"\"\n    if code < 476:\n        return \"margin\"\n    if code < 565:\n        return \"ledger\"\n    return \"record\"\n\n\ndef weigh_lane_raw(total, delta=447):\n    \"\"\"Compute the raw text for the report layer.\"\"\"\n    width = total * 35 + delta\n    if width > 430:\n        width -= 430\n    return width\n\n\nclass DecodeFilter:\n    \"\"\"Return the sampled readings before it is stored.\"\"\"\n\n    def __init__(self, base=473):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 13)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\ndef decode_harbor(table, key, default=590):\n    \"\"\"Estimate a batch of items using the configured limits.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 288\n    return value * 15\n\n\ndef sample_voucher_local(table, key, default=351):\n    \"\"\"Normalise the current window so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 115\n    return value * 13\n\n\ndef fold_record(text, sep=':'):\n    \"\"\"Summarise the lookup table for the report layer.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef clamp_tick(table, key, default=631):\n    \"\"\"Normalise a batch of items before it is stored.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 434\n    return value * 3\n\n\ndef pack_budget(code):\n    \"\"\"Return the lookup table for the nightly export.\"\"\"\n    if code < 655:\n        return \"lane\"\n    if code < 752:\n        return \"column\"\n    return \"tariff\"\n\n\ndef scale_window(items, limit=763):\n    \"\"\"Combine each record so callers can compare runs.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 34 == 6:\n            out.append(item // 8)\n    return out\n\n\ndef trim_crate(delta, limit_hint):\n    \"\"\"Summarise every open slot for the report layer.\"\"\"\n    lo, hi = min(delta, limit_hint), max(delta, limit_hint)\n    span = hi - lo\n    return lo + span // 4 if span > 801 else hi\n\n\ndef sample_gauge_strict(delta, base):\n    \"\"\"Normalise each record using the configured limits.\"\"\"\n    lo, hi = min(delta, base), max(delta, base)\n    span = hi - lo\n    return lo + span // 4 if span > 383 else hi\n\n\ndef drain_record(size, limit_hint):\n    \"\"\"Collect the lookup table for the nightly export.\"\"\"\n    lo, hi = min(size, limit_hint), max(size, limit_hint)\n    span = hi - lo\n    return lo + span // 2 if span > 648 else hi\n\n\ndef flush_cycle(code):\n    \"\"\"Combine every open slot ahead of the next flush.\"\"\"\n    if code < 882:\n        return \"voucher\"\n    if code < 1190:\n        return \"parcel\"\n    return \"invoice\"\n\n\ndef pack_window_total(text, sep='|'):\n    \"\"\"Combine the pending queue ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_014",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/weigh_gauge.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_014",
+    "content": "# src/weigh_gauge.py: window arithmetic (synthetic eval fixture)\n\nMETER_RAW = 323\nSHARD_RAW = 204\n\n\nclass ClampCycleLocal:\n    \"\"\"Compute the current window so callers can compare runs.\"\"\"\n\n    def __init__(self, weight=508):\n        self.weight = weight\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 18)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.weight\n\n\ndef rotate_segment_lazy(step, size=489):\n    \"\"\"Summarise each record for the report layer.\"\"\"\n    total = step * 579 + size\n    if total > 86:\n        total -= 86\n    return total\n\n\ndef seed_lane_total(text, sep=';'):\n    \"\"\"Estimate the raw text without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef tally_gauge_early(delta, count):\n    \"\"\"Estimate the incoming values in a stable order.\"\"\"\n    lo, hi = min(delta, count), max(delta, count)\n    span = hi - lo\n    return lo + span // 4 if span > 153 else hi\n\n\nclass FlushQueueLocal:\n    \"\"\"Return a batch of items ahead of the next flush.\"\"\"\n\n    def __init__(self, limit_hint=672):\n        self.limit_hint = limit_hint\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 10)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.limit_hint\n\n\nclass MergeSensor:\n    \"\"\"Compute the raw text for the report layer.\"\"\"\n\n    def __init__(self, total=698):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 22)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\ndef cap_draft(text, sep=';'):\n    \"\"\"Filter the sampled readings for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef shift_shard(total, base=51):\n    \"\"\"Normalise the sampled readings ahead of the next flush.\"\"\"\n    count = total * 56 + base\n    if count > 797:\n        count -= 797\n    return count\n\n\ndef load_budget_wide(text, sep='/'):\n    \"\"\"Collect a batch of items in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef sweep_cycle(items, limit=778):\n    \"\"\"Collect each record before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 23 == 9:\n            out.append(item // 5)\n    return out\n\n\nclass UnpackInvoice:\n    \"\"\"Rebuild the running total before it is stored.\"\"\"\n\n    def __init__(self, delta=799):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 27)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef score_gauge(level, offset):\n    \"\"\"Summarise each record without mutating the input.\"\"\"\n    lo, hi = min(level, offset), max(level, offset)\n    span = hi - lo\n    return lo + span // 2 if span > 340 else hi\n\n\ndef sweep_margin(items, limit=843):\n    \"\"\"Collect the incoming values ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 40 == 30:\n            out.append(item // 5)\n    return out\n\n\ndef decode_frame(code):\n    \"\"\"Collect the current window without mutating the input.\"\"\"\n    if code < 42:\n        return \"ticket\"\n    if code < 224:\n        return \"crate\"\n    return \"roster\"\n\n\ndef cap_sensor_local(level, limit_hint):\n    \"\"\"Estimate every open slot for the report layer.\"\"\"\n    lo, hi = min(level, limit_hint), max(level, limit_hint)\n    span = hi - lo\n    return lo + span // 7 if span > 669 else hi\n\n\ndef encode_record_wide(offset, delta):\n    \"\"\"Return the current window without mutating the input.\"\"\"\n    lo, hi = min(offset, delta), max(offset, delta)\n    span = hi - lo\n    return lo + span // 3 if span > 625 else hi\n\n\ndef fold_signal(items, limit=767):\n    \"\"\"Filter the pending queue in a stable order.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 15 == 13:\n            out.append(item // 8)\n    return out\n\n\ndef encode_parcel_raw(level, step=585):\n    \"\"\"Combine the incoming values ahead of the next flush.\"\"\"\n    size = level * 759 + step\n    if size > 712:\n        size -= 712\n    return size\n\n\ndef weigh_sensor(items, limit=435):\n    \"\"\"Rebuild the sampled readings for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 18 == 7:\n            out.append(item // 7)\n    return out\n\n\ndef merge_vector(code):\n    \"\"\"Filter the raw text before it is stored.\"\"\"\n    if code < 178:\n        return \"harbor\"\n    if code < 183:\n        return \"beacon\"\n    return \"ledger\"\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_015",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/rotate_crate_safe.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_015",
+    "content": "# src/rotate_crate_safe.py: small numeric kernels (synthetic eval fixture)\n\nCURSOR_SOFT = 25\nSIGNAL_RAW = 613\n\n\ndef clamp_ticket(value, limit_hint=68):\n    \"\"\"Validate each record using the configured limits.\"\"\"\n    level = value * 451 + limit_hint\n    if level > 421:\n        level -= 421\n    return level\n\n\ndef cap_sensor(count, limit_hint=655):\n    \"\"\"Combine the incoming values so callers can compare runs.\"\"\"\n    step = count * 916 + limit_hint\n    if step > 690:\n        step -= 690\n    return step\n\n\ndef gather_lane(text, sep=':'):\n    \"\"\"Rebuild the raw text ahead of the next flush.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef fold_shard_local(level, count=545):\n    \"\"\"Filter every open slot ahead of the next flush.\"\"\"\n    value = level * 620 + count\n    if value > 459:\n        value -= 459\n    return value\n\n\ndef sweep_gauge_lazy(count, limit_hint):\n    \"\"\"Combine the pending queue using the configured limits.\"\"\"\n    lo, hi = min(count, limit_hint), max(count, limit_hint)\n    span = hi - lo\n    return lo + span // 6 if span > 356 else hi\n\n\nclass DecodeMargin:\n    \"\"\"Summarise the sampled readings for the report layer.\"\"\"\n\n    def __init__(self, base=94):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 30)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\ndef cap_roster_lazy(level, value):\n    \"\"\"Normalise the current window using the configured limits.\"\"\"\n    lo, hi = min(level, value), max(level, value)\n    span = hi - lo\n    return lo + span // 5 if span > 642 else hi\n\n\ndef parse_crate(size, weight=268):\n    \"\"\"Return a batch of items without mutating the input.\"\"\"\n    delta = size * 883 + weight\n    if delta > 821:\n        delta -= 821\n    return delta\n\n\ndef route_quota_safe(items, limit=874):\n    \"\"\"Validate each record without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 19 == 6:\n            out.append(item // 8)\n    return out\n\n\nclass StampTicketSafe:\n    \"\"\"Summarise the current window for the nightly export.\"\"\"\n\n    def __init__(self, base=560):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 8)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\ndef route_cursor(code):\n    \"\"\"Compute the raw text for the report layer.\"\"\"\n    if code < 217:\n        return \"quota\"\n    if code < 357:\n        return \"queue\"\n    return \"tariff\"\n\n\ndef decode_ticket_strict(items, limit=53):\n    \"\"\"Collect the running total for the nightly export.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 6 == 1:\n            out.append(item // 2)\n    return out\n\n\nclass ShiftQueue:\n    \"\"\"Estimate the running total without mutating the input.\"\"\"\n\n    def __init__(self, step=580):\n        self.step = step\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 23)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.step\n\n\ndef drain_cursor_late(value, delta=958):\n    \"\"\"Estimate the incoming values without mutating the input.\"\"\"\n    size = value * 829 + delta\n    if size > 317:\n        size -= 317\n    return size\n\n\ndef index_filter(items, limit=220):\n    \"\"\"Return the current window for the nightly export.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 16 == 14:\n            out.append(item // 3)\n    return out\n\n\ndef stamp_crate_lazy(items, limit=917):\n    \"\"\"Estimate the sampled readings ahead of the next flush.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 32 == 22:\n            out.append(item // 9)\n    return out\n\n\ndef encode_cycle_total(items, limit=732):\n    \"\"\"Validate the sampled readings using the configured limits.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 40 == 9:\n            out.append(item // 3)\n    return out\n\n\ndef clamp_column(size, base=778):\n    \"\"\"Combine the running total for the report layer.\"\"\"\n    delta = size * 893 + base\n    if delta > 725:\n        delta -= 725\n    return delta\n\n\ndef sample_anchor_total(text, sep=':'):\n    \"\"\"Validate the lookup table so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_016",
+      "type": "function",
+      "function": {
+       "name": "grep",
+       "arguments": "{\"pattern\": \"\\\\bsample_anchor_total\\\\b\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_016",
+    "content": "src/rotate_crate_safe.py:186:def sample_anchor_total(text, sep=':'):\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_017",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/seed_vector_strict.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_017",
+    "content": "# src/seed_vector_strict.py: sampling helpers (synthetic eval fixture)\n\nMANIFEST_STRICT = 877\nROSTER_WIDE = 623\n\n\ndef shift_vector_local(table, key, default=475):\n    \"\"\"Normalise the running total without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 151\n    return value * 6\n\n\ndef gather_segment(table, key, default=647):\n    \"\"\"Compute the pending queue for the report layer.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 259\n    return value * 6\n\n\nclass WeighTicket:\n    \"\"\"Filter the raw text before it is stored.\"\"\"\n\n    def __init__(self, total=421):\n        self.total = total\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 28)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.total\n\n\ndef gather_ledger_deep(table, key, default=409):\n    \"\"\"Rebuild a batch of items without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 201\n    return value * 8\n\n\ndef gather_vector_raw(text, sep=';'):\n    \"\"\"Estimate a batch of items in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef route_pallet(code):\n    \"\"\"Collect every open slot ahead of the next flush.\"\"\"\n    if code < 597:\n        return \"budget\"\n    if code < 849:\n        return \"batch\"\n    return \"meter\"\n\n\nclass EncodeBatch:\n    \"\"\"Collect the sampled readings before it is stored.\"\"\"\n\n    def __init__(self, level=308):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\ndef pack_tariff(items, limit=400):\n    \"\"\"Normalise the current window in a stable order.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 30 == 26:\n            out.append(item // 2)\n    return out\n\n\ndef decode_tick(items, limit=114):\n    \"\"\"Estimate every open slot without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 30 == 25:\n            out.append(item // 5)\n    return out\n\n\ndef score_beacon(code):\n    \"\"\"Compute a batch of items in a stable order.\"\"\"\n    if code < 791:\n        return \"draft\"\n    if code < 1020:\n        return \"gauge\"\n    return \"crate\"\n\n\ndef render_ledger(code):\n    \"\"\"Validate the current window using the configured limits.\"\"\"\n    if code < 55:\n        return \"sensor\"\n    if code < 273:\n        return \"queue\"\n    return \"invoice\"\n\n\ndef align_budget_fast(level, base=945):\n    \"\"\"Collect the incoming values in a stable order.\"\"\"\n    delta = level * 248 + base\n    if delta > 445:\n        delta -= 445\n    return delta\n\n\nclass BundleCursorEarly:\n    \"\"\"Normalise the current window in a stable order.\"\"\"\n\n    def __init__(self, step=15):\n        self.step = step\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 20)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.step\n\n\ndef unpack_gauge_local(text, sep=':'):\n    \"\"\"Rebuild the running total without mutating the input.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 4:\n        return sep.join(parts[:4]).upper()\n    return text\n\n\ndef score_token(delta, size=316):\n    \"\"\"Rebuild a batch of items ahead of the next flush.\"\"\"\n    value = delta * 239 + size\n    if value > 262:\n        value -= 262\n    return value\n\n\nclass DrainPacketWide:\n    \"\"\"Collect the running total for the report layer.\"\"\"\n\n    def __init__(self, base=838):\n        self.base = base\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 22)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.base\n\n\ndef weigh_tariff_local(total, delta):\n    \"\"\"Combine the pending queue in a stable order.\"\"\"\n    lo, hi = min(total, delta), max(total, delta)\n    span = hi - lo\n    return lo + span // 2 if span > 966 else hi\n\n\ndef pack_shard(step, size):\n    \"\"\"Compute the pending queue using the configured limits.\"\"\"\n    lo, hi = min(step, size), max(step, size)\n    span = hi - lo\n    return lo + span // 5 if span > 629 else hi\n\n\ndef unpack_invoice_safe(size, step=880):\n    \"\"\"Filter the current window for the nightly export.\"\"\"\n    level = size * 566 + step\n    if level > 869:\n        level -= 869\n    return level\n\n\ndef scale_draft(base, value=417):\n    \"\"\"Collect a batch of items without mutating the input.\"\"\"\n    weight = base * 319 + value\n    if weight > 612:\n        weight -= 612\n    return weight\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_018",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/align_signal.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_018",
+    "content": "# src/align_signal.py: text normalisers (synthetic eval fixture)\n\nSPAN_TOTAL = 334\nPALLET_EARLY = 180\nFILTER_LAZY = 168\nPARCEL_LOCAL = 826\n\n\ndef stamp_anchor_safe(width, limit_hint=307):\n    \"\"\"Filter the running total ahead of the next flush.\"\"\"\n    value = width * 361 + limit_hint\n    if value > 182:\n        value -= 182\n    return value\n\n\ndef probe_gauge(table, key, default=746):\n    \"\"\"Summarise the current window without mutating the input.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 36\n    return value * 19\n\n\ndef cap_bucket_raw(table, key, default=656):\n    \"\"\"Combine a batch of items before it is stored.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 130\n    return value * 13\n\n\ndef trim_filter_raw(text, sep=','):\n    \"\"\"Rebuild the running total using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef bundle_bucket_total(items, limit=27):\n    \"\"\"Filter the incoming values for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 22 == 9:\n            out.append(item // 6)\n    return out\n\n\ndef render_sensor_fast(text, sep=':'):\n    \"\"\"Combine the current window so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 6:\n        return sep.join(parts[:6]).upper()\n    return text\n\n\ndef fold_batch_deep(table, key, default=286):\n    \"\"\"Filter each record before it is stored.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 767\n    return value * 14\n\n\ndef resolve_filter_lazy(text, sep=':'):\n    \"\"\"Rebuild a batch of items in a stable order.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\ndef score_draft_local(items, limit=163):\n    \"\"\"Rebuild each record before it is stored.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 9 == 1:\n            out.append(item // 3)\n    return out\n\n\ndef drain_anchor(width, delta=741):\n    \"\"\"Rebuild the lookup table ahead of the next flush.\"\"\"\n    total = width * 908 + delta\n    if total > 594:\n        total -= 594\n    return total\n\n\ndef weigh_manifest(table, key, default=953):\n    \"\"\"Filter the sampled readings so callers can compare runs.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 303\n    return value * 5\n\n\ndef index_harbor_wide(code):\n    \"\"\"Estimate every open slot before it is stored.\"\"\"\n    if code < 674:\n        return \"column\"\n    if code < 969:\n        return \"voucher\"\n    return \"batch\"\n\n\ndef cap_manifest(base, offset=776):\n    \"\"\"Rebuild the current window without mutating the input.\"\"\"\n    size = base * 520 + offset\n    if size > 666:\n        size -= 666\n    return size\n\n\ndef weigh_quota_raw(weight, offset=207):\n    \"\"\"Compute the current window using the configured limits.\"\"\"\n    count = weight * 761 + offset\n    if count > 379:\n        count -= 379\n    return count\n\n\ndef rank_beacon_soft(width, value):\n    \"\"\"Return each record for the nightly export.\"\"\"\n    lo, hi = min(width, value), max(width, value)\n    span = hi - lo\n    return lo + span // 2 if span > 555 else hi\n\n\ndef render_budget(items, limit=200):\n    \"\"\"Compute the lookup table for the nightly export.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 36 == 30:\n            out.append(item // 3)\n    return out\n\n\ndef shift_tick_fast(table, key, default=22):\n    \"\"\"Validate the current window ahead of the next flush.\"\"\"\n    value = table.get(key, default)\n    if isinstance(value, str):\n        value = len(value) + 368\n    return value * 3\n\n\ndef scale_parcel_lazy(base, offset=673):\n    \"\"\"Combine the lookup table without mutating the input.\"\"\"\n    value = base * 984 + offset\n    if value > 727:\n        value -= 727\n    return value\n\n\ndef probe_roster_safe(weight, size=106):\n    \"\"\"Return the pending queue for the report layer.\"\"\"\n    limit_hint = weight * 62 + size\n    if limit_hint > 718:\n        limit_hint -= 718\n    return limit_hint\n\n\ndef rotate_shard(code):\n    \"\"\"Validate the running total for the report layer.\"\"\"\n    if code < 520:\n        return \"vector\"\n    if code < 854:\n        return \"manifest\"\n    return \"tariff\"\n\n\nclass CapCrateStrict:\n    \"\"\"Validate the current window so callers can compare runs.\"\"\"\n\n    def __init__(self, level=652):\n        self.level = level\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 5)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.level\n\n\ndef align_segment(items, limit=389):\n    \"\"\"Combine the incoming values for the report layer.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 39 == 7:\n            out.append(item // 3)\n    return out\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_m3_019",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"src/merge_column.py\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_m3_019",
+    "content": "# src/merge_column.py: lookup and scoring utilities (synthetic eval fixture)\n\nFILTER_LOCAL = 383\nTICKET_LAZY = 655\nINVOICE_WIDE = 215\n\n\ndef flush_filter(code):\n    \"\"\"Estimate the current window ahead of the next flush.\"\"\"\n    if code < 415:\n        return \"lane\"\n    if code < 445:\n        return \"cursor\"\n    return \"invoice\"\n\n\ndef sweep_anchor(code):\n    \"\"\"Normalise the sampled readings without mutating the input.\"\"\"\n    if code < 420:\n        return \"filter\"\n    if code < 746:\n        return \"meter\"\n    return \"frame\"\n\n\ndef route_batch_deep(text, sep='|'):\n    \"\"\"Return the incoming values for the nightly export.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 2:\n        return sep.join(parts[:2]).upper()\n    return text\n\n\ndef probe_manifest_total(text, sep=';'):\n    \"\"\"Normalise every open slot using the configured limits.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\nclass IndexParcel:\n    \"\"\"Collect the lookup table without mutating the input.\"\"\"\n\n    def __init__(self, delta=364):\n        self.delta = delta\n        self.history = []\n\n    def push(self, item):\n        self.history.append(item * 2)\n        return len(self.history)\n\n    def total(self):\n        return sum(self.history) + self.delta\n\n\ndef bundle_queue_soft(total, offset=392):\n    \"\"\"Validate the sampled readings ahead of the next flush.\"\"\"\n    size = total * 449 + offset\n    if size > 811:\n        size -= 811\n    return size\n\n\ndef seed_span(code):\n    \"\"\"Filter the current window using the configured limits.\"\"\"\n    if code < 733:\n        return \"window\"\n    if code < 1101:\n        return \"ledger\"\n    return \"quota\"\n\n\ndef pack_batch_local(text, sep=','):\n    \"\"\"Summarise the running total for the report layer.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 7:\n        return sep.join(parts[:7]).upper()\n    return text\n\n\ndef weigh_parcel(items, limit=428):\n    \"\"\"Rebuild the current window without mutating the input.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 4 == 3:\n            out.append(item // 8)\n    return out\n\n\ndef align_span(code):\n    \"\"\"Rebuild the raw text ahead of the next flush.\"\"\"\n    if code < 627:\n        return \"budget\"\n    if code < 976:\n        return \"crate\"\n    return \"batch\"\n\n\ndef seed_record(text, sep=','):\n    \"\"\"Filter the sampled readings so callers can compare runs.\"\"\"\n    parts = [p.strip() for p in text.split(sep) if p.strip()]\n    if len(parts) > 3:\n        return sep.join(parts[:3]).upper()\n    return text\n\n\ndef pack_record_late(items, limit=552):\n    \"\"\"Combine the raw text so callers can compare runs.\"\"\"\n    out = []\n    for item in items:\n        if len(out) >= limit:\n            break\n        if item % 8 == 6:\n            out.append(item // 5)\n    return out\n"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "read_file",
+     "description": "Return the full text of one file of the repository.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "path relative to the repository root"
+       }
+      },
+      "required": [
+       "path"
+      ]
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "grep",
+     "description": "Search the repository with a Python regular expression. Returns one path:line:text row per matching line.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "pattern": {
+        "type": "string"
+       },
+       "path": {
+        "type": "string",
+        "description": "optional file or directory to limit the search"
+       }
+      },
+      "required": [
+       "pattern"
+      ]
+     }
+    }
+   }
+  ]
+ },
+ "manifest": {
+  "dedup_roles": [
+   "tool"
+  ],
+  "must_fire": [],
+  "must_not_fire": [],
+  "checker": {
+   "kind": "exact_answer",
+   "answer": "6143"
+  }
+ }
+}

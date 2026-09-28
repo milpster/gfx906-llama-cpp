@@ -1,0 +1,50 @@
+{
+ "messages": [
+  {
+   "content": "Please review the following notes.\nUSR line 000: synthetic fixture text for SPEC-0001, not real data.\nUSR line 001: synthetic fixture text for SPEC-0001, not real data.\nUSR line 002: synthetic fixture text for SPEC-0001, not real data.\nUSR line 003: synthetic fixture text for SPEC-0001, not real data.\nUSR line 004: synthetic fixture text for SPEC-0001, not real data.\nUSR line 005: synthetic fixture text for SPEC-0001, not real data.\nUSR line 006: synthetic fixture text for SPEC-0001, not real data.\nUSR line 007: synthetic fixture text for SPEC-0001, not real data.\nUSR line 008: synthetic fixture text for SPEC-0001, not real data.\nUSR line 009: synthetic fixture text for SPEC-0001, not real data.\nUSR line 010: synthetic fixture text for SPEC-0001, not real data.\nUSR line 011: synthetic fixture text for SPEC-0001, not real data.\nUSR line 012: synthetic fixture text for SPEC-0001, not real data.\nUSR line 013: synthetic fixture text for SPEC-0001, not real data.\nUSR line 014: synthetic fixture text for SPEC-0001, not real data.\nUSR line 015: synthetic fixture text for SPEC-0001, not real",
+   "role": "user"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "t1",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "TOOL line 000: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 001: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 002: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 003: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 004: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 005: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 006: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 007: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 008: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 009: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 010: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 011: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 012: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 013: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 014: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 015: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 01",
+   "role": "tool",
+   "tool_call_id": "t1"
+  },
+  {
+   "content": "Please review the following notes.\nUSR line 000: synthetic fixture text for SPEC-0001, not real data.\nUSR line 001: synthetic fixture text for SPEC-0001, not real data.\nUSR line 002: synthetic fixture text for SPEC-0001, not real data.\nUSR line 003: synthetic fixture text for SPEC-0001, not real data.\nUSR line 004: synthetic fixture text for SPEC-0001, not real data.\nUSR line 005: synthetic fixture text for SPEC-0001, not real data.\nUSR line 006: synthetic fixture text for SPEC-0001, not real data.\nUSR line 007: synthetic fixture text for SPEC-0001, not real data.\nUSR line 008: synthetic fixture text for SPEC-0001, not real data.\nUSR line 009: synthetic fixture text for SPEC-0001, not real data.\nUSR line 010: synthetic fixture text for SPEC-0001, not real data.\nUSR line 011: synthetic fixture text for SPEC-0001, not real data.\nUSR line 012: synthetic fixture text for SPEC-0001, not real data.\nUSR line 013: synthetic fixture text for SPEC-0001, not real data.\nUSR line 014: synthetic fixture text for SPEC-0001, not real data.\nUSR line 015: synthetic fixture text for SPEC-0001, not real",
+   "role": "user"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "t2",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "TOOL line 000: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 001: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 002: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 003: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 004: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 005: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 006: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 007: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 008: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 009: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 010: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 011: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 012: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 013: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 014: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 015: synthetic fixture text for SPEC-0001, not real data.\nTOOL line 01",
+   "role": "tool",
+   "tool_call_id": "t2"
+  }
+ ]
+}

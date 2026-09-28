@@ -1522,7 +1522,13 @@ private:
                 /* reasoning_budget      */ params_base.sampling.reasoning_budget_tokens,
                 /* reasoning_budget_msg  */ params_base.sampling.reasoning_budget_message,
                 /* media_path            */ params_base.media_path,
-                /* force_pure_content    */ params_base.force_pure_content_parser
+                /* force_pure_content    */ params_base.force_pure_content_parser,
+                /* dedup_defaults        */ {
+                    /* enabled   */ params_base.message_dedup,
+                    /* min_bytes */ params_base.message_dedup_min_bytes,
+                    /* roles     */ params_base.message_dedup_roles,
+                },
+                /* dedup_predicate       */ dedup_special_text_predicate_from_vocab(vocab),
             };
 
             {
@@ -1852,6 +1858,8 @@ private:
 
         // the per-request limit takes priority over the global one
         slot.n_predict_max = task.params.n_predict != -1 ? task.params.n_predict : params_base.n_predict;
+
+        slot.stats.dedup = task.params.dedup;
 
         slot.task = std::make_unique<const server_task>(std::move(task));
 
@@ -4464,7 +4472,8 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
         server_task_type type,
         const json & data,
         const std::vector<raw_buffer> & files,
-        task_response_type res_type) {
+        task_response_type res_type,
+        const std::optional<dedup_stats> & dedup) {
     GGML_ASSERT(type == SERVER_TASK_TYPE_COMPLETION || type == SERVER_TASK_TYPE_INFILL);
 
     auto res = create_response();
@@ -4509,6 +4518,17 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
 
         // tasks.reserve(inputs.size()); // TODO: this is inaccurate due to child tasks
 
+        // message dedup text bytes B (spec §6.5): the rendered prompt minus its media markers
+        uint64_t dedup_text_bytes = 0;
+        if (dedup && prompt.is_string()) {
+            const std::string prompt_str = prompt.get<std::string>();
+            const std::string marker = get_media_marker();
+            dedup_text_bytes = prompt_str.size();
+            for (size_t pos = prompt_str.find(marker); pos != std::string::npos; pos = prompt_str.find(marker, pos + marker.size())) {
+                dedup_text_bytes -= marker.size();
+            }
+        }
+
         // message delimiters for checkpointing
         json delims = json_value(data, "message_delimiters", json::array());
         auto delimiters = common_chat_msg_delimiters_parse(delims);
@@ -4527,6 +4547,13 @@ std::unique_ptr<server_res_generator> server_routes::handle_completions_impl(
                     data);
 
             task.params.message_spans = task.tokens.find_message_spans(delimiters);
+
+            // message dedup stats, completed with T, the text tokens of this prompt (media chunks excluded)
+            if (dedup) {
+                task.params.dedup = *dedup;
+                task.params.dedup->tokens_saved_est =
+                    dedup_tokens_saved_est(dedup->bytes_saved, task.tokens.n_text_tokens(), dedup_text_bytes);
+            }
 
             task.id_slot = json_value(data, "id_slot", -1);
             sse_ping_interval = task.params.sse_ping_interval;
@@ -5144,16 +5171,19 @@ void server_routes::init_routes() {
         auto res = create_response();
         std::vector<raw_buffer> files;
         json body = json::parse(req.body);
+        std::optional<dedup_stats> dedup;
         json body_parsed = oaicompat_chat_params_parse(
             body,
             meta->chat_params,
-            files);
+            files,
+            &dedup);
         return handle_completions_impl(
             req,
             SERVER_TASK_TYPE_COMPLETION,
             body_parsed,
             files,
-            TASK_RESPONSE_TYPE_OAI_CHAT);
+            TASK_RESPONSE_TYPE_OAI_CHAT,
+            dedup);
     };
 
     this->post_chat_completions_tok = [this](const server_http_req & req) {
@@ -5203,16 +5233,19 @@ void server_routes::init_routes() {
         json body = server_chat_convert_responses_to_chatcmpl(json::parse(req.body));
         SRV_DBG("%s\n", "Request converted: OpenAI Responses -> OpenAI Chat Completions");
         SRV_DBG("converted request: %s\n", body.dump().c_str());
+        std::optional<dedup_stats> dedup;
         json body_parsed = oaicompat_chat_params_parse(
             body,
             meta->chat_params,
-            files);
+            files,
+            &dedup);
         return handle_completions_impl(
             req,
             SERVER_TASK_TYPE_COMPLETION,
             body_parsed,
             files,
-            TASK_RESPONSE_TYPE_OAI_RESP);
+            TASK_RESPONSE_TYPE_OAI_RESP,
+            dedup);
     };
 
     this->post_responses_tok_oai = [this](const server_http_req & req) {
@@ -5235,16 +5268,19 @@ void server_routes::init_routes() {
             files);
         SRV_DBG("%s\n", "Request converted: OpenAI Transcriptions -> OpenAI Chat Completions");
         SRV_DBG("converted request: %s\n", body.dump().c_str());
+        std::optional<dedup_stats> dedup;
         json body_parsed = oaicompat_chat_params_parse(
             body,
             meta->chat_params,
-            files);
+            files,
+            &dedup);
         return handle_completions_impl(
             req,
             SERVER_TASK_TYPE_COMPLETION,
             body_parsed,
             files,
-            TASK_RESPONSE_TYPE_OAI_ASR);
+            TASK_RESPONSE_TYPE_OAI_ASR,
+            dedup);
     };
 
     this->post_anthropic_messages = [this](const server_http_req & req) {
@@ -5253,16 +5289,19 @@ void server_routes::init_routes() {
         json body = server_chat_convert_anthropic_to_oai(json::parse(req.body));
         SRV_DBG("%s\n", "Request converted: Anthropic -> OpenAI Chat Completions");
         SRV_DBG("converted request: %s\n", body.dump().c_str());
+        std::optional<dedup_stats> dedup;
         json body_parsed = oaicompat_chat_params_parse(
             body,
             meta->chat_params,
-            files);
+            files,
+            &dedup);
         return handle_completions_impl(
             req,
             SERVER_TASK_TYPE_COMPLETION,
             body_parsed,
             files,
-            TASK_RESPONSE_TYPE_ANTHROPIC);
+            TASK_RESPONSE_TYPE_ANTHROPIC,
+            dedup);
     };
 
     this->post_anthropic_count_tokens = [this](const server_http_req & req) {

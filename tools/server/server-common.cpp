@@ -101,6 +101,12 @@ json server_slot_stats::to_json() const {
         base["draft_n_accepted"] = n_draft_accepted;
     }
 
+    if (dedup) {
+        base["dedup_n"]                = dedup->n;
+        base["dedup_bytes_saved"]      = dedup->bytes_saved;
+        base["dedup_tokens_saved_est"] = dedup->tokens_saved_est;
+    }
+
     return base;
 }
 
@@ -645,6 +651,16 @@ llama_tokens server_tokens::get_text_tokens() const {
     return res;
 }
 
+size_t server_tokens::n_text_tokens() const {
+    size_t n = 0;
+    for (llama_token t : tokens) {
+        if (t != LLAMA_TOKEN_NULL) {
+            n++;
+        }
+    }
+    return n;
+}
+
 void server_tokens::set_token(llama_pos pos, llama_token id) {
     GGML_ASSERT(!has_mtmd); // only allow this if mtmd is disabled
     tokens[pos] = id;
@@ -1151,9 +1167,21 @@ static void handle_media(
 json oaicompat_chat_params_parse(
     json & body, /* openai api json semantics */
     const server_chat_params & opt,
-    std::vector<raw_buffer> & out_files)
+    std::vector<raw_buffer> & out_files,
+    std::optional<dedup_stats> * out_dedup)
 {
     json llama_params;
+    if (out_dedup) {
+        out_dedup->reset();
+    }
+
+    // message dedup settings: the server defaults, overridden per field by the request; an invalid override is a 400
+    // before any task exists. With no "message_dedup" key this costs one lookup and no copy
+    std::optional<dedup_settings> dedup_override;
+    if (body.contains("message_dedup")) {
+        dedup_override = dedup_resolve(body.at("message_dedup"), opt.dedup_defaults);
+    }
+    const dedup_settings & dedup = dedup_override ? *dedup_override : opt.dedup_defaults;
 
     auto tools = json_value(body, "tools", json());
     auto has_tools = tools.is_array() && !tools.empty();
@@ -1282,6 +1310,16 @@ json oaicompat_chat_params_parse(
             } else if (type != "text") {
                 throw std::invalid_argument("unsupported content[].type");
             }
+        }
+    }
+
+    // message dedup runs on the converted messages, as the template receives them; without a vocab predicate
+    // (a context built with no model) no stub can be proven free of control tokens, so the pass cannot run
+    if (dedup.enabled && opt.dedup_predicate) {
+        dedup_result applied = dedup_apply(messages, dedup, opt.dedup_predicate);
+        messages = std::move(applied.messages);
+        if (out_dedup) {
+            *out_dedup = applied.stats();
         }
     }
 

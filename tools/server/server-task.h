@@ -94,6 +94,9 @@ struct task_params {
     // message spans for checkpointing
     common_chat_msg_spans message_spans;
 
+    // message dedup stats of the request, written by the server after parsing (never read from the request body)
+    std::optional<dedup_stats> dedup;
+
     // Embeddings
     int32_t embd_normalize = 2; // (-1=none, 0=max absolute int16, 1=taxicab, 2=Euclidean/L2, >2=p-norm)
 

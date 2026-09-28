@@ -6,6 +6,7 @@
 > outputs vs upstream master - for gfx906 (Radeon VII / MI50) and
 > mixed ROCm + Vulkan rigs. Last upstream sync: 2026-09-24 (merge
 > 7887b8887, lane-gated; master carries it all).
+> Agent workloads can opt into exact prompt-message deduplication to avoid re-prefilling repeated large tool, user, or system messages.
 >
 > **What this is:** a production llama.cpp fork for AMD gfx906 GPUs
 > (Radeon VII / MI50 / MI60) and mixed ROCm + Vulkan rigs. Upstream has
@@ -74,6 +75,7 @@
 > | mixed ROCm + Vulkan | controllable pipeline parallelism + safe fallback |
 > | heterogeneous GPU setups | unlike GPUs in one pipeline: weighted layer splits, cross-backend scheduling, per-device fits |
 > | Qwen3.8 / qwen4exp | DFlash2 drafter, adaptive depth, GDN prefill |
+> | coding agents with repeated tool output | opt-in exact message dedup that preserves the first copy and prompt-cache prefix |
 > | anyone reproducibility-minded | every change gated on unchanged temp-0 sha |
 >
 > ### What we changed, and why
@@ -104,6 +106,7 @@
 > - **MoE MMQ OOB fix** (host-side padding, 2026-09-09): fixes
 >   out-of-bounds reads in expert-routed MMQ at flattened sizing; PPL
 >   tie, perf-neutral.
+> - **Prompt message deduplication** (llopresto87 commit `02957b773`, adopted 2026-09-29): `llama-server` can replace later byte-identical large messages with references to their first copy. It is off by default; enable it with `--message-dedup` and tune it with `--message-dedup-min-bytes` and `--message-dedup-roles`. See [README_DEDUPLICATION.md](README_DEDUPLICATION.md).
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
 >   Benefit: current fixes ride along at zero measured cost.
 >
@@ -145,6 +148,7 @@
 > | upstream #26592 (Geramy) hipCUB top-k | triage | no hot sort on our path |
 > | mx-llama.cpp (mxxm-t) | full survey | 3 robustness ports adopted (bit-exact); GDN chunk + q8_1 cache perf-neutral; TP/AllReduce, layout cache, replay coupling not our topology |
 > | eaman patch store (store.piffa.net/lm/bug) | full survey | pipeline-parallel controls + fit refinements adopted 2026-08-24; rs sync line wedges on abort |
+> | llopresto87/llama.cpp-prompt-dedup | ported commit `02957b773` with its conformance and scenario suites | adopted 2026-09-29; opt-in and stateless, with no prompt change when disabled |
 | upstream #29191 (streaming load-mode) | evaluated | UMA-only design + 24G swap requirement; not applicable to dGPU rigs |
 | upstream #28414 (prefetch-experts-slots) | evaluated vs our staging ring | ring already frees the host timeline; in-order queue caps device overlap (transfer-queue probe: 222 vs 248.4 t/s) |
 | upstream #27851 (tiled k-quant CPU mulmat) | cherry-picked, GGML_CPU_TILED_MM=0 | not bit-exact; Q6_K GEMV regression; true-CPU mode still loses to vk streaming (74 vs 248 t/s, no VNNI here) |
@@ -160,7 +164,9 @@
 > optimum for gfx906 here; launchers also pin its userspace). Current
 > prod build: build-rcfix/bin (0.5.0-dev, 0924 sync + q4v tile fixes,
 > promoted 2026-09-25); launchers 2llama-start-*.sh point there
-> (rollback: build-sync0909).
+> (rollback: build-sync0909). Source versions from 2026-09-29 include
+> prompt message deduplication; retained production binaries remain
+> pre-dedup until explicitly rebuilt and promoted.
 >
 # llama.cpp
 

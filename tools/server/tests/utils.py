@@ -123,6 +123,9 @@ class ServerProcess:
     mcp_servers_config: str | None = None
     mcp_servers_json: str | None = None
     cors_origins: str | None = None
+    message_dedup: bool | None = None  # SPEC-0001: --message-dedup / --no-message-dedup
+    message_dedup_min_bytes: int | None = None
+    message_dedup_roles: str | None = None  # comma-separated; "" is a valid value
 
     # session variables
     process: subprocess.Popen | None = None
@@ -255,6 +258,12 @@ class ServerProcess:
             server_args.append("--no-ui")
         if self.no_models_autoload:
             server_args.append("--no-models-autoload")
+        if self.message_dedup is not None:
+            server_args.append("--message-dedup" if self.message_dedup else "--no-message-dedup")
+        if self.message_dedup_min_bytes is not None:
+            server_args.extend(["--message-dedup-min-bytes", self.message_dedup_min_bytes])
+        if self.message_dedup_roles is not None:
+            server_args.extend(["--message-dedup-roles", self.message_dedup_roles])
         if self.jinja:
             server_args.append("--jinja")
         else:

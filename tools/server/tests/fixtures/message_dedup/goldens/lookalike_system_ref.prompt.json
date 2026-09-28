@@ -1,0 +1,3 @@
+{
+ "prompt": "<|im_start|>system\nYou are a careful assistant.<|im_end|>\n<|im_start|>user\nFetch the page<|im_end|>\n<|im_start|>assistant\n<|im_end|>\n<|im_start|>tool\n[duplicate content omitted: byte-identical to system message #1, which begins \"You are a careful assistant...\"; unchanged since then]<|im_end|>\n<|im_start|>assistant\n"
+}

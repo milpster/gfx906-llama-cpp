@@ -1,0 +1,53 @@
+{
+ "_provenance": "synthetic: authored by tool-smith (SPEC-0001 increment 18) as recorded live tails for the increment-18 checker tests; tool results produced by tool_simulator.py; no model or production output",
+ "correct": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"src/meter.py\", \"line\": 77, \"text\": \"    return used <= quota\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited src/meter.py: line 77 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "Fixed src/meter.py line 77: within_quota now returns used <= quota."
+  }
+ ],
+ "wrong": [
+  {
+   "role": "assistant",
+   "content": "",
+   "tool_calls": [
+    {
+     "id": "tail_1",
+     "type": "function",
+     "function": {
+      "name": "edit_file",
+      "arguments": "{\"path\": \"src/meter.py\", \"line\": 77, \"text\": \"    return used > quota\"}"
+     }
+    }
+   ]
+  },
+  {
+   "role": "tool",
+   "tool_call_id": "tail_1",
+   "content": "edited src/meter.py: line 77 replaced\n"
+  },
+  {
+   "role": "assistant",
+   "content": "Changed the comparison on line 77."
+  }
+ ]
+}

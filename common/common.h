@@ -662,6 +662,11 @@ struct common_params {
     bool prefill_assistant = true; // if true, any trailing assistant message will be prefilled into the response
     int sleep_idle_seconds = -1;   // if >0, server will sleep after this many seconds of idle time
 
+    // server message dedup defaults (a request may override them); min_bytes and roles never enable the pass
+    bool                  message_dedup           = false;    // render a repeated message unit as a reference to its first occurrence
+    int32_t               message_dedup_min_bytes = 1024;     // smallest unit, in UTF-8 bytes, that takes part
+    std::set<std::string> message_dedup_roles     = {"tool"}; // subset of {tool, user, system}; empty = nothing takes part
+
     std::vector<std::string> api_keys;
 
     std::string ssl_file_key  = "";                                                                         // NOLINT
@@ -768,6 +773,12 @@ struct common_params {
 
     bool is_gen_docs = false; // whether we are running inside llama-gen-docs
 };
+
+// whether message dedup may take part in messages of this role (SPEC-0001 §6.1): exact and case-sensitive, never "assistant"
+// shared by --message-dedup-roles and the server's per-request override
+inline bool common_message_dedup_role_allowed(std::string_view role) {
+    return role == "tool" || role == "user" || role == "system";
+}
 
 // call once at the start of a program if it uses libcommon
 // initializes the logging system and prints info about the build

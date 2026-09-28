@@ -146,23 +146,28 @@ void common_preset::apply_to_params(common_params & params, const std::set<std::
                 continue;
             }
         }
-        // apply each option to params
-        if (opt.handler_string) {
-            opt.handler_string(params, val);
-        } else if (opt.handler_int) {
-            opt.handler_int(params, std::stoi(val));
-        } else if (opt.handler_bool) {
-            opt.handler_bool(params, common_arg_utils::is_truthy(val));
-        } else if (opt.handler_str_str) {
-            // not supported yet
-            throw std::runtime_error(string_format(
-                "%s: option with two values is not supported yet",
-                __func__
-            ));
-        } else if (opt.handler_void) {
-            opt.handler_void(params);
-        } else {
-            GGML_ABORT("unknown handler type");
+        // apply each option to params; like an argument or an environment variable, a rejected value names its option
+        try {
+            if (opt.handler_string) {
+                opt.handler_string(params, val);
+            } else if (opt.handler_int) {
+                opt.handler_int(params, std::stoi(val));
+            } else if (opt.handler_bool) {
+                opt.handler_bool(params, common_arg_utils::is_truthy(val));
+            } else if (opt.handler_str_str) {
+                // not supported yet
+                throw std::runtime_error(string_format(
+                    "%s: option with two values is not supported yet",
+                    __func__
+                ));
+            } else if (opt.handler_void) {
+                opt.handler_void(params);
+            } else {
+                GGML_ABORT("unknown handler type");
+            }
+        } catch (const std::exception & e) {
+            throw std::invalid_argument(string_format(
+                "error while handling option \"%s\": %s", rm_leading_dashes(opt.args.back()).c_str(), e.what()));
         }
     }
 }

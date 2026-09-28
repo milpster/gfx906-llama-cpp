@@ -1,0 +1,136 @@
+{
+ "schema": "message_dedup.scenario/1",
+ "id": "A1",
+ "endpoint": "/v1/chat/completions",
+ "depth_class": "shallow",
+ "repo_snapshot": "mini-snapshot-0001",
+ "prefix": {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are a coding agent working in a throwaway synthetic repository."
+   },
+   {
+    "role": "user",
+    "content": "Fix the off-by-one bug in alpha.c."
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_1",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"alpha.c\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_1",
+    "content": "/* alpha: synthetic source for the SPEC-0001 inc 14 mini scenario */\n#include <stdio.h>\n\nstatic int alpha_f00(int x) { return x * 3 + 0; }\nstatic int alpha_f01(int x) { return x * 4 + 1; }\nstatic int alpha_f02(int x) { return x * 5 + 2; }\nstatic int alpha_f03(int x) { return x * 6 + 3; }\nstatic int alpha_f04(int x) { return x * 7 + 4; }\nstatic int alpha_f05(int x) { return x * 8 + 5; }\nstatic int alpha_f06(int x) { return x * 9 + 6; }\nstatic int alpha_f07(int x) { return x * 10 + 7; }\nstatic int alpha_f08(int x) { return x * 11 + 8; }\nstatic int alpha_f09(int x) { return x * 12 + 9; }\nstatic int alpha_f10(int x) { return x * 13 + 10; }\nstatic int alpha_f11(int x) { return x * 14 + 11; }\nstatic int alpha_f12(int x) { return x * 15 + 12; }\nstatic int alpha_f13(int x) { return x * 16 + 13; }\nstatic int alpha_f14(int x) { return x * 17 + 14; }\nstatic int alpha_f15(int x) { return x * 18 + 15; }\nstatic int alpha_f16(int x) { return x * 19 + 16; }\nstatic int alpha_f17(int x) { return x * 20 + 17; }\nstatic int alpha_f18(int x) { return x * 21 + 18; }\nstatic int alpha_f19(int x) { return x * 22 + 19; }\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_2",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"beta.c\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_2",
+    "content": "/* beta: synthetic source for the SPEC-0001 inc 14 mini scenario */\n#include <stdio.h>\n\nstatic int beta_f00(int x) { return x * 3 + 0; }\nstatic int beta_f01(int x) { return x * 4 + 1; }\nstatic int beta_f02(int x) { return x * 5 + 2; }\nstatic int beta_f03(int x) { return x * 6 + 3; }\nstatic int beta_f04(int x) { return x * 7 + 4; }\nstatic int beta_f05(int x) { return x * 8 + 5; }\nstatic int beta_f06(int x) { return x * 9 + 6; }\nstatic int beta_f07(int x) { return x * 10 + 7; }\nstatic int beta_f08(int x) { return x * 11 + 8; }\nstatic int beta_f09(int x) { return x * 12 + 9; }\nstatic int beta_f10(int x) { return x * 13 + 10; }\nstatic int beta_f11(int x) { return x * 14 + 11; }\nstatic int beta_f12(int x) { return x * 15 + 12; }\nstatic int beta_f13(int x) { return x * 16 + 13; }\nstatic int beta_f14(int x) { return x * 17 + 14; }\nstatic int beta_f15(int x) { return x * 18 + 15; }\nstatic int beta_f16(int x) { return x * 19 + 16; }\nstatic int beta_f17(int x) { return x * 20 + 17; }\nstatic int beta_f18(int x) { return x * 21 + 18; }\nstatic int beta_f19(int x) { return x * 22 + 19; }\nstatic int beta_f20(int x) { return x * 23 + 20; }\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_3",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"alpha.c\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_3",
+    "content": "/* alpha: synthetic source for the SPEC-0001 inc 14 mini scenario */\n#include <stdio.h>\n\nstatic int alpha_f00(int x) { return x * 3 + 0; }\nstatic int alpha_f01(int x) { return x * 4 + 1; }\nstatic int alpha_f02(int x) { return x * 5 + 2; }\nstatic int alpha_f03(int x) { return x * 6 + 3; }\nstatic int alpha_f04(int x) { return x * 7 + 4; }\nstatic int alpha_f05(int x) { return x * 8 + 5; }\nstatic int alpha_f06(int x) { return x * 9 + 6; }\nstatic int alpha_f07(int x) { return x * 10 + 7; }\nstatic int alpha_f08(int x) { return x * 11 + 8; }\nstatic int alpha_f09(int x) { return x * 12 + 9; }\nstatic int alpha_f10(int x) { return x * 13 + 10; }\nstatic int alpha_f11(int x) { return x * 14 + 11; }\nstatic int alpha_f12(int x) { return x * 15 + 12; }\nstatic int alpha_f13(int x) { return x * 16 + 13; }\nstatic int alpha_f14(int x) { return x * 17 + 14; }\nstatic int alpha_f15(int x) { return x * 18 + 15; }\nstatic int alpha_f16(int x) { return x * 19 + 16; }\nstatic int alpha_f17(int x) { return x * 20 + 17; }\nstatic int alpha_f18(int x) { return x * 21 + 18; }\nstatic int alpha_f19(int x) { return x * 22 + 19; }\n"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_4",
+      "type": "function",
+      "function": {
+       "name": "edit_file",
+       "arguments": "{\"path\": \"beta.c\", \"line\": 8, \"text\": \"return x * 7 + 5;\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_4",
+    "content": "ok"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "id": "call_5",
+      "type": "function",
+      "function": {
+       "name": "read_file",
+       "arguments": "{\"path\": \"beta.c\"}"
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "call_5",
+    "content": "/* beta: synthetic source for the SPEC-0001 inc 14 mini scenario */\n#include <stdio.h>\n\nstatic int beta_f00(int x) { return x * 3 + 0; }\nstatic int beta_f01(int x) { return x * 4 + 1; }\nstatic int beta_f02(int x) { return x * 5 + 2; }\nstatic int beta_f03(int x) { return x * 6 + 3; }\nstatic int beta_f04(int x) { return x * 7 + 5; }\nstatic int beta_f05(int x) { return x * 8 + 5; }\nstatic int beta_f06(int x) { return x * 9 + 6; }\nstatic int beta_f07(int x) { return x * 10 + 7; }\nstatic int beta_f08(int x) { return x * 11 + 8; }\nstatic int beta_f09(int x) { return x * 12 + 9; }\nstatic int beta_f10(int x) { return x * 13 + 10; }\nstatic int beta_f11(int x) { return x * 14 + 11; }\nstatic int beta_f12(int x) { return x * 15 + 12; }\nstatic int beta_f13(int x) { return x * 16 + 13; }\nstatic int beta_f14(int x) { return x * 17 + 14; }\nstatic int beta_f15(int x) { return x * 18 + 15; }\nstatic int beta_f16(int x) { return x * 19 + 16; }\nstatic int beta_f17(int x) { return x * 20 + 17; }\nstatic int beta_f18(int x) { return x * 21 + 18; }\nstatic int beta_f19(int x) { return x * 22 + 19; }\nstatic int beta_f20(int x) { return x * 23 + 20; }\n"
+   }
+  ]
+ },
+ "manifest": {
+  "dedup_roles": [
+   "tool"
+  ],
+  "must_fire": [
+   {
+    "message": 7,
+    "part": null,
+    "reference": "tool result #1 (read_file)"
+   }
+  ],
+  "must_not_fire": [
+   {
+    "message": 11,
+    "part": null
+   }
+  ],
+  "checker": {
+   "kind": "exact_answer",
+   "answer": "alpha_f03"
+  }
+ }
+}

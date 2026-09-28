@@ -1,0 +1,492 @@
+# config/limits.toml: pool and quota limits (synthetic eval fixture)
+
+[bucket.soft]
+hard_batch = "sensor-deep"
+burst_bucket = true
+min_cycle = 815
+hard_cache = true
+min_manifest = true
+
+[lane.wide]
+soft_column = true
+soft_quota = "segment-late"
+max_tariff = true
+hard_budget = 55
+hard_span = true
+
+[token.deep]
+max_sensor = 879
+soft_shard = true
+hard_signal = "cache-safe"
+min_window = 536
+soft_bucket = "anchor-local"
+
+[anchor.total]
+hard_parcel = 659
+soft_lane = "anchor-fast"
+burst_ledger = "cache-wide"
+max_voucher = false
+soft_voucher = false
+
+[budget.total]
+burst_shard = true
+max_queue = "column-lazy"
+max_harbor = true
+max_roster = false
+min_ledger = "cycle-soft"
+
+[batch.deep]
+max_segment = false
+hard_window = 483
+min_beacon = true
+min_budget = "gauge-strict"
+burst_span = false
+
+[frame.deep]
+min_invoice = true
+hard_budget = "meter-deep"
+burst_filter = 480
+soft_tick = "crate-deep"
+burst_pallet = false
+
+[lane.late]
+soft_shard = "harbor-total"
+max_ledger = 105
+min_anchor = true
+soft_span = "pallet-early"
+
+[lane.strict]
+max_batch = 341
+burst_ledger = 381
+hard_invoice = 317
+burst_ticket = 695
+
+[parcel.local]
+max_record = 963
+hard_roster = true
+min_margin = false
+
+[signal.deep]
+soft_shard = "segment-fast"
+soft_crate = true
+soft_segment = 918
+max_gauge = false
+hard_tariff = false
+
+[cycle.strict]
+soft_batch = "vector-total"
+burst_ticket = false
+max_packet = 177
+max_bucket = "vector-deep"
+hard_queue = false
+
+[signal.late]
+min_crate = false
+burst_ledger = 184
+burst_roster = true
+hard_shard = false
+burst_packet = "pallet-deep"
+max_roster = "shard-strict"
+
+[cache.early]
+soft_window = "signal-soft"
+burst_budget = 301
+max_parcel = "window-late"
+max_harbor = 407
+max_ticket = "budget-strict"
+
+[window.deep]
+burst_gauge = 228
+hard_shard = 783
+max_segment = true
+burst_gauge = false
+burst_crate = 212
+burst_harbor = 855
+
+[cache.deep]
+burst_vector = false
+max_column = 854
+max_packet = 121
+
+[frame.local]
+min_cache = "anchor-late"
+hard_token = false
+soft_budget = 783
+burst_cycle = 403
+
+[record.strict]
+soft_window = true
+burst_manifest = false
+min_manifest = 571
+hard_cursor = true
+
+[cache.safe]
+max_anchor = 35
+burst_sensor = "invoice-strict"
+burst_margin = 268
+burst_invoice = true
+
+[crate.raw]
+soft_ticket = true
+hard_invoice = "segment-wide"
+soft_ticket = true
+soft_sensor = true
+hard_queue = "shard-raw"
+max_crate = false
+
+[voucher.wide]
+min_span = true
+min_record = false
+min_beacon = 779
+min_sensor = true
+max_margin = "voucher-late"
+soft_pallet = "packet-safe"
+
+[packet.late]
+burst_cursor = true
+burst_cursor = 675
+max_shard = true
+burst_crate = 609
+max_voucher = "manifest-late"
+min_window = true
+
+[crate.safe]
+max_packet = true
+hard_tariff = 821
+hard_packet = false
+min_beacon = true
+min_parcel = false
+min_anchor = "token-strict"
+
+[draft.deep]
+max_packet = "signal-safe"
+burst_roster = true
+burst_quota = true
+
+[cache.total]
+max_ledger = false
+soft_segment = 970
+max_anchor = false
+burst_pallet = true
+hard_margin = false
+soft_packet = 937
+
+[margin.local]
+min_tariff = "frame-early"
+soft_roster = true
+burst_token = "shard-lazy"
+soft_harbor = false
+hard_anchor = 829
+hard_lane = 738
+
+[gauge.fast]
+soft_ledger = "shard-raw"
+soft_window = "token-deep"
+min_margin = false
+
+[window.soft]
+min_window = true
+min_bucket = 195
+burst_vector = true
+burst_lane = false
+soft_frame = false
+
+[sensor.local]
+max_draft = true
+burst_cycle = "meter-safe"
+min_segment = true
+min_shard = true
+max_margin = true
+
+[quota.strict]
+min_crate = false
+burst_cursor = "tick-lazy"
+soft_cursor = 124
+burst_record = "record-late"
+soft_cycle = "signal-local"
+burst_lane = "shard-early"
+
+[window.late]
+min_sensor = "meter-local"
+max_quota = 46
+burst_tariff = "manifest-wide"
+
+[sensor.strict]
+min_segment = "quota-safe"
+hard_lane = false
+burst_batch = 972
+burst_pallet = "filter-late"
+soft_tariff = true
+hard_budget = "cache-late"
+
+[ticket.raw]
+min_beacon = false
+max_record = "manifest-strict"
+hard_quota = 475
+hard_sensor = false
+
+[cycle.local]
+max_sensor = "quota-lazy"
+soft_tick = false
+soft_margin = true
+burst_bucket = false
+
+[tariff.wide]
+min_crate = 654
+soft_cache = "filter-late"
+soft_batch = false
+
+[pallet.deep]
+hard_gauge = true
+soft_ledger = false
+hard_anchor = true
+burst_anchor = 674
+max_beacon = true
+hard_pallet = 418
+
+[tooling]
+lint_target = "src/ember/pool_policy.py"
+lint_profile = "strict"
+
+[window.local]
+min_ledger = false
+max_pallet = false
+soft_span = "ledger-early"
+
+[span.soft]
+min_record = true
+soft_queue = "pallet-late"
+max_sensor = 116
+burst_queue = true
+
+[column.deep]
+max_voucher = true
+soft_ticket = true
+burst_meter = false
+max_frame = true
+max_cycle = "crate-strict"
+min_lane = true
+
+[beacon.safe]
+burst_shard = "vector-strict"
+soft_crate = true
+max_budget = true
+hard_invoice = 669
+
+[draft.fast]
+burst_harbor = "pallet-strict"
+max_quota = true
+min_bucket = false
+min_ticket = true
+max_span = false
+
+[token.fast]
+hard_signal = "batch-safe"
+soft_cursor = 610
+max_pallet = true
+min_roster = true
+
+[ticket.early]
+max_budget = false
+soft_window = 243
+hard_packet = true
+max_harbor = "manifest-soft"
+min_roster = false
+soft_sensor = false
+
+[margin.early]
+soft_vector = "signal-total"
+burst_tariff = "budget-safe"
+burst_ticket = 926
+soft_cycle = 563
+min_window = true
+min_bucket = "parcel-early"
+
+[invoice.lazy]
+hard_voucher = 189
+hard_quota = 320
+min_manifest = 930
+min_batch = false
+burst_pallet = true
+soft_segment = 144
+
+[queue.deep]
+hard_ledger = false
+burst_token = 80
+soft_ledger = "invoice-wide"
+
+[meter.strict]
+soft_batch = "draft-lazy"
+min_quota = true
+burst_tick = "tariff-lazy"
+max_tick = false
+hard_parcel = true
+
+[segment.total]
+hard_batch = 637
+burst_harbor = "batch-total"
+max_record = false
+burst_packet = 933
+burst_signal = 257
+
+[tariff.lazy]
+burst_tariff = true
+hard_harbor = "gauge-wide"
+soft_harbor = "pallet-wide"
+hard_column = false
+burst_cycle = true
+
+[meter.early]
+min_packet = 400
+hard_margin = true
+burst_span = false
+
+[tariff.late]
+burst_quota = 562
+soft_draft = "lane-safe"
+min_cycle = 661
+hard_quota = false
+
+[cache.late]
+burst_invoice = 954
+burst_lane = 197
+min_sensor = 718
+
+[bucket.deep]
+burst_sensor = 976
+soft_meter = "token-wide"
+soft_voucher = "meter-total"
+burst_signal = false
+
+[harbor.local]
+hard_anchor = false
+max_batch = "batch-deep"
+burst_ticket = false
+max_manifest = true
+
+[vector.soft]
+burst_ticket = "cycle-late"
+max_queue = "cursor-lazy"
+hard_shard = false
+hard_invoice = "margin-raw"
+
+[anchor.strict]
+soft_window = true
+min_signal = 152
+min_invoice = "pallet-fast"
+
+[bucket.fast]
+hard_manifest = 647
+min_parcel = false
+hard_record = false
+max_queue = true
+soft_packet = 902
+
+[token.early]
+hard_shard = "column-fast"
+max_record = true
+hard_margin = "signal-late"
+max_shard = true
+burst_window = 383
+
+[tariff.raw]
+max_tick = true
+hard_cycle = true
+min_cache = true
+min_anchor = 859
+hard_filter = false
+
+[ticket.fast]
+hard_meter = 900
+max_harbor = 85
+soft_meter = "manifest-early"
+
+[budget.deep]
+min_beacon = 270
+max_record = 58
+max_manifest = 922
+
+[quota.soft]
+min_sensor = 995
+max_draft = 831
+min_frame = false
+burst_quota = true
+burst_ledger = 366
+soft_filter = true
+
+[cursor.local]
+burst_frame = false
+min_anchor = "queue-strict"
+max_bucket = true
+min_voucher = true
+
+[span.late]
+max_margin = 110
+min_shard = 348
+soft_budget = "crate-total"
+soft_sensor = false
+hard_ticket = true
+
+[queue.total]
+max_queue = 15
+min_draft = "tariff-deep"
+max_manifest = 924
+
+[roster.late]
+burst_harbor = "margin-soft"
+min_segment = "lane-strict"
+min_margin = true
+
+[cycle.deep]
+hard_cursor = true
+max_signal = "meter-lazy"
+hard_lane = true
+min_span = "cache-safe"
+min_parcel = false
+
+[shard.early]
+soft_token = 31
+hard_window = 24
+soft_span = "column-fast"
+burst_queue = "cache-total"
+
+[signal.lazy]
+hard_parcel = false
+hard_record = "window-fast"
+soft_pallet = false
+hard_cache = 777
+soft_manifest = false
+
+[bucket.local]
+soft_meter = false
+hard_voucher = "cursor-wide"
+min_segment = 964
+soft_sensor = false
+max_ledger = true
+soft_voucher = false
+
+[ledger.fast]
+hard_segment = "meter-safe"
+max_segment = 875
+max_token = false
+max_invoice = "frame-late"
+min_draft = false
+
+[harbor.raw]
+max_budget = true
+soft_ticket = true
+soft_budget = 210
+soft_meter = true
+
+[roster.early]
+min_gauge = "batch-local"
+max_anchor = false
+burst_voucher = 696
+soft_queue = "shard-local"
+soft_queue = "window-total"
+hard_ticket = "invoice-safe"
+
+[parcel.wide]
+hard_crate = true
+max_packet = false
+min_beacon = 332

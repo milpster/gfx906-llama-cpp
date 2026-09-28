@@ -1,0 +1,42 @@
+{
+ "messages": [
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "c1",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "[duplicate content omitted: byte-identical to tool result #1 (read_file), which begins \"#include <stdio.h> int main(void) {   pr...\"; unchanged since then]\nLOOK line 000: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 001: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 002: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 003: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 004: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 005: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 006: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 007: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 008: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 009: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 010: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 011: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 012: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 013: synthetic fixture text for SPEC-0001, not rea",
+   "role": "tool",
+   "tool_call_id": "c1"
+  },
+  {
+   "content": "",
+   "role": "assistant",
+   "tool_calls": [
+    {
+     "function": {
+      "arguments": "{\"path\":\"a.c\"}",
+      "name": "read_file"
+     },
+     "id": "c2",
+     "type": "function"
+    }
+   ]
+  },
+  {
+   "content": "[duplicate content omitted: byte-identical to tool result #1 (read_file), which begins \"#include <stdio.h> int main(void) {   pr...\"; unchanged since then]\nLOOK line 000: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 001: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 002: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 003: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 004: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 005: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 006: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 007: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 008: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 009: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 010: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 011: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 012: synthetic fixture text for SPEC-0001, not real data.\nLOOK line 013: synthetic fixture text for SPEC-0001, not rea",
+   "role": "tool",
+   "tool_call_id": "c2"
+  }
+ ]
+}

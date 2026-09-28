@@ -1,0 +1,14 @@
+{
+ "messages": [
+  {
+   "content": "caf\u00e9 r\u00e9sum\u00e9 na\u00efve caf\u00e9 r\u00e9sum\u00e9 na\u00efve caf\u00e9 r\u00e9sum\u00e9 na\u00efve caf\u00e9 r\u00e9sum\u00e9 na\u00efve NFC line 000: synthetic fixture text for SPEC-0001, not real data.\nNFC line 001: synthetic fixture text for SPEC-0001, not real data.\nNFC line 002: synthetic fixture text for SPEC-0001, not real data.\nNFC line 003: synthetic fixture text for SPEC-0001, not real data.\nNFC line 004: synthetic fixture text for SPEC-0001, not real data.\nNFC line 005: synthetic fixture text for SPEC-0001, not real data.\nNFC line 006: synthetic fixture text for SPEC-0001, not real data.\nNFC line 007: synthetic fixture text for SPEC-0001, not real data.\nNFC line 008: synthetic fixture text for SPEC-0001, not real data.\nNFC line 009: synthetic fixture text for SPEC-0001, not real data.\nNFC line 010: synthetic fixture text for SPEC-0001, not real data.\nNFC line 011: synthetic fixture text for SPEC-0001, not real data.\nNFC line 012: synthetic fixture text for SPEC-0001, not real data.\nNFC line 013: synthetic fixture text for SPEC-0001, not real data.\nNFC line 014: synthetic fixture text for SPEC-0001, not real data.\nNFC lin",
+   "role": "tool",
+   "tool_call_id": "a"
+  },
+  {
+   "content": "cafe\u0301 re\u0301sume\u0301 nai\u0308ve cafe\u0301 re\u0301sume\u0301 nai\u0308ve cafe\u0301 re\u0301sume\u0301 nai\u0308ve cafe\u0301 re\u0301sume\u0301 nai\u0308ve NFC line 000: synthetic fixture text for SPEC-0001, not real data.\nNFC line 001: synthetic fixture text for SPEC-0001, not real data.\nNFC line 002: synthetic fixture text for SPEC-0001, not real data.\nNFC line 003: synthetic fixture text for SPEC-0001, not real data.\nNFC line 004: synthetic fixture text for SPEC-0001, not real data.\nNFC line 005: synthetic fixture text for SPEC-0001, not real data.\nNFC line 006: synthetic fixture text for SPEC-0001, not real data.\nNFC line 007: synthetic fixture text for SPEC-0001, not real data.\nNFC line 008: synthetic fixture text for SPEC-0001, not real data.\nNFC line 009: synthetic fixture text for SPEC-0001, not real data.\nNFC line 010: synthetic fixture text for SPEC-0001, not real data.\nNFC line 011: synthetic fixture text for SPEC-0001, not real data.\nNFC line 012: synthetic fixture text for SPEC-0001, not real data.\nNFC line 013: synthetic fixture text for SPEC-0001, not real data.\nNFC line 014: synthetic fixture text for SPEC-0001, not real data.\nNFC lin",
+   "role": "tool",
+   "tool_call_id": "b"
+  }
+ ]
+}

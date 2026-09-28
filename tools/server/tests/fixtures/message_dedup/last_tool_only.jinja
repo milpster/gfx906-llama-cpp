@@ -1,0 +1,11 @@
+{#- SPEC-0001 fixture (DEDUP_FIRST_OCCURRENCE_NOT_RENDERED): chatml that renders only the LAST tool message, so an earlier first occurrence is dropped by the template -#}
+{%- set ns = namespace(last_tool=-1) -%}
+{%- for m in messages -%}
+    {%- if m.role == 'tool' -%}{%- set ns.last_tool = loop.index0 -%}{%- endif -%}
+{%- endfor -%}
+{%- for m in messages -%}
+    {%- if m.role != 'tool' or loop.index0 == ns.last_tool -%}
+        {{- '<|im_start|>' + m.role + '\n' + (m.content if m.content is string else '') + '<|im_end|>\n' -}}
+    {%- endif -%}
+{%- endfor -%}
+{%- if add_generation_prompt -%}{{- '<|im_start|>assistant\n' -}}{%- endif -%}

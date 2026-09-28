@@ -1,0 +1,14 @@
+{
+ "messages": [
+  {
+   "content": "S line 000: synthetic fixture text for SPEC-0001, not real d",
+   "role": "tool",
+   "tool_call_id": "a"
+  },
+  {
+   "content": "S line 000: synthetic fixture text for SPEC-0001, not real d",
+   "role": "tool",
+   "tool_call_id": "b"
+  }
+ ]
+}
