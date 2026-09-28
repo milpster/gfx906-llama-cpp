@@ -1305,6 +1305,11 @@ struct ggml_tensor * llama_model_loader::create_tensor(
             n_tensors_moved++;
         }
 
+        // dump final per-tensor placement for fit planning
+        if (getenv("LLAMA_DUMP_PLACEMENT")) {
+            fprintf(stderr, "PLACE %s %zu %s\n", tn.str().c_str(), ggml_nbytes(t_meta), ggml_backend_buft_name(buft));
+        }
+
         return buft;
     };
 
