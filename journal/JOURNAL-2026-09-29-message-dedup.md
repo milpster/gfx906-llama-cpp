@@ -180,12 +180,26 @@ After the functional, compile, PP16384, TG1024, and exact-output gates passed, t
 
 PID `875823` was already running `build-dedup`, so launcher promotion required no server restart. Its `/health` response remained `{"status":"ok"}`.
 
+## Ngcache launcher alignment
+
+The user separately requested updating `swift_1.5_llama_start-q6_q8_q4-ngcache.sh`. This launcher was not part of the earlier production promotion.
+
+- Fixed the malformed `s#!/usr/bin/env bash` first line to a valid shebang.
+- Changed default `BIN` and `LD_LIB` from `build-promptlookup-baseline/bin` to the promoted `build-dedup/bin`.
+- Corrected the default port from 8009 to the documented isolated port 8010, keeping the normal production lane on 8009 untouched.
+- Retained `SPEC_TYPE=ngram-mod,ngram-cache,draft-dflash`, `--spec-ngram-cache-strict`, `--spec-ngram-cache-p-min`, and `-lcd` dynamic-cache persistence.
+- `bash -n` and `git diff --check` passed.
+- No ngcache server was launched. PID `875823` remained on `build-dedup` at port 8009 and `/health` stayed `{"status":"ok"}`.
+
+This aligns the dedicated launcher with the binary that already contains the ngcache working-tree code. It does not integrate or commit the ngcache source changes themselves; those remain separate WIP.
+
 ## Promotion state
 
 - Source adoption: complete.
 - Fresh build and C++ conformance: complete.
 - Production default: promoted to `build-dedup/bin`; `build-rcfix` remains unchanged as the rollback build.
 - Launcher changes: complete for all active root production launchers; message dedup itself remains default-off.
+- Ngcache launcher: aligned with `build-dedup` and isolated on port 8010; ngcache source integration remains incomplete.
 - Live HTTP validation: complete for default-off rendering, per-request dedup rendering, token count reduction, timing statistics, and post-test health.
 - Production-shaped validation: complete; three interleaved candidate and three control lanes passed PP16384, TG1024, acceptance, exact temperature-0 SHA, fit, and runtime-error gates.
 - Push: not requested and not performed.
