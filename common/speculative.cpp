@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <map>
 #include <cinttypes>
@@ -2230,24 +2231,32 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
     common_params_speculative_ngram_cache params;
 
     uint16_t n_draft;
+    uint16_t n_min;
 
     bool save_dynamic;
     bool save_static;
+
+    std::string path_dynamic;
+
+    // shared across sequences: loaded cache plus what finished requests learned
+    common_ngram_cache ngram_cache_dynamic;
 
     struct seq_info {
         size_t cache_size = 0; // number of tokens in n-gram cache
 
         common_ngram_cache ngram_cache_context;
-        common_ngram_cache ngram_cache_dynamic;
-        common_ngram_cache ngram_cache_static;
     };
 
     std::vector<seq_info> sinfos;
+
+    // read-only, shared by all sequences
+    std::shared_ptr<const common_ngram_cache_static> ngram_cache_static;
 
     common_speculative_impl_ngram_cache(
             const common_params_speculative & params,
             uint32_t n_seq,
             uint16_t n_draft,
+            uint16_t n_min,
             const std::string & path_static,
             const std::string & path_dynamic,
             bool save_dynamic,
@@ -2255,12 +2264,15 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
         : common_speculative_impl(COMMON_SPECULATIVE_TYPE_NGRAM_CACHE, n_seq, n_draft)
         , params(params.ngram_cache)
         , n_draft(n_draft)
+        , n_min(n_min)
         , save_dynamic(save_dynamic)
         , save_static(save_static)
+        , path_dynamic(path_dynamic)
     {
         SPC_TRC("%s", "adding speculative implementation 'ngram-cache'\n");
-        SPC_TRC("- n_draft=%d, cache_static=%s, cache_dynamic=%s\n",
+        SPC_TRC("- n_draft=%d, n_min=%d, cache_static=%s, cache_dynamic=%s\n",
                 n_draft,
+                n_min,
                 path_static.empty() ? "none" : path_static.c_str(),
                 path_dynamic.empty() ? "none" : path_dynamic.c_str());
 
@@ -2268,11 +2280,7 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
 
         if (!path_static.empty()) {
             try {
-                auto ngram_cache_static = common_ngram_cache_load(path_static);
-
-                for (auto & sinfo : sinfos) {
-                    sinfo.ngram_cache_static = ngram_cache_static;
-                }
+                ngram_cache_static = common_ngram_cache_static_load(path_static);
             } catch (...) {
                 SPC_ERR("failed to open static lookup cache: %s", path_static.c_str());
                 GGML_ABORT("Couldn't read static lookup cache");
@@ -2281,11 +2289,10 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
 
         if (!path_dynamic.empty()) {
             try {
-                auto ngram_cache_dynamic = common_ngram_cache_load(path_dynamic);
-
-                for (auto & sinfo : sinfos) {
-                    sinfo.ngram_cache_dynamic = ngram_cache_dynamic;
-                }
+                ngram_cache_dynamic = common_ngram_cache_load(path_dynamic);
+            } catch (const std::ifstream::failure &) {
+                // first run: no dynamic cache file yet - start empty, it is written on exit
+                SPC_WRN("dynamic lookup cache not found, starting empty: %s\n", path_dynamic.c_str());
             } catch (...) {
                 SPC_ERR("failed to open dynamic lookup cache: %s", path_dynamic.c_str());
                 GGML_ABORT("Couldn't read dynamic lookup cache");
@@ -2293,8 +2300,28 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
         }
     }
 
-    void begin(llama_seq_id /*seq_id*/, const llama_tokens & /*prompt*/) override {
-        // noop
+    ~common_speculative_impl_ngram_cache() {
+        if (save_dynamic && !path_dynamic.empty()) {
+            try {
+                SPC_INF("saving dynamic lookup cache: %s (%d ngrams)\n", path_dynamic.c_str(), (int) ngram_cache_dynamic.size());
+
+                const int64_t t_start = ggml_time_ms();
+
+                common_ngram_cache_save(ngram_cache_dynamic, path_dynamic);
+
+                SPC_INF("saved dynamic lookup cache in %d ms\n", (int) (ggml_time_ms() - t_start));
+            } catch (const std::exception & e) {
+                SPC_ERR("failed to save dynamic lookup cache %s: %s\n", path_dynamic.c_str(), e.what());
+            }
+        }
+    }
+
+    void begin(llama_seq_id seq_id, const llama_tokens & /*prompt*/) override {
+        // new generation: drop the previous request's context n-grams
+        auto & sinfo = sinfos[seq_id];
+
+        sinfo.ngram_cache_context.clear();
+        sinfo.cache_size = 0;
     }
 
     void draft_one(
@@ -2305,40 +2332,50 @@ struct common_speculative_impl_ngram_cache : public common_speculative_impl {
 
         const auto & prompt = *dparams.prompt;
 
-        if (sinfo.cache_size < prompt.size() + 1) {
-            llama_tokens tokens_new;
-            tokens_new.reserve(prompt.size() + 1 - sinfo.cache_size);
-            for (size_t j = sinfo.cache_size; j < prompt.size(); ++j) {
-                tokens_new.push_back(prompt[j]);
-            }
-            tokens_new.push_back(dparams.id_last); // add the last token
+        // full history seen by the model: prompt + the last sampled token
+        llama_tokens inp = prompt;
+        inp.push_back(dparams.id_last);
 
-            // Update context ngram cache with new dparams.prompt:
+        if (sinfo.cache_size > inp.size()) {
+            // history shrank (context shift or rollback): rebuild per the append-only contract
+            sinfo.ngram_cache_context.clear();
+            sinfo.cache_size = 0;
+        }
+
+        if (sinfo.cache_size < inp.size()) {
             common_ngram_cache_update(
                     sinfo.ngram_cache_context,
                     LLAMA_NGRAM_MIN, LLAMA_NGRAM_MAX,
-                    tokens_new, tokens_new.size(), false);
-            sinfo.cache_size = prompt.size() + 1;
-        }
+                    inp, (int) (inp.size() - sinfo.cache_size), false);
 
-        llama_tokens inp;
-        inp.reserve(prompt.size() + 1);
-        for (size_t j = 0; j < prompt.size(); ++j) {
-            inp.push_back(prompt[j]);
+            if (save_dynamic) {
+                // -lcd: train the shared cross-request cache in the same pass
+                common_ngram_cache_update(
+                        ngram_cache_dynamic,
+                        LLAMA_NGRAM_MIN, LLAMA_NGRAM_MAX,
+                        inp, (int) (inp.size() - sinfo.cache_size), false);
+            }
+
+            sinfo.cache_size = inp.size();
         }
-        inp.push_back(dparams.id_last);
 
         result.push_back(dparams.id_last);
 
         common_ngram_cache_draft(
                 inp, result, n_draft, LLAMA_NGRAM_MIN, LLAMA_NGRAM_MAX,
                 sinfo.ngram_cache_context,
-                sinfo.ngram_cache_dynamic,
-                sinfo.ngram_cache_static);
+                ngram_cache_dynamic,
+                ngram_cache_static.get(),
+                params.context_strict,
+                params.p_min);
 
         if (result.size() > 0) {
             // delete first token in result (which is the id_last token)
             result.erase(result.begin());
+        }
+
+        if (result.size() < n_min) {
+            result.clear();
         }
     }
 
@@ -2386,22 +2423,6 @@ static common_ngram_map get_common_ngram_map(
     uint16_t min_hits   = config.min_hits;
 
     return common_ngram_map(size_key, size_value, key_only, min_hits);
-}
-
-static common_speculative_impl_ngram_cache create_state_ngram_cache(
-        const common_speculative_config & config,
-        uint32_t n_seq,
-        const std::string & path_static,
-        const std::string & path_dynamic) {
-    uint16_t n_draft = 8; // TODO get from config?
-
-    // TODO bool param in common/common.h to set save_static/save_dynamic?
-    bool save_static = false;
-    bool save_dynamic = false;
-
-    common_speculative_impl_ngram_cache state(config.params, n_seq, n_draft, path_static, path_dynamic, save_static, save_dynamic);
-
-    return state;
 }
 
 std::string common_speculative_type_name_str(const std::vector<common_speculative_type> & types) {
@@ -2544,7 +2565,7 @@ int32_t common_speculative_n_max(const common_params_speculative * spec) {
                 n_max = std::max(n_max, std::max(0, spec->ngram_mod.n_max));
                 break;
             case COMMON_SPECULATIVE_TYPE_NGRAM_CACHE:
-                n_max = std::max(n_max, (int32_t) 8);
+                n_max = std::max(n_max, (int32_t) std::max(1, spec->draft.n_max));
                 break;
             case COMMON_SPECULATIVE_TYPE_NONE:
             case COMMON_SPECULATIVE_TYPE_COUNT:
@@ -2929,11 +2950,19 @@ common_speculative * common_speculative_init(common_params_speculative & params,
                 break;
             }
             case COMMON_SPECULATIVE_TYPE_NGRAM_CACHE: {
-                auto state = create_state_ngram_cache(
-                        config, n_seq,
+                uint16_t n_draft = std::max(1, params.draft.n_max);
+                uint16_t n_min   = std::max(0, params.draft.n_min);
+
+                // TODO bool param in common/common.h to set save_static?
+                bool save_static  = false;
+                bool save_dynamic = !params.ngram_cache.lookup_cache_dynamic.empty();
+
+                // construct in place: the destructor saves the dynamic cache, so no temporary copies
+                impls.push_back(std::make_unique<common_speculative_impl_ngram_cache>(
+                        config.params, n_seq, n_draft, n_min,
                         params.ngram_cache.lookup_cache_static,
-                        params.ngram_cache.lookup_cache_dynamic);
-                impls.push_back(std::make_unique<common_speculative_impl_ngram_cache>(state));
+                        params.ngram_cache.lookup_cache_dynamic,
+                        save_dynamic, save_static));
                 break;
             }
             default:
@@ -3136,6 +3165,12 @@ void common_speculative_accept(common_speculative * spec, llama_seq_id seq_id, u
         impl->accept(seq_id, n_accepted, false);
         impl->n_call_accept++;
     }
+
+    SPC_INF("round: seq = %d, method = %s, accepted = %d/%zu\n",
+            seq_id,
+            common_speculative_type_to_str(impl->type).c_str(),
+            (int) n_accepted,
+            spec->dparams[seq_id].result->size());
 
     // accept with the rest of the implementations, using is_other == true
     for (auto & impl_other : spec->impls) {

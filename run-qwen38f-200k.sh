@@ -37,7 +37,7 @@ exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-qwen38-mtp/bin/llama-server \
   -b 512 -ub 128 -cram 0 --ctx-checkpoints 0 \
   --device rocm0,vulkan1,rocm1 --port 8009 -np 1 -mg 0 \
   --pipeline-parallel off -sm layer -ts 66,10,24 \
-  -c 204800 -ctk f16 -ctv f16 \
+  -c 104800 -ctk f16 -ctv f16 \
   -md /home/srcds/ai/ai/MTP/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf \
   --spec-type draft-mtp-adaptive --spec-draft-n-max 10 --spec-draft-n-min-adaptive 3 \
   -ngld all -ctkd f16 -ctvd f16 -otd '.*=ROCm0' \

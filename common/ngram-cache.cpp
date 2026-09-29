@@ -2,9 +2,12 @@
 #include "common.h"
 #include "log.h"
 
+#include "constmap/constmap.h"
+
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <thread>
 #include <algorithm>
@@ -62,21 +65,21 @@ constexpr int        draft_min_percent_lax[LLAMA_NGRAM_MAX] = {66, 50, 50, 50};
 constexpr int draft_min_sample_size_strict[LLAMA_NGRAM_MAX] = { 4,  3,  2,  2};
 constexpr int     draft_min_percent_strict[LLAMA_NGRAM_MAX] = {75, 66, 66, 66};
 
-// Helper function that tries to draft a token from only the static ngram cache:
-static llama_token try_draft(common_ngram_cache & nc_static, const common_ngram ngram_static) {
-    common_ngram_cache::iterator part_static_it = nc_static.find(ngram_static);
-    if (part_static_it == nc_static.end()) {
-        return LLAMA_TOKEN_NULL;
-    }
-    const common_ngram_cache_part part_static = part_static_it->second;
+// Helper function that returns how often a token follows in a static cache part, 0 if never:
+static int32_t static_count(const common_ngram_cache_static_part & part_static, const llama_token token) {
+    const size_t i = common_ngram_cache_part::lower_bound(part_static.entries, part_static.size, token);
+    return i < part_static.size && part_static.entries[i].first == token ? part_static.entries[i].second : 0;
+}
 
+// Helper function that tries to draft a token from only the static ngram cache:
+static llama_token try_draft(const common_ngram_cache_static_part & part_static) {
     int max_count_static  = 0;
     int sum_count_static  = 0;
     llama_token max_token = LLAMA_TOKEN_NULL;
 
-    for (std::pair<llama_token, int> token_count_static : part_static) {
-        const llama_token token = token_count_static.first;
-        const int32_t count_static  = token_count_static.second;
+    for (size_t i = 0; i < part_static.size; ++i) {
+        const llama_token token = part_static.entries[i].first;
+        const int32_t count_static  = part_static.entries[i].second;
 
         if (count_static > max_count_static) {
             max_token        = token;
@@ -96,7 +99,7 @@ static llama_token try_draft(common_ngram_cache & nc_static, const common_ngram 
 
 // Try to draft a token from primary cache (context/dynamic), validate with static cache:
 static llama_token try_draft(
-    common_ngram_cache & nc_primary, const std::vector<common_ngram> & ngrams_primary, common_ngram_cache_part & part_static,
+    common_ngram_cache & nc_primary, const std::vector<common_ngram> & ngrams_primary, const common_ngram_cache_static_part & part_static,
     const int * min_sample_size, const int * min_percent) {
 
     llama_token drafted_token = LLAMA_TOKEN_NULL;
@@ -108,34 +111,41 @@ static llama_token try_draft(
         if (part_primary_it == nc_primary.end()) {
             continue;
         }
-        const common_ngram_cache_part part_primary = part_primary_it->second;
+        const common_ngram_cache_part & part_primary = part_primary_it->second;
+
+        int sum_count_primary     = 0;
+        int largest_count_primary = 0;
+        for (const std::pair<llama_token, int32_t> & token_count_primary : part_primary) {
+            sum_count_primary     += token_count_primary.second;
+            largest_count_primary  = std::max(largest_count_primary, token_count_primary.second);
+        }
+        if (sum_count_primary < min_sample_size[i]) {
+            continue;
+        }
+        if (100*largest_count_primary < min_percent[i]*sum_count_primary) {
+            continue;
+        }
 
         int max_count_primary = 0;
         int max_count_static  = 0;
-        int sum_count_primary = 0;
         llama_token max_token = LLAMA_TOKEN_NULL;
 
-        for (std::pair<llama_token, int> token_count_primary : part_primary) {
+        for (const std::pair<llama_token, int32_t> & token_count_primary : part_primary) {
             const llama_token token = token_count_primary.first;
 
-            common_ngram_cache_part::iterator token_count_static_it = part_static.find(token);
+            const int32_t token_count_static = static_count(part_static, token);
 
             const int32_t count_primary = token_count_primary.second;
-            const int32_t count_static  = token_count_static_it != part_static.end() ? 100*token_count_static_it->second : 1;
+            const int32_t count_static  = token_count_static > 0 ? 100*token_count_static : 1;
 
             if (count_primary*count_static > max_count_primary*max_count_static) {
                 max_token         = token;
                 max_count_primary = count_primary;
                 max_count_static  = count_static;
             }
-            sum_count_primary += count_primary;
-        }
-
-        if (sum_count_primary < min_sample_size[i]) {
-            continue;
         }
         if (100*max_count_primary < min_percent[i]*sum_count_primary) {
-            continue;;
+            continue;
         }
         drafted_token = max_token;
     }
@@ -145,7 +155,8 @@ static llama_token try_draft(
 
 void common_ngram_cache_draft(
     std::vector<llama_token> & inp, std::vector<llama_token> & draft, int n_draft, int ngram_min, int ngram_max,
-    common_ngram_cache & nc_context, common_ngram_cache & nc_dynamic, common_ngram_cache & nc_static
+    common_ngram_cache & nc_context, common_ngram_cache & nc_dynamic, const common_ngram_cache_static * nc_static,
+    bool strict_context, float p_min_dynamic
 ) {
     GGML_ASSERT(draft.size() == 1);
     const int inp_size = inp.size();
@@ -162,10 +173,9 @@ void common_ngram_cache_draft(
         for (int j = ngram_start_static; j < ngram_start_static + LLAMA_NGRAM_STATIC; ++j) {
             ngram_static.tokens[j-ngram_start_static] = get_token(inp, draft, j);
         }
-        common_ngram_cache::iterator part_static_it = nc_static.find(ngram_static);
-        common_ngram_cache_part part_static;
-        if (part_static_it != nc_static.end()) {
-            part_static = part_static_it->second;
+        common_ngram_cache_static_part part_static;
+        if (nc_static != nullptr) {
+            part_static = common_ngram_cache_static_find(*nc_static, ngram_static);
         }
 
         // cd = context + dynamic
@@ -179,13 +189,22 @@ void common_ngram_cache_draft(
             ngrams_cd.push_back(ngram_cd);
         }
         if (drafted_token == LLAMA_TOKEN_NULL) {
-            drafted_token = try_draft(nc_context, ngrams_cd, part_static, draft_min_sample_size_lax, draft_min_percent_lax);
+            drafted_token = try_draft(
+                    nc_context, ngrams_cd, part_static,
+                    strict_context ? draft_min_sample_size_strict : draft_min_sample_size_lax,
+                    strict_context ? draft_min_percent_strict : draft_min_percent_lax);
         }
         if (drafted_token == LLAMA_TOKEN_NULL) {
-            drafted_token = try_draft(nc_dynamic, ngrams_cd, part_static, draft_min_sample_size_strict, draft_min_percent_strict);
+            // admission policy: raise the top-continuation share bar so the dynamic cache
+            // only claims a round it is confident about, instead of preempting a stronger drafter
+            int min_percent_dynamic[LLAMA_NGRAM_MAX];
+            for (int i = 0; i < LLAMA_NGRAM_MAX; ++i) {
+                min_percent_dynamic[i] = std::max(draft_min_percent_strict[i], (int) (p_min_dynamic*100));
+            }
+            drafted_token = try_draft(nc_dynamic, ngrams_cd, part_static, draft_min_sample_size_strict, min_percent_dynamic);
         }
         if (drafted_token == LLAMA_TOKEN_NULL) {
-            drafted_token = try_draft(nc_static, ngram_static);
+            drafted_token = try_draft(part_static);
         }
 
         if (drafted_token == LLAMA_TOKEN_NULL) {
@@ -255,6 +274,97 @@ common_ngram_cache common_ngram_cache_load(const std::string & filename) {
     GGML_ASSERT(hashmap_file.eof());
 
     return ngram_cache;
+}
+
+// Static cache file: header, entries array, then a serialized fastconstmap VerifiedConstMap
+// mapping the LLAMA_NGRAM_STATIC tokens of an n-gram to (offset << STATIC_LEN_BITS) | length in the entries array.
+static constexpr uint64_t STATIC_MAGIC    = 0x70616d63676e6767ull; // "ggngcmap"
+static constexpr int      STATIC_LEN_BITS = 24;
+static constexpr uint64_t STATIC_LEN_MASK = (1ull << STATIC_LEN_BITS) - 1;
+static constexpr size_t   STATIC_KEY_SIZE = LLAMA_NGRAM_STATIC * sizeof(llama_token);
+
+struct common_ngram_cache_static_header {
+    uint64_t magic;
+    uint64_t n_entries;
+    uint64_t map_size;
+};
+
+static_assert(sizeof(common_ngram_cache_static_entry) == sizeof(uint64_t), "entries must keep the map 8-byte aligned");
+static_assert(sizeof(common_ngram_cache_static_header) % sizeof(uint64_t) == 0, "header must keep the map 8-byte aligned");
+
+common_ngram_cache_static::common_ngram_cache_static() = default;
+
+common_ngram_cache_static::~common_ngram_cache_static() = default;
+
+common_ngram_cache_static_part common_ngram_cache_static_find(const common_ngram_cache_static & nc_static, const common_ngram & ngram) {
+    const uint64_t value = fcm_verified_constmap_lookup(nc_static.map.get(), reinterpret_cast<const char *>(ngram.tokens), STATIC_KEY_SIZE);
+    if (value == FCM_NOT_FOUND) {
+        return {};
+    }
+    return { nc_static.entries + (value >> STATIC_LEN_BITS), (size_t) (value & STATIC_LEN_MASK) };
+}
+
+void common_ngram_cache_static_save(const common_ngram_cache & ngram_cache, const std::string & filename) {
+    std::vector<common_ngram_cache_static_entry> entries;
+    std::vector<fcm_key_t>                       keys;
+    std::vector<uint64_t>                        values;
+    for (const auto & item : ngram_cache) {
+        const common_ngram & ngram = item.first;
+        const bool is_static_size = ngram.tokens[LLAMA_NGRAM_STATIC-1] != LLAMA_TOKEN_NULL &&
+            (LLAMA_NGRAM_STATIC == LLAMA_NGRAM_MAX || ngram.tokens[LLAMA_NGRAM_STATIC] == LLAMA_TOKEN_NULL);
+        if (!is_static_size) {
+            continue;
+        }
+
+        const uint64_t offset = entries.size();
+        for (const auto & token_count : item.second) {
+            entries.push_back(token_count);
+        }
+
+        const uint64_t length = entries.size() - offset;
+        GGML_ASSERT(length <= STATIC_LEN_MASK && offset < (1ull << (64 - STATIC_LEN_BITS)));
+        keys.push_back({reinterpret_cast<const char *>(ngram.tokens), STATIC_KEY_SIZE});
+        values.push_back((offset << STATIC_LEN_BITS) | length);
+    }
+
+    fcm_verified_constmap_t map;
+    GGML_ASSERT(fcm_verified_constmap_new(&map, keys.data(), values.data(), keys.size()) == FCM_OK);
+    std::vector<char> map_bytes(fcm_verified_constmap_serialized_size(&map));
+    GGML_ASSERT(fcm_verified_constmap_write(&map, map_bytes.data()) == FCM_OK);
+    fcm_verified_constmap_free(&map);
+
+    const common_ngram_cache_static_header header = { STATIC_MAGIC, entries.size(), map_bytes.size() };
+    std::ofstream file_out(filename, std::ios::binary);
+    file_out.write(reinterpret_cast<const char *>(&header), sizeof(header));
+    file_out.write(reinterpret_cast<const char *>(entries.data()), entries.size() * sizeof(common_ngram_cache_static_entry));
+    file_out.write(map_bytes.data(), map_bytes.size());
+}
+
+std::shared_ptr<const common_ngram_cache_static> common_ngram_cache_static_load(const std::string & filename) {
+    std::ifstream file_in(filename, std::ios::binary | std::ios::ate);
+    if (!file_in) {
+        throw std::ifstream::failure("Unable to open file " + filename);
+    }
+    const size_t file_size = file_in.tellg();
+    GGML_ASSERT(file_size >= sizeof(common_ngram_cache_static_header));
+
+    auto nc_static = std::make_shared<common_ngram_cache_static>();
+    nc_static->buffer.resize((file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t));
+    char * bytes = reinterpret_cast<char *>(nc_static->buffer.data());
+    file_in.seekg(0);
+    GGML_ASSERT(file_in.read(bytes, file_size));
+
+    common_ngram_cache_static_header header;
+    memcpy(&header, bytes, sizeof(header));
+    GGML_ASSERT(header.magic == STATIC_MAGIC);
+    const size_t entries_size = header.n_entries * sizeof(common_ngram_cache_static_entry);
+    GGML_ASSERT(sizeof(header) + entries_size + header.map_size == file_size);
+
+    nc_static->entries = reinterpret_cast<const common_ngram_cache_static_entry *>(bytes + sizeof(header));
+    nc_static->map     = std::make_unique<fcm_verified_constmap>();
+    GGML_ASSERT(fcm_verified_constmap_view(nc_static->map.get(), bytes + sizeof(header) + entries_size, header.map_size) == FCM_OK);
+
+    return nc_static;
 }
 
 void common_ngram_cache_merge(common_ngram_cache & ngram_cache_target, common_ngram_cache & ngram_cache_add) {

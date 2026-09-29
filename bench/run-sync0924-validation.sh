@@ -5,6 +5,8 @@ ROOT=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
 BUILD=${BUILD:-$ROOT/build-sync0924}
 OUT=${OUT:-$ROOT/bench/logs/sync0924-swift-q6q8q4}
 PORT=${PORT:-8013}
+LAUNCHER=${LAUNCHER:-$ROOT/swift_llama_start-q6_q8_q4.sh}
+CLIENT=${CLIENT:-$ROOT/bench/cmp-client.py}
 SERVER_PID=
 
 cleanup() {
@@ -40,7 +42,7 @@ BIN="$BUILD/bin/llama-server" \
 LD_LIB="$BUILD/bin" \
 LOG_DIR="$OUT/runtime" \
 PORT="$PORT" \
-setsid "$ROOT/swift_llama_start-q6_q8_q4.sh" > "$OUT/launcher.log" 2>&1 < /dev/null &
+setsid "$LAUNCHER" > "$OUT/launcher.log" 2>&1 < /dev/null &
 SERVER_PID=$!
 
 ready=
@@ -57,4 +59,8 @@ for _ in $(seq 1 450); do
 done
 [ -n "$ready" ] || { echo "ERROR: validation server did not listen within 15 minutes"; exit 1; }
 
-FILL1=${FILL1:-16384} TG_N=${TG_N:-1024} python3 "$ROOT/bench/cmp-client.py" "$PORT" | tee "$OUT/result.json"
+if [ -x "$CLIENT" ]; then
+    FILL1=${FILL1:-16384} TG_N=${TG_N:-1024} "$CLIENT" "$PORT" | tee "$OUT/result.json"
+else
+    FILL1=${FILL1:-16384} TG_N=${TG_N:-1024} python3 "$CLIENT" "$PORT" | tee "$OUT/result.json"
+fi

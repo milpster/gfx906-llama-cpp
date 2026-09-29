@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
     common_ngram_cache_update(ngram_cache, LLAMA_NGRAM_STATIC, LLAMA_NGRAM_STATIC, inp, inp.size(), true);
     fprintf(stderr, "%s: hashing done, writing file to %s\n", __func__, params.speculative.ngram_cache.lookup_cache_static.c_str());
 
-    common_ngram_cache_save(ngram_cache, params.speculative.ngram_cache.lookup_cache_static);
+    common_ngram_cache_static_save(ngram_cache, params.speculative.ngram_cache.lookup_cache_static);
 
     return 0;
 }

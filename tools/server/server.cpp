@@ -33,6 +33,8 @@ static inline void signal_handler(int signal) {
         exit(1);
     }
 
+    fprintf(stderr, "Received termination signal, shutting down gracefully (running tasks must finish, send again to force exit)...\n");
+
     shutdown_handler(signal);
 }
 
@@ -541,8 +543,13 @@ int llama_server(common_params & params, int argc, char ** argv) {
         // this call blocks the main thread until queue_tasks.terminate() is called
         ctx_server.start_loop();
 
+        SRV_INF("%s: task queue stopped\n", __func__);
+
         clean_up();
         ctx_http.join();
+
+        SRV_INF("%s: http thread stopped\n", __func__);
+
         if (monitor_thread.joinable()) {
             monitor_thread.join();
         }
@@ -551,6 +558,8 @@ int llama_server(common_params & params, int argc, char ** argv) {
         if (ll_ctx != nullptr) {
             common_memory_breakdown_print(ll_ctx);
         }
+
+        SRV_INF("%s: releasing model and caches (process exits when done)\n", __func__);
     }
 
     return 0;

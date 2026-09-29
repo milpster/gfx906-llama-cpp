@@ -1629,11 +1629,25 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     ).set_examples({LLAMA_EXAMPLE_LOOKUP, LLAMA_EXAMPLE_SERVER}));
     add_opt(common_arg(
         {"-lcd", "--lookup-cache-dynamic"}, "FNAME",
-        "path to dynamic lookup cache to use for lookup decoding (updated by generation)",
+        "path to dynamic lookup cache to use for lookup decoding (updated by generation, saved on exit)",
         [](common_params & params, const std::string & value) {
             params.speculative.ngram_cache.lookup_cache_dynamic = value;
         }
     ).set_examples({LLAMA_EXAMPLE_LOOKUP, LLAMA_EXAMPLE_SERVER}));
+    add_opt(common_arg(
+        {"--spec-ngram-cache-strict"},
+        "require stronger evidence from request-local n-grams before drafting",
+        [](common_params & params) {
+            params.speculative.ngram_cache.context_strict = true;
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}));
+    add_opt(common_arg(
+        {"--spec-ngram-cache-p-min"}, "P",
+        string_format("minimum share of observations for the top continuation to be drafted from the dynamic lookup cache (default: %.2f)", (double) params.speculative.ngram_cache.p_min),
+        [](common_params & params, const std::string & value) {
+            params.speculative.ngram_cache.p_min = std::stof(value);
+        }
+    ).set_examples({LLAMA_EXAMPLE_SERVER}).set_env("LLAMA_ARG_SPEC_NGRAM_CACHE_P_MIN"));
     add_opt(common_arg(
         {"-c", "--ctx-size"}, "N",
         string_format("size of the prompt context (default: %d, 0 = loaded from model)", params.n_ctx),

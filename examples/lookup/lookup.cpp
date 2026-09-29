@@ -51,7 +51,7 @@ int main(int argc, char ** argv){
 
     common_ngram_cache ngram_cache_context;
     common_ngram_cache ngram_cache_dynamic;
-    common_ngram_cache ngram_cache_static;
+    std::shared_ptr<const common_ngram_cache_static> ngram_cache_static;
     int64_t t_draft_flat_us = 0;
     int64_t t_draft_us = 0;
 
@@ -62,7 +62,7 @@ int main(int argc, char ** argv){
 
         if (!params.speculative.ngram_cache.lookup_cache_static.empty()) {
             try {
-                ngram_cache_static = common_ngram_cache_load(params.speculative.ngram_cache.lookup_cache_static);
+                ngram_cache_static = common_ngram_cache_static_load(params.speculative.ngram_cache.lookup_cache_static);
             } catch (std::ifstream::failure const &) {
                 LOG_ERR("failed to open static lookup cache: %s", params.speculative.ngram_cache.lookup_cache_static.c_str());
                 exit(1);
@@ -200,7 +200,7 @@ int main(int argc, char ** argv){
         GGML_ASSERT(draft[0] == inp.back());
         const int64_t t_start_draft_us = ggml_time_us();
 
-        common_ngram_cache_draft(inp, draft, n_draft, LLAMA_NGRAM_MIN, LLAMA_NGRAM_MAX, ngram_cache_context, ngram_cache_dynamic, ngram_cache_static);
+        common_ngram_cache_draft(inp, draft, n_draft, LLAMA_NGRAM_MIN, LLAMA_NGRAM_MAX, ngram_cache_context, ngram_cache_dynamic, ngram_cache_static.get());
 
         for (size_t i = 1; i < draft.size(); ++i) {
             common_batch_add(batch_tgt, draft[i], n_past + i, { 0 }, true);

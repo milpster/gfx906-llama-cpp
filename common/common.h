@@ -367,6 +367,8 @@ struct common_params_speculative_ngram_map {
 struct common_params_speculative_ngram_cache {
     std::string lookup_cache_static;  // path of static ngram cache file for lookup decoding
     std::string lookup_cache_dynamic; // path of dynamic ngram cache file for lookup decoding
+    bool context_strict = false;
+    float p_min = 0.0f; // min share of observations for the top continuation to be drafted from the dynamic cache
 };
 
 struct common_params_speculative {
