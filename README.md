@@ -107,6 +107,7 @@
 >   out-of-bounds reads in expert-routed MMQ at flattened sizing; PPL
 >   tie, perf-neutral.
 > - **Prompt message deduplication** (llopresto87 commit `02957b773`, adopted 2026-09-29): `llama-server` can replace later byte-identical large messages with references to their first copy. It is off by default; enable it with `--message-dedup` and tune it with `--message-dedup-min-bytes` and `--message-dedup-roles`. See [README_DEDUPLICATION.md](README_DEDUPLICATION.md).
+> - **gfx906 packed-byte subtraction** (upstream [#29478](https://github.com/ggml-org/llama.cpp/pull/29478), adopted 2026-09-29): `__vsubss4` -> `__vsub4` in fattn-vec V-dequant, MMQ tile loads and q3_K/q6_K MMVQ. Operands are bounded so saturation never triggers; TG +9-10% on the Q6_K DFlash lane with identical temp-0 SHA. Evidence: `bench/logs/upstream-prs-20260929/summary.md`.
 > - **Upstream syncs**: full merges, each lane-gated on sha + perf.
 >   Benefit: current fixes ride along at zero measured cost.
 >

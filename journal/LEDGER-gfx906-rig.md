@@ -222,6 +222,24 @@ Rejected after measurement/triage:
 - #29280 vulkan descriptor-set reuse: applied clean, sha-clean,
   TG neutral -> reverted to zero diff (PLE precedent)
 - #26631 MUL_MAT_ID -1 skip: 7 commits, reference only
+- #29478 gfx906 packed-byte sub (__vsubss4 -> __vsub4): ADOPTED
+  2026-09-29; TG +9-10% (21.2/21.4 vs 19.4-19.7 t/s), acc and temp-0
+  SHA identical across 9 runs; ngcache launcher BIN -> build-pr29478
+  (rollback: build-promptlookup-baseline)
+- #29638 EOG draft acceptance guard: perf-neutral, SHA identical;
+  ride at next sync
+- #29660 dev_layer/dev_output resync after -ot: proven no-op on the
+  ngcache launcher (override agrees with --spec-draft-device); ride at
+  next sync; loader.cpp hunk needs hand port
+- #29019 layer-input batch-order restore: single-slot neutral;
+  deferred - needs concurrent-slot A/B (baseline 2-slot ref captured)
+  plus dflash contiguity review in common/speculative.cpp
+- #29509 omit draft KV from checkpoints: REJECTED here - TG -77%,
+  draft wall x3.5; fork's ckpt rewind + on-device spec-ckpt violates
+  the draft-KV residency assumption
+- #29534 gfx906 wave64 q8 FA: watchlist - native q8-K path unused
+  (force_convert pinned, E184-E190); trial only if re-challenging
+  convert-vs-native
 
 Riding at next gated sync:
 - #27530 K/V + recurrent state cleanup after failed restores

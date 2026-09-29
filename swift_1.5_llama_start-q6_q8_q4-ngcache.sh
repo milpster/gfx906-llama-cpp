@@ -13,16 +13,18 @@
 #   >= P share of observations; provisional until the GPU sweep lands.
 # - Default port 8009 with a separate log file; LOG_DIR/BIN/LD_LIB
 #   overrides work as in the original.
-# - BIN/LD_LIB default to the build-promptlookup-baseline binary, which
-#   contains the strict ngram-cache gate plus the 5-PR port (2026-09-29).
+# - BIN/LD_LIB default to the build-pr29478 binary: the ngcache 5-PR
+#   build plus upstream #29478 gfx906 packed-byte subtraction, adopted
+#   2026-09-29 (TG +9-10%, temp-0 SHA identical; rollback binary:
+#   build-promptlookup-baseline).
 # Production (swift_1.5_llama_start-q6_q8_q4.sh) remains a separate lane.
 # The original header (model, drafter, fit E172/E173, LD_LIBRARY_PATH,
 # mirror-output, force_convert notes) applies to this copy verbatim.
 set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-BIN=${BIN:-$SCRIPT_DIR/build-promptlookup-baseline/bin/llama-server}
-LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-promptlookup-baseline/bin}
+BIN=${BIN:-$SCRIPT_DIR/build-pr29478/bin/llama-server}
+LD_LIB=${LD_LIB:-$SCRIPT_DIR/build-pr29478/bin}
 LOG_DIR=${LOG_DIR:-$SCRIPT_DIR/log}
 PORT=${PORT:-8009}
 NGRAM_CACHE_FILE=${NGRAM_CACHE_FILE:-$LOG_DIR/ngram-cache.bin}
