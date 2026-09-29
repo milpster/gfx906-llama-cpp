@@ -162,11 +162,10 @@
 > (A/B harness, FINDINGS.md, vram-test, rocprof stack). Build:
 > ./build-dflash-novega.sh (Vulkan + ROCm 6.1 - pinned, the measured
 > optimum for gfx906 here; launchers also pin its userspace). Current
-> prod build: build-rcfix/bin (0.5.0-dev, 0924 sync + q4v tile fixes,
-> promoted 2026-09-25); launchers 2llama-start-*.sh point there
-> (rollback: build-sync0909). Source versions from 2026-09-29 include
-> prompt message deduplication; retained production binaries remain
-> pre-dedup until explicitly rebuilt and promoted.
+> prod build: build-dedup/bin (0.5.0-dev, full prior fork state plus
+> opt-in prompt message deduplication, promoted 2026-09-29 after matched
+> PP16384/TG1024/temp-0 SHA gates); production launchers point there
+> by default (rollback: build-rcfix/bin).
 >
 # llama.cpp
 

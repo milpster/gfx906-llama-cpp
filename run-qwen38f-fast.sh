@@ -83,8 +83,8 @@ GGML_MOE_CPU_COMPUTE_MIN_BATCH=128 \
 GGML_SPEC_DRAFT_UBATCH=128 \
 GGML_MOE_FULLCOPY_CHUNK=33554432 \
 GGML_SPEC_CKPT_ON_DEVICE=1 \
-LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin:/opt/rocm-6.1.0/lib \
-exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-rcfix/bin/llama-server \
+LD_LIBRARY_PATH=/home/srcds/rocm-gfx906-xnack/lib:/home/srcds/dev/uf3_rocm6.1_llama.cpp/build-dedup/bin:/opt/rocm-6.1.0/lib \
+exec /home/srcds/dev/uf3_rocm6.1_llama.cpp/build-dedup/bin/llama-server \
   -m /home/srcds/ai/ai/Swift-1.5-Qwen3.8-Flash-Next-IQ4_XS.gguf \
   --threads "${THREADS:-8}" --threads-batch 8 --poll "${POLL:-0}" --poll-batch 0 \
   -lm mmap+mlock -lzm on-direct -fit off -fa on -ngl all ${NCMOE_ARGS[@]+"${NCMOE_ARGS[@]}"} \
